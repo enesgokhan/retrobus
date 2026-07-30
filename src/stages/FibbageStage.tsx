@@ -8,7 +8,6 @@ import type { Member, Stage } from '../lib/types'
 interface Round {
   id: string
   prompt: string
-  truth: string | null
   phase: 'lie' | 'guess' | 'revealed'
   order_index: number
   multiplier: number
@@ -39,6 +38,9 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
   const [rounds, setRounds] = useState<Round[]>([])
   const [lies, setLies] = useState<Lie[]>([])
   const [picks, setPicks] = useState<Pick[]>([])
+  // truth per round — the key table only yields rows once the round is revealed
+  // (or to the host, who wrote it), so an empty map here is the normal state
+  const [truths, setTruths] = useState<Record<string, string>>({})
   const [authors, setAuthors] = useState<Record<string, string>>({})
   const [members, setMembers] = useState<Member[]>([])
   const [draft, setDraft] = useState('')
@@ -57,7 +59,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
       // caps responses at 1000 rows — so a reused app eventually starves the
       // current game of its own data.
       const [{ data: r }, { data: m }] = await Promise.all([
-        supabase.from('fibbage_rounds').select('id, prompt, truth, phase, order_index, multiplier')
+        supabase.from('fibbage_rounds').select('id, prompt, phase, order_index, multiplier')
           .eq('stage_id', stage.id).order('order_index'),
         supabase.from('members').select('id, display_name, is_host, avatar').order('display_name'),
       ])
@@ -70,22 +72,27 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
       if (!roundIds.length) {
         setLies([])
         setPicks([])
+        setTruths({})
         return
       }
-      const [{ data: l }, { data: p }] = await Promise.all([
+      const [{ data: l }, { data: k }, { data: p }] = await Promise.all([
         supabase.from('fibbage_lies').select('id, round_id, body, sort_seed')
           .in('round_id', roundIds).order('sort_seed'),
+        supabase.from('fibbage_keys').select('round_id, truth').in('round_id', roundIds),
         supabase.from('fibbage_picks').select('round_id, picker_member_id, lie_id, picked_truth')
           .in('round_id', roundIds),
       ])
       if (cancelled) return
       setLies((l as Lie[]) ?? [])
       setPicks((p as Pick[]) ?? [])
+      setTruths(Object.fromEntries(
+        ((k as { round_id: string; truth: string }[]) ?? []).map((x) => [x.round_id, x.truth]),
+      ))
     }
     load()
     const channel = liveChannel(
       `fib-${stage.id}`,
-      ['fibbage_rounds', 'fibbage_lies', 'fibbage_picks', 'stages'],
+      ['fibbage_rounds', 'fibbage_lies', 'fibbage_keys', 'fibbage_picks', 'stages'],
       load,
     )
     return () => {
@@ -157,18 +164,19 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
   }
   async function addRound() {
     if (!newRound.prompt.trim() || !newRound.truth.trim()) return
-    const order = rounds.length ? Math.max(...rounds.map((r) => r.order_index)) + 1 : 1
-    const { data } = await supabase.from('fibbage_rounds').insert({
-      stage_id: stage.id,
-      prompt: newRound.prompt.trim(),
-      truth: newRound.truth.trim(),
-      order_index: order,
-      multiplier: newRound.multiplier,
-    }).select().single()
+    // one RPC, because prompt and truth now live in two tables and a round with
+    // no truth would be unplayable
+    const { data, error: e } = await supabase.rpc('create_fibbage_round', {
+      p_stage_id: stage.id,
+      p_prompt: newRound.prompt.trim(),
+      p_truth: newRound.truth.trim(),
+      p_multiplier: newRound.multiplier,
+    })
+    if (e) { setError('Tur eklenemedi.'); return }
     setNewRound({ prompt: '', truth: '', multiplier: 1 })
     if (data) {
       await supabase.from('stages')
-        .update({ config: { ...stage.config, current_round_id: data.id } })
+        .update({ config: { ...stage.config, current_round_id: data as string } })
         .eq('id', stage.id)
     }
   }
@@ -335,8 +343,8 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
             {/* truth is mixed in among the lies */}
             {[
               ...roundLies.map((l) => ({ kind: 'lie' as const, id: l.id, body: l.body, seed: l.sort_seed })),
-              ...(round.truth
-                ? [{ kind: 'truth' as const, id: 'truth', body: round.truth, seed: 0.5 }]
+              ...(truths[round.id]
+                ? [{ kind: 'truth' as const, id: 'truth', body: truths[round.id], seed: 0.5 }]
                 : []),
             ]
               .sort((a, b) => a.seed - b.seed)

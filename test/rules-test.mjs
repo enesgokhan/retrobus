@@ -97,9 +97,11 @@ else ok('RULE: count 0 / unlimited = guess until wrong')
 // ============ FIBBAGE: Jackbox rules ============
 console.log('\n-- fibbage: jackbox kuralları --')
 const fibStage = await mkStage('fibbage')
-const { data: round } = await host.from('fibbage_rounds')
-  .insert({ stage_id: fibStage.id, prompt: 'Test?', truth: 'GERÇEK', multiplier: 2 })
-  .select().single()
+// prompt and truth live in two tables now, so the round is made by RPC
+const { data: fibRoundId } = await host.rpc('create_fibbage_round', {
+  p_stage_id: fibStage.id, p_prompt: 'Test?', p_truth: 'GERÇEK', p_multiplier: 2,
+})
+const round = { id: fibRoundId }
 
 await c.Test1.rpc('submit_fib_lie', { p_round_id: round.id, p_body: 'aynı yalan' })
 // RULE: no duplicate lies

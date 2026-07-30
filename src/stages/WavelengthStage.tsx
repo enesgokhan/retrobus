@@ -154,6 +154,12 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     await supabase.from('stages').update({ config: { ...stage.config, teams: next } }).eq('id', stage.id)
   }
 
+  useEffect(() => {
+    if (psychic || !Object.keys(teams).length || !members.length) return
+    setPsychic(suggestPsychic(rounds.length % 2 === 0 ? 'a' : 'b'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members, stage.config.teams, rounds.length])
+
   async function startRound() {
     if (!psychic) {
       setError('Önce ipucu verecek kişiyi seç.')
@@ -170,10 +176,19 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     })
     if (e) { setError('Tur başlatılamadı.'); return }
     setPairIdx((i) => i + 1)
-    // rotate the psychic to the OTHER team so turns alternate like the real game
-    const cur = teams[psychic]
-    const candidates = members.filter((m) => teams[m.id] && teams[m.id] !== cur)
-    setPsychic(candidates[0]?.id ?? '')
+    // hand the role to the other team, and inside that team to whoever has done
+    // it least — picking candidates[0] meant one person was psychic every round
+    setPsychic(suggestPsychic(teams[psychic] === 'a' ? 'b' : 'a'))
+  }
+
+  /** Whoever on this team has been psychic fewest times; ties by roster order. */
+  function suggestPsychic(team: 'a' | 'b'): string {
+    const done = new Map<string, number>()
+    for (const r of rounds) done.set(r.psychic_member_id, (done.get(r.psychic_member_id) ?? 0) + 1)
+    const pool = members.filter((m) => teams[m.id] === team)
+    if (!pool.length) return ''
+    return pool.reduce((best, m) =>
+      (done.get(m.id) ?? 0) < (done.get(best.id) ?? 0) ? m : best, pool[0]).id
   }
 
   async function sendClue() {
@@ -268,6 +283,11 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
               Yeni tur
             </button>
           </div>
+          {!psychic && (
+            <p className="text-xs font-semibold text-ink-soft">
+              Turu başlatmak için önce medyumu seç. Sıra kimdeyse onu öneriyorum.
+            </p>
+          )}
           <p className="text-xs text-ink-soft">
             Sıradaki spektrum: {SPECTRUM_PAIRS[pairIdx % SPECTRUM_PAIRS.length].left} ↔{' '}
             {SPECTRUM_PAIRS[pairIdx % SPECTRUM_PAIRS.length].right}

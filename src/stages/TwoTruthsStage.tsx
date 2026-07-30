@@ -133,8 +133,7 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
   }
 
   // --- authoring phase ---
-  if (isOpen && !presenter && !mine) {
-    return (
+  const authoringCard = (
       <div className="card w-full max-w-2xl flex flex-col gap-3">
         <h3 className="font-extrabold">Üç cümle yaz — biri yalan olsun</h3>
         {([1, 2, 3] as const).map((n) => (
@@ -168,8 +167,13 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
           Gönder
         </button>
       </div>
-    )
-  }
+  )
+
+  // A passenger who has not written yet only needs the form. The host needs the
+  // form AND their controls: the card picker used to live past this early return,
+  // so the host could not start the round until they had played themselves —
+  // and if they chose not to play, the stage could not be run at all.
+  if (isOpen && !presenter && !mine && !isHost) return authoringCard
 
   // --- waiting / guessing / reveal ---
   const header = (() => {
@@ -226,6 +230,8 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
       ) : (
         !isOpen && <p className="text-center text-ink-soft">Şoför bir kart seçmeyi bekliyor.</p>
       )}
+
+      {isOpen && !presenter && !mine && isHost && authoringCard}
 
       {isHost && !presenter && (
         <section className="card flex flex-col gap-2">

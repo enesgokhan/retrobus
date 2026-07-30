@@ -10,11 +10,12 @@ interface MemberRow {
   code_set: boolean
 }
 
-/** Yolcu yönetimi — ekle, 6 haneli kod ata. */
+/** Yolcu yönetimi — ekle, 6 haneli kod ata, yanlış eklediğini çıkar. */
 export default function Members() {
   const [members, setMembers] = useState<MemberRow[]>([])
   const [newName, setNewName] = useState('')
   const [codeFor, setCodeFor] = useState<string | null>(null)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
   const [code, setCode] = useState('')
   const [note, setNote] = useState<string | null>(null)
   const [isError, setIsError] = useState(false)
@@ -47,6 +48,18 @@ export default function Members() {
     setNewName('')
     say(`${name} eklendi.`)
     load()
+  }
+
+  // A passenger added by mistake — a typo'd name, someone who cannot make it —
+  // used to be permanent: there was no delete policy and no button. Their cards
+  // and actions survive the removal, they simply stop being attributed.
+  async function removeMember(m: MemberRow) {
+    if (confirmId !== m.id) { setConfirmId(m.id); setNote(null); return }
+    const { error } = await supabase.from('members').delete().eq('id', m.id)
+    setConfirmId(null)
+    if (error) { setNote(`${m.display_name} silinemedi.`); return }
+    setNote(`${m.display_name} listeden çıkarıldı.`)
+    await load()
   }
 
   async function saveCode(memberId: string) {
@@ -126,16 +139,32 @@ export default function Members() {
                 </button>
               </div>
             ) : (
-              <button
-                className="btn-ghost text-xs px-3 py-1.5"
-                onClick={() => {
-                  setCodeFor(m.id)
-                  setCode('')
-                  setNote(null)
-                }}
-              >
-                {m.code_set ? 'Kodu değiştir' : S.setCode}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  className="btn-ghost text-xs px-3 py-1.5"
+                  onClick={() => {
+                    setCodeFor(m.id)
+                    setCode('')
+                    setNote(null)
+                    setConfirmId(null)
+                  }}
+                >
+                  {m.code_set ? 'Kodu değiştir' : S.setCode}
+                </button>
+                {!m.is_host && (
+                  <button
+                    className={[
+                      'text-xs px-3 py-1.5 rounded-full font-bold border-2 transition',
+                      confirmId === m.id
+                        ? 'bg-coral text-white border-coral-deep'
+                        : 'border-line text-ink-soft hover:border-coral',
+                    ].join(' ')}
+                    onClick={() => removeMember(m)}
+                  >
+                    {confirmId === m.id ? 'Emin misin? Bas' : 'Çıkar'}
+                  </button>
+                )}
+              </div>
             )}
           </div>
         ))}

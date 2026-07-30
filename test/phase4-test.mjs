@@ -114,13 +114,22 @@ else ok('number question ranks by distance (1000/600/300)')
 // ============ FIBBAGE ============
 console.log('\n-- fibbage --')
 const fStage = await mkStage('fibbage')
-const { data: round } = await host.from('fibbage_rounds').insert({
-  stage_id: fStage, prompt: 'Enes’in en sevdiği film?', truth: 'Kurtlar Vadisi',
-}).select().single()
+const { data: roundId } = await host.rpc('create_fibbage_round', {
+  p_stage_id: fStage, p_prompt: 'Enes’in en sevdiği film?', p_truth: 'Kurtlar Vadisi',
+})
+const round = { id: roundId }
 
-// the round row holds the truth, so it must be hidden during the lie phase
-const roundPeek = await pax[0].from('fibbage_rounds').select('truth').eq('id', round.id)
-if ((roundPeek.data ?? []).length !== 0) fail('TRUTH LEAKED during lie phase')
+// This assertion used to say the opposite — that the whole round row must be
+// invisible during the lie phase — and it passed, because that is exactly what
+// the policy did. It was pinning the bug: hiding the row hides the PROMPT, so
+// no passenger could see what they were lying about and the game was
+// unplayable by anyone but the host. Two things must now be true at once.
+const roundPeek = await pax[0].from('fibbage_rounds').select('id, prompt').eq('id', round.id)
+if ((roundPeek.data ?? []).length !== 1) fail('players cannot see the round — Fibbage is unplayable')
+else ok('players can read the prompt during the lie phase')
+
+const truthPeek = await pax[0].from('fibbage_keys').select('truth').eq('round_id', round.id)
+if ((truthPeek.data ?? []).length !== 0) fail('TRUTH LEAKED during lie phase')
 else ok('truth hidden during lie phase')
 
 for (let i = 0; i < pax.length; i++) {
@@ -257,5 +266,25 @@ else ok('clients cannot insert scores')
 // ============ cleanup ============
 await host.from('meetings').delete().eq('id', meeting.id)
 for (const n of names) await host.from('members').delete().eq('display_name', n)
+// ---------------------------------------------------------------------------
+// A player must be able to READ every screen they are asked to act on.
+//
+// Fibbage failed this and nothing caught it: the round row was hidden during
+// the lie phase to protect the truth inside it, which also hid the prompt, so
+// passengers saw "Şoför turu hazırlıyor…" and never got an input box. The game
+// was playable only by the host. Every other game keeps its secret in a
+// separate keys table precisely so the visible row stays visible.
+console.log('\n-- oynanabilirlik: oyuncu kendi ekranını okuyabiliyor mu --')
+for (const [table, cols] of [
+  ['fibbage_rounds', 'id, prompt, phase'],
+  ['wave_rounds', 'id, phase, active_team'],
+  ['quiz_questions', 'id, prompt, options'],
+  ['two_truths_entries', 'id, s1'],
+]) {
+  const { error } = await pax[0].from(table).select(cols).limit(1)
+  if (error) fail(`a player cannot read ${table}(${cols}): ${error.message}`)
+  else ok(`player can read ${table}`)
+}
+
 console.log(failed ? `\n${failed} CHECK(S) FAILED` : '\nALL CHECKS PASSED')
 process.exit(failed ? 1 : 0)
