@@ -22,13 +22,14 @@ const Ctx = createContext<AuthCtx>({
   logout: async () => {},
 })
 
-interface ClaimRow {
+/** Shape returned by the claim_member RPC (a single jsonb object). */
+interface ClaimResult {
   ok: boolean
-  reason: string | null
-  retry_after_s: number | null
-  member_id: string | null
-  display_name: string | null
-  is_host: boolean | null
+  reason?: 'invalid' | 'no_code' | 'locked' | 'no_session'
+  retry_after_s?: number
+  member_id?: string
+  display_name?: string
+  is_host?: boolean
 }
 
 /** Resolves the member linked to the current anonymous auth user, if any. */
@@ -78,26 +79,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         p_name: name.trim(),
         p_code: code,
       })
-      if (error || !data?.length) return { ok: false, reason: 'error' }
+      if (error || !data) return { ok: false, reason: 'error' }
 
-      const row = data[0] as ClaimRow
-      if (!row.ok) {
-        switch (row.reason) {
+      const result = data as ClaimResult
+      if (!result.ok) {
+        switch (result.reason) {
           case 'no_code':
             return { ok: false, reason: 'no_code' }
           case 'locked':
-            return { ok: false, reason: 'locked', retryAfterS: row.retry_after_s ?? 900 }
+            return { ok: false, reason: 'locked', retryAfterS: result.retry_after_s ?? 900 }
           case 'invalid':
             return { ok: false, reason: 'wrong' }
           default:
             return { ok: false, reason: 'error' }
         }
       }
+      if (!result.member_id || !result.display_name) return { ok: false, reason: 'error' }
 
       setMember({
-        id: row.member_id!,
-        display_name: row.display_name!,
-        is_host: row.is_host ?? false,
+        id: result.member_id,
+        display_name: result.display_name,
+        is_host: result.is_host ?? false,
       })
       return { ok: true }
     } catch {

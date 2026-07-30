@@ -115,11 +115,15 @@ grant execute on function public.auth_is_host() to anon, authenticated;
 
 -- Verifies name + 6-digit code and links the caller's anonymous auth user.
 --
--- Returns a status row instead of raising on bad credentials: raising would roll
--- back the transaction and discard the failed-attempt counter we just wrote,
--- silently defeating the rate limit.
+-- Returns a status OBJECT rather than raising on bad credentials: raising would
+-- roll back the transaction and discard the failed-attempt counter we just
+-- wrote, silently defeating the rate limit.
+--
+-- Returns jsonb, not `table (...)`, deliberately: OUT parameters named after
+-- table columns (display_name, member_id, is_host) become PL/pgSQL variables
+-- that shadow those columns and make every query ambiguous (42702).
 create or replace function public.claim_member(p_name text, p_code text)
-returns table (ok boolean, reason text, retry_after_s int, member_id uuid, display_name text, is_host boolean)
+returns jsonb
 language plpgsql security definer
 set search_path = public, extensions
 as $$
@@ -131,33 +135,28 @@ declare
   v_fresh boolean;
 begin
   if auth.uid() is null then
-    return query select false, 'no_session', null::int, null::uuid, null::text, null::boolean;
-    return;
+    return jsonb_build_object('ok', false, 'reason', 'no_session');
   end if;
   if p_name is null or btrim(p_name) = '' or p_code !~ '^\d{6}$' then
-    return query select false, 'invalid', null::int, null::uuid, null::text, null::boolean;
-    return;
+    return jsonb_build_object('ok', false, 'reason', 'invalid');
   end if;
 
-  select * into v_member from members where lower(display_name) = lower(btrim(p_name));
+  select m.* into v_member from members m where lower(m.display_name) = lower(btrim(p_name));
   if not found then
     -- same answer as a wrong code, so the roster can't be probed by name
-    return query select false, 'invalid', null::int, null::uuid, null::text, null::boolean;
-    return;
+    return jsonb_build_object('ok', false, 'reason', 'invalid');
   end if;
   if v_member.code_hash is null then
-    return query select false, 'no_code', null::int, null::uuid, null::text, null::boolean;
-    return;
+    return jsonb_build_object('ok', false, 'reason', 'no_code');
   end if;
 
-  select * into v_att from login_attempts where login_attempts.member_id = v_member.id;
+  select la.* into v_att from login_attempts la where la.member_id = v_member.id;
   if found and v_att.fail_count >= v_max and now() - v_att.window_start < v_window then
-    return query select
-      false,
-      'locked',
-      ceil(extract(epoch from (v_window - (now() - v_att.window_start))))::int,
-      null::uuid, null::text, null::boolean;
-    return;
+    return jsonb_build_object(
+      'ok', false,
+      'reason', 'locked',
+      'retry_after_s', ceil(extract(epoch from (v_window - (now() - v_att.window_start))))::int
+    );
   end if;
 
   if crypt(p_code, v_member.code_hash) <> v_member.code_hash then
@@ -168,18 +167,22 @@ begin
     on conflict (member_id) do update
       set window_start = case when v_fresh then now() else la.window_start end,
           fail_count   = case when v_fresh then 1 else la.fail_count + 1 end;
-    return query select false, 'invalid', null::int, null::uuid, null::text, null::boolean;
-    return;
+    return jsonb_build_object('ok', false, 'reason', 'invalid');
   end if;
 
-  delete from login_attempts where login_attempts.member_id = v_member.id;
+  delete from login_attempts la where la.member_id = v_member.id;
 
   insert into member_links (auth_uid, member_id)
   values (auth.uid(), v_member.id)
   on conflict (auth_uid) do update
     set member_id = excluded.member_id, linked_at = now();
 
-  return query select true, null::text, null::int, v_member.id, v_member.display_name, v_member.is_host;
+  return jsonb_build_object(
+    'ok', true,
+    'member_id', v_member.id,
+    'display_name', v_member.display_name,
+    'is_host', v_member.is_host
+  );
 end;
 $$;
 grant execute on function public.claim_member(text, text) to anon, authenticated;
