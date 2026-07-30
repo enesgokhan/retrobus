@@ -10,6 +10,7 @@ import Members from './routes/host/Members'
 import Profil from './routes/Profil'
 import Yearbook from './routes/Yearbook'
 import Kurallar from './routes/Kurallar'
+import Tani from './routes/Tani'
 
 function Splash() {
   return (
@@ -72,6 +73,14 @@ export default function App() {
         element={
           <RequireMember>
             <Kurallar />
+          </RequireMember>
+        }
+      />
+      <Route
+        path="/tani"
+        element={
+          <RequireMember>
+            <Tani />
           </RequireMember>
         }
       />

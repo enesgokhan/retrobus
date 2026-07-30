@@ -250,7 +250,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
 
   if (!round) {
     return (
-      <div className="w-full max-w-2xl flex flex-col gap-4">
+      <div className="w-full max-w-4xl flex flex-col gap-4">
         <p className="text-center text-ink-soft">
           {isHost ? 'Tur yok — aşağıdan ekle.' : 'Şoför turu hazırlıyor…'}
         </p>
@@ -274,7 +274,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
   })()
 
   return (
-    <div className="w-full max-w-2xl flex flex-col gap-4">
+    <div className="w-full max-w-4xl flex flex-col gap-4">
       <StageHeader
         {...header}
         presenter={presenter}

@@ -17,6 +17,7 @@ const ITEMS: Item[] = [
   { to: '/kurallar', icon: '📖', label: 'Kurallar' },
   { to: '/yillik', icon: '📖', label: 'Yıllık', hostOnly: true },
   { to: '/profil', icon: '🙂', label: 'Profil' },
+  { to: '/tani', icon: '🩺', label: 'Tanı' },
 ]
 
 /**

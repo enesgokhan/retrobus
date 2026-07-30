@@ -95,7 +95,7 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
 
   return (
     <div
-      className="stage-world flex-1 flex flex-col items-center gap-4 w-full px-3 py-6 sm:px-5"
+      className="stage-world flex-1 flex flex-col items-center gap-5 w-full px-3 py-7 sm:px-6"
       style={themeVars(theme)}
       data-stage-kind={stage.kind}
       data-stage-mood={theme.mood}
@@ -103,7 +103,7 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
       {!bare && (
         <>
           {stage.config.prompt && (
-            <div className="accent-wash w-full max-w-2xl rounded-2xl border-2 px-5 py-3 text-center font-semibold">
+            <div className="accent-wash w-full max-w-4xl rounded-2xl border-2 px-5 py-3 text-center font-semibold">
               {stage.config.prompt}
             </div>
           )}

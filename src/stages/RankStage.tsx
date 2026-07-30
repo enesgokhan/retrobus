@@ -114,7 +114,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
 
   if (!items.length) {
     return (
-      <div className="w-full max-w-lg flex flex-col gap-3">
+      <div className="w-full max-w-2xl flex flex-col gap-3">
         <p className="text-center text-ink-soft">
           {isHost ? 'Sıralanacak öğe yok — aşağıdan ekle.' : 'Şoför listeyi hazırlıyor…'}
         </p>
@@ -138,7 +138,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
   }
 
   return (
-    <div className="w-full max-w-lg flex flex-col gap-4">
+    <div className="w-full max-w-2xl flex flex-col gap-4">
       {error && (
         <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
           {error}

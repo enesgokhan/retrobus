@@ -52,7 +52,7 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
   }
 
   return (
-    <div className="w-full max-w-3xl flex flex-col items-center gap-5">
+    <div className="w-full max-w-5xl flex flex-col items-center gap-5">
       <StageHeader
         phase={isOpen ? 'Kelime bulutu' : 'Kapandı'}
         instruction={

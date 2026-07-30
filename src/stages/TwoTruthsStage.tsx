@@ -135,7 +135,7 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
   // --- authoring phase ---
   if (isOpen && !presenter && !mine) {
     return (
-      <div className="card w-full max-w-lg flex flex-col gap-3">
+      <div className="card w-full max-w-2xl flex flex-col gap-3">
         <h3 className="font-extrabold">Üç cümle yaz — biri yalan olsun</h3>
         {([1, 2, 3] as const).map((n) => (
           <label key={n} className="flex items-center gap-2">
@@ -188,7 +188,7 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
   })()
 
   return (
-    <div className="w-full max-w-2xl flex flex-col gap-4">
+    <div className="w-full max-w-4xl flex flex-col gap-4">
       <StageHeader
         {...header}
         presenter={presenter}

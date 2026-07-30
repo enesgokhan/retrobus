@@ -164,7 +164,7 @@ export default function Host() {
   if (loading) return <main className="min-h-dvh grid place-items-center text-ink-soft">{S.loading}</main>
 
   return (
-    <main className="min-h-dvh max-w-3xl mx-auto px-5 py-6 flex flex-col gap-6">
+    <main className="min-h-dvh max-w-[1400px] mx-auto px-5 py-6 flex flex-col gap-5">
       <ConnStatus />
       <header className="flex flex-col gap-2">
         <div className="min-w-0">
@@ -190,7 +190,9 @@ export default function Host() {
           </button>
         </section>
       ) : (
-        <>
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start">
+          {/* sol kolon: şoförün kontrolleri */}
+          <div className="flex flex-col gap-5 min-w-0">
           <NowNext
             meeting={meeting}
             stages={stages}
@@ -271,7 +273,10 @@ export default function Host() {
             </div>
           )}
 
-          <section className="flex flex-col gap-2">
+          </div>
+
+          {/* sağ kolon: rota — geniş ekranda kendi içinde kayar */}
+          <section className="flex flex-col gap-2 min-w-0 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto xl:pr-1">
             {[...stages]
               .sort((a, b) => a.order_index - b.order_index)
               .map((stage, i, arr) => {
@@ -397,7 +402,7 @@ export default function Host() {
               </button>
             )}
           </section>
-        </>
+        </div>
       )}
     </main>
   )

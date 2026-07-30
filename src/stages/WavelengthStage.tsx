@@ -279,7 +279,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
 
   if (!round) {
     return (
-      <div className="w-full max-w-2xl flex flex-col gap-4">
+      <div className="w-full max-w-4xl flex flex-col gap-4">
         <StageHeader
           phase="Frekans"
           instruction={isHost ? 'Takımları kur ve ilk turu başlat.' : 'Şoför turu hazırlıyor…'}
@@ -333,7 +333,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     : null
 
   return (
-    <div className="w-full max-w-2xl flex flex-col gap-4">
+    <div className="w-full max-w-4xl flex flex-col gap-4">
       <StageHeader
         {...header}
         presenter={presenter}

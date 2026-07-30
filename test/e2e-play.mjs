@@ -254,6 +254,54 @@ console.log('\n-- frekans --')
   }
 }
 
+// ============ EVERY STAGE RENDERS ITS OWN TITLE ============
+// My earlier click-through used a loose row selector that matched ancestor
+// elements, so it kept re-activating the same first two stages while appearing
+// to walk all 17. Per-stage UI was therefore never actually verified. This walks
+// them properly and asserts the rendered title matches the stage activated.
+console.log('\n-- her durak --')
+{
+  const kinds = [
+    ['wordcloud', 'Kelime bulutu'], ['board', 'Pano'], ['lean_coffee', 'Lean'],
+    ['suggestions', 'Oneriler'], ['health_check', 'Nabiz'], ['two_truths', 'Iki dogru'],
+    ['poll', 'Anket'], ['quiz', 'Quiz2'], ['fibbage', 'Fib2'], ['rank', 'Sirala'],
+    ['codenames', 'Ajanlar2'], ['wavelength', 'Frekans2'], ['feedback_wall', 'Duvar'],
+    ['secret_mission', 'Gorev'], ['leaderboard', 'Tablo'], ['break', 'Mola2'],
+  ]
+  let walked = 0
+  let mismatched = []
+  for (const [kind, title] of kinds) {
+    const st = await addStage(kind, title)
+    await activate(st)
+    await room(p1)
+    const shown = (await p1.locator('.stage-title, h2').first().textContent().catch(() => '')) ?? ''
+    const world = await p1.locator('[data-stage-kind]').first().getAttribute('data-stage-kind').catch(() => null)
+    // break renders bare (no title furniture) by design
+    const titleOk = kind === 'break' ? true : shown.trim().startsWith(title)
+    if (world !== kind) mismatched.push(`${kind}: world=${world}`)
+    else if (!titleOk) mismatched.push(`${kind}: showed "${shown.trim().slice(0, 20)}"`)
+    else walked++
+  }
+  if (mismatched.length) fail(`stages rendered wrong: ${mismatched.join(' | ')}`)
+  else ok(`all ${walked} stage kinds render their own stage`)
+}
+
+// ============ CONNECTION INDICATOR STAYS QUIET WHEN HEALTHY ============
+// Regression test for the banner that flapped on during harmless transients and
+// went silent when the connection was actually dead.
+console.log('\n-- bağlantı göstergesi --')
+{
+  await room(p1)
+  await p1.waitForTimeout(9000)   // past the 6s grace and the 3s settle
+  const banner = await p1.locator('[role="status"]').count()
+  if (banner > 0) {
+    const txt = await p1.locator('[role="status"]').first().textContent()
+    fail(`indicator shown on a healthy connection: ${txt?.trim().slice(0, 60)}`)
+  } else {
+    ok('no connection warning while the socket is healthy')
+  }
+}
+
 // ============ report ============
 await api.from('meetings').delete().eq('id', meeting.id)
 for (const n of NAMES) await api.from('members').delete().eq('display_name', n)

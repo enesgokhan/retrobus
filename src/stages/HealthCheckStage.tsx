@@ -98,7 +98,7 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
   const allDone = dims.every((d) => done.has(d.key))
 
   return (
-    <div className="w-full max-w-2xl flex flex-col gap-4">
+    <div className="w-full max-w-4xl flex flex-col gap-4">
       <StageHeader
         phase={showResults ? 'Sonuçlar' : 'Takım nabzı'}
         instruction={

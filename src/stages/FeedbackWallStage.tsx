@@ -119,7 +119,7 @@ export default function FeedbackWallStage({
   // --- toplama aşaması ---
   if (isOpen) {
     return (
-      <div className="w-full max-w-lg flex flex-col gap-4">
+      <div className="w-full max-w-2xl flex flex-col gap-4">
         <StageHeader
           phase={kudosOnly ? 'Teşekkür duvarı' : 'Geri bildirim duvarı'}
           instruction={
@@ -199,7 +199,7 @@ export default function FeedbackWallStage({
   }
 
   return (
-    <div className="w-full max-w-3xl flex flex-col gap-4">
+    <div className="w-full max-w-5xl flex flex-col gap-4">
       {isHost && !presenter && (
         <section className="card flex flex-col gap-2">
           <h4 className="font-bold text-sm">Şoför: sırayla göster</h4>

@@ -196,7 +196,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
   // ---------- no game ----------
   if (!game) {
     return (
-      <div className="w-full max-w-2xl flex flex-col gap-4">
+      <div className="w-full max-w-4xl flex flex-col gap-4">
         <StageHeader
           phase="Kelime Ajanları"
           instruction={isHost ? 'Oyunu kur, sonra herkes takımını seçsin.' : 'Şoför oyunu kuruyor…'}
@@ -218,7 +218,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
     const blueSm = players.find((p) => p.team === 'blue' && p.is_spymaster)
     const canDeal = !!redSm && !!blueSm
     return (
-      <div className="w-full max-w-2xl flex flex-col gap-4">
+      <div className="w-full max-w-4xl flex flex-col gap-4">
         <StageHeader
           phase="Takım seçimi"
           instruction={
@@ -331,7 +331,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
   })()
 
   return (
-    <div className="w-full max-w-3xl flex flex-col gap-3">
+    <div className="w-full max-w-5xl flex flex-col gap-3">
       <StageHeader
         {...header}
         presenter={presenter}
@@ -385,7 +385,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       </section>
 
       {/* 5x5 tahta */}
-      <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+      <div className="grid grid-cols-5 gap-2 sm:gap-3 w-full max-w-4xl">
         {cards.map((c) => {
           const role = keyOf(c.id)
           const showRole = c.revealed || (seeingKey && role)
@@ -396,8 +396,8 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
               key={c.id}
               className={[
                 'relative aspect-4/3 rounded-xl border-2 font-bold uppercase tracking-tight transition',
-                'flex items-center justify-center text-center px-0.5',
-                presenter ? 'text-lg' : 'text-[11px] sm:text-sm',
+                'flex items-center justify-center text-center px-1',
+                presenter ? 'text-2xl' : 'text-[11px] sm:text-base lg:text-lg',
                 showRole && meta ? meta.cls : 'bg-card border-line',
                 c.revealed ? 'opacity-80' : '',
                 canGuess ? 'hover:scale-105 hover:shadow-md cursor-pointer' : 'cursor-default',
