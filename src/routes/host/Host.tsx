@@ -6,8 +6,8 @@ import { useMeeting } from '../../lib/useMeeting'
 import { S } from '../../lib/strings'
 import type { Stage, StageKind } from '../../lib/types'
 import { AGENDA_MINUTES, DEFAULT_AGENDA, STAGE_PRESETS } from '../../lib/presets'
-import TimerStrip from '../../components/TimerStrip'
 import StageControls from './StageControls'
+import NowNext from './NowNext'
 import { useStageReadiness } from '../../lib/useStageReadiness'
 import { usePresence } from '../../lib/usePresence'
 import PresenceBar from '../../components/PresenceBar'
@@ -154,19 +154,18 @@ export default function Host() {
     const ends = new Date(new Date(activeStage.timer_ends_at).getTime() + 60_000).toISOString()
     await sb.from('stages').update({ timer_ends_at: ends }).eq('id', activeStage.id)
   }
-  async function timerReset() {
-    if (!activeStage) return
-    await sb.from('stages').update({ timer_ends_at: null, timer_remaining_s: null }).eq('id', activeStage.id)
-  }
 
   if (loading) return <main className="min-h-dvh grid place-items-center text-ink-soft">{S.loading}</main>
 
   return (
     <main className="min-h-dvh max-w-3xl mx-auto px-5 py-6 flex flex-col gap-6">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold flex items-center gap-2">
-          <span aria-hidden>🚌</span> {S.hostConsole}
-        </h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-extrabold flex items-center gap-2">
+            <span aria-hidden>🚌</span> {S.hostConsole}
+          </h1>
+          {meeting && <p className="text-sm font-semibold text-ink-soft truncate">{meeting.title}</p>}
+        </div>
         <nav className="flex items-center gap-4 text-sm font-semibold">
           <Link to="/host/uyeler" className="text-coral">
             {S.members}
@@ -179,6 +178,9 @@ export default function Host() {
           </Link>
           <Link to="/sunum" className="text-ink-soft">
             Sunum
+          </Link>
+          <Link to="/kurallar" className="text-ink-soft">
+            Kurallar
           </Link>
           <Link to="/yillik" className="text-ink-soft">
             Yıllık
@@ -204,38 +206,18 @@ export default function Host() {
         </section>
       ) : (
         <>
-          <section className="card flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <div className="text-sm text-ink-soft font-semibold">{S.route}</div>
-              <div className="text-xl font-extrabold">{meeting.title}</div>
-            </div>
-            {activeStage && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <TimerStrip stage={activeStage} />
-                {activeStage.timer_ends_at ? (
-                  <>
-                    <button className="btn-ghost text-sm" onClick={timerPause}>
-                      {S.timerPause}
-                    </button>
-                    <button className="btn-ghost text-sm" onClick={timerPlus}>
-                      {S.timerPlusMinute}
-                    </button>
-                  </>
-                ) : activeStage.timer_remaining_s != null ? (
-                  <button className="btn-ghost text-sm" onClick={timerResume}>
-                    {S.timerResume}
-                  </button>
-                ) : (
-                  <button className="btn-ghost text-sm" onClick={() => timerStart(activeStage.config.timer_s ?? 300)}>
-                    ⏱ {S.timerStart}
-                  </button>
-                )}
-                <button className="btn-ghost text-sm" onClick={timerReset}>
-                  {S.timerStop}
-                </button>
-              </div>
-            )}
-          </section>
+          <NowNext
+            meeting={meeting}
+            stages={stages}
+            activeStage={activeStage}
+            todo={readiness}
+            onActivate={activate}
+            onSetState={setState}
+            onTimerStart={timerStart}
+            onTimerPause={timerPause}
+            onTimerResume={timerResume}
+            onTimerPlus={timerPlus}
+          />
 
           <PresenceBar here={here} />
 

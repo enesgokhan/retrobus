@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
+import StageHeader from '../components/StageHeader'
 import type { Member, Stage } from '../lib/types'
 
 interface Round {
@@ -10,6 +11,7 @@ interface Round {
   truth: string | null
   phase: 'lie' | 'guess' | 'revealed'
   order_index: number
+  multiplier: number
 }
 interface Lie {
   id: string
@@ -41,7 +43,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
   const [members, setMembers] = useState<Member[]>([])
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [newRound, setNewRound] = useState({ prompt: '', truth: '' })
+  const [newRound, setNewRound] = useState({ prompt: '', truth: '', multiplier: 1 })
 
   const currentId = (stage.config.current_round_id as string | undefined) ?? null
   const round = rounds.find((r) => r.id === currentId) ?? rounds.find((r) => r.phase !== 'revealed') ?? null
@@ -55,7 +57,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
       // caps responses at 1000 rows — so a reused app eventually starves the
       // current game of its own data.
       const [{ data: r }, { data: m }] = await Promise.all([
-        supabase.from('fibbage_rounds').select('id, prompt, truth, phase, order_index')
+        supabase.from('fibbage_rounds').select('id, prompt, truth, phase, order_index, multiplier')
           .eq('stage_id', stage.id).order('order_index'),
         supabase.from('members').select('id, display_name, is_host, avatar').order('display_name'),
       ])
@@ -123,7 +125,11 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
     setError(null)
     const { error: e } = await supabase.rpc('submit_fib_lie', { p_round_id: round.id, p_body: draft })
     if (e) {
-      setError(e.message.includes('the truth') ? 'O gerçek cevap! Başka bir şey yaz.' : 'Kaydedilemedi.')
+      setError(
+        e.message.includes('the truth') ? 'O gerçek cevap! Başka bir şey yaz.'
+        : e.message.includes('already wrote') ? 'Birisi aynı yalanı yazmış — başka bir şey düşün.'
+        : 'Kaydedilemedi.',
+      )
     } else {
       setDraft('')
     }
@@ -157,8 +163,9 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
       prompt: newRound.prompt.trim(),
       truth: newRound.truth.trim(),
       order_index: order,
+      multiplier: newRound.multiplier,
     }).select().single()
-    setNewRound({ prompt: '', truth: '' })
+    setNewRound({ prompt: '', truth: '', multiplier: 1 })
     if (data) {
       await supabase.from('stages')
         .update({ config: { ...stage.config, current_round_id: data.id } })
@@ -200,6 +207,18 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
             placeholder="Gerçek cevap"
             maxLength={200}
           />
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-ink-soft">Puan çarpanı (Jackbox: son turlar daha değerli)</span>
+            <select
+              className="input-blob"
+              value={newRound.multiplier}
+              onChange={(e) => setNewRound((n) => ({ ...n, multiplier: Number(e.target.value) }))}
+            >
+              <option value={1}>×1 — normal tur</option>
+              <option value={2}>×2 — ikinci tur</option>
+              <option value={3}>×3 — final turu</option>
+            </select>
+          </label>
           <button className="btn-coral self-start text-sm" onClick={addRound}>
             Ekle ve başlat
           </button>
@@ -240,8 +259,32 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
     )
   }
 
+  const header = (() => {
+    if (round.phase === 'lie') {
+      return myLie
+        ? { phase: 'Yalanın hazır', instruction: 'Diğerlerini bekliyoruz.', waiting: true }
+        : { phase: 'Yalan yazma zamanı', instruction: 'Gerçek sanılacak bir yalan yaz. Kandırdığın her kişi puan.', waiting: false }
+    }
+    if (round.phase === 'guess') {
+      return myPick
+        ? { phase: 'Seçimin kayıtlı', instruction: 'Diğerlerini bekliyoruz.', waiting: true }
+        : { phase: 'Gerçeği bul', instruction: 'Hangisi gerçek cevap? Kendi yalanını seçemezsin.', waiting: false }
+    }
+    return { phase: 'Sonuç', instruction: 'Gerçek açıldı — kim kimi kandırdı?', waiting: false }
+  })()
+
   return (
     <div className="w-full max-w-2xl flex flex-col gap-4">
+      <StageHeader
+        {...header}
+        presenter={presenter}
+        progress={
+          round.phase === 'lie' ? `${roundLies.length}/${members.length} yalan`
+          : round.phase === 'guess' ? `${roundPicks.length}/${members.length} seçim`
+          : null
+        }
+      />
+
       {error && (
         <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
           {error}
@@ -249,7 +292,14 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
       )}
 
       <section className="card flex flex-col gap-4">
-        <h3 className={presenter ? 'text-4xl font-extrabold' : 'text-2xl font-extrabold'}>{round.prompt}</h3>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className={presenter ? 'text-4xl font-extrabold' : 'text-2xl font-extrabold'}>{round.prompt}</h3>
+          {round.multiplier > 1 && (
+            <span className="shrink-0 rounded-full bg-grape text-white px-3 py-1 text-sm font-extrabold">
+              ×{round.multiplier}
+            </span>
+          )}
+        </div>
 
         {round.phase === 'lie' && (
           <>

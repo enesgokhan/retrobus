@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
+import StageHeader from '../components/StageHeader'
 import type { Member, Stage } from '../lib/types'
 
 interface FeedbackItem {
@@ -119,6 +120,16 @@ export default function FeedbackWallStage({
   if (isOpen) {
     return (
       <div className="w-full max-w-lg flex flex-col gap-4">
+        <StageHeader
+          phase={kudosOnly ? 'Teşekkür duvarı' : 'Geri bildirim duvarı'}
+          instruction={
+            kudosOnly
+              ? 'Kime teşekkür etmek istersin? Anonim, hepsi birden açılacak.'
+              : 'Takım arkadaşların için yaz. Anonim — hepsi aynı anda, karışık açılacak.'
+          }
+          progress={sent > 0 ? `${sent} gönderdin` : null}
+          presenter={presenter}
+        />
         {!presenter && (
           <div className="card flex flex-col gap-3">
             <h3 className="font-extrabold">

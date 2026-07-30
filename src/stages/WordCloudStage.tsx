@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { submitCard } from '../lib/anon'
 import { useStageData } from '../lib/useStageData'
+import StageHeader from '../components/StageHeader'
 import type { Stage } from '../lib/types'
 
 const SIZES = ['text-lg', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl']
@@ -52,6 +53,17 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
 
   return (
     <div className="w-full max-w-3xl flex flex-col items-center gap-5">
+      <StageHeader
+        phase={isOpen ? 'Kelime bulutu' : 'Kapandı'}
+        instruction={
+          !isOpen ? 'Bu durak tamamlandı.'
+          : canSubmit ? 'Tek kelime yaz. Aynı kelimeler büyür.'
+          : 'Kelime hakkın doldu — bulutu izle.'
+        }
+        waiting={!canSubmit}
+        progress={words.length ? `${words.length} kelime` : null}
+        presenter={presenter}
+      />
       {canSubmit && (
         <div className="card w-full max-w-md flex flex-col gap-3">
           <div className="flex items-center gap-2">

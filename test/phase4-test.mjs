@@ -207,21 +207,34 @@ for (const c of pax) {
   const { error } = await c.rpc('submit_ranking', { p_stage_id: rStage, p_ordering: itemIds })
   if (error) fail(`ranking: ${error.message}`)
 }
-const twice = await pax[0].rpc('submit_ranking', { p_stage_id: rStage, p_ordering: itemIds })
-if (!twice.error) fail('second ranking from the same person must be refused')
-else ok('one ranking per person')
+// CONTRACT CHANGE (0011): resubmitting now UPDATES your ranking instead of
+// being refused — you are ordering a list, so changing your mind before the
+// reveal is correct. Still exactly one row per person.
+const twice = await pax[0].rpc('submit_ranking', { p_stage_id: rStage, p_ordering: [...itemIds].reverse() })
+if (twice.error) fail(`resubmitting should update, not fail: ${twice.error.message}`)
+const { data: mineRows } = await pax[0].from('rank_submissions').select('id').eq('stage_id', rStage)
+if ((mineRows ?? []).length !== 1) fail(`expected exactly 1 row per person, got ${mineRows?.length}`)
+else ok('resubmitting updates in place (one row per person)')
 
-const rEarly = await pax[0].from('rank_submissions').select('ordering').eq('stage_id', rStage)
-if ((rEarly.data ?? []).length !== 0) fail('rankings leaked before reveal')
-else ok('rankings hidden before reveal')
+// You may read your OWN ranking before reveal (the UI shows "kayıtlı"), but
+// nobody else's.
+const rEarly = await pax[0].from('rank_submissions').select('ordering, member_id').eq('stage_id', rStage)
+const notMine = (rEarly.data ?? []).filter((r) => r.member_id !== idOf('Ayse'))
+if (notMine.length) fail(`other people's rankings visible before reveal: ${notMine.length}`)
+else if ((rEarly.data ?? []).length !== 1) fail(`should see exactly your own, saw ${rEarly.data?.length}`)
+else ok('before reveal you see only your own ranking')
 
 await host.from('stages').update({ state: 'revealed' }).eq('id', rStage)
 const rLate = await pax[0].from('rank_submissions').select('*').eq('stage_id', rStage)
 if ((rLate.data ?? []).length !== 3) fail(`expected 3 rankings, got ${rLate.data?.length}`)
 else ok('rankings visible after reveal')
-const rCols = Object.keys(rLate.data[0] ?? {})
-if (rCols.some((c) => /member|user|author/i.test(c))) fail(`ranking leaks submitter: ${rCols}`)
-else ok(`rankings carry no submitter (${rCols.join(', ')})`)
+// CONTRACT CHANGE (0011): Rank These is now a SCORED game (Herd Mentality
+// family), and a scoreboard requires identity — so submissions are named on
+// purpose. Rankings of fast food are not sensitive. Everything genuinely
+// sensitive (cards, feedback, health, polls) stays authorless; asserted in the
+// other suites.
+if (!(rLate.data ?? []).every((r) => r.member_id)) fail('scored rankings must carry a member_id')
+else ok('rankings are named by design (needed to score agreement)')
 
 // ============ LEADERBOARD ============
 console.log('\n-- şampiyonluk tablosu --')

@@ -5,6 +5,7 @@ import { castDot, submitCard, type SubmitError } from '../lib/anon'
 import { useStageData } from '../lib/useStageData'
 import { useProgress } from '../lib/useProgress'
 import ActionsPanel from '../components/ActionsPanel'
+import StageHeader from '../components/StageHeader'
 import { S } from '../lib/strings'
 import type { Stage } from '../lib/types'
 
@@ -116,8 +117,37 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
     />
   )
 
+  const header = (() => {
+    if (isOpen && canSubmit) {
+      return {
+        phase: 'Yazma zamanı',
+        instruction: stage.config.reveal === 'live'
+          ? 'Aklına geleni yaz — herkes anında görüyor.'
+          : 'Aklına geleni yaz. Kartlar herkes bitirince açılacak.',
+        waiting: false,
+      }
+    }
+    if (isOpen) return { phase: 'Yazma zamanı', instruction: 'Kart hakkın doldu — diğerlerini bekliyoruz.', waiting: true }
+    if (votingPhase) {
+      return myDots >= dotBudget
+        ? { phase: 'Oylama', instruction: 'Oy hakkın bitti. En çok oy alanları konuşacağız.', waiting: true }
+        : { phase: 'Oylama', instruction: `Konuşmak istediklerine oy ver (${dotBudget - myDots} hakkın var).`, waiting: false }
+    }
+    return { phase: 'Kapandı', instruction: 'Bu durak tamamlandı.', waiting: true }
+  })()
+
   return (
     <div className="w-full max-w-4xl flex flex-col gap-4">
+      <StageHeader
+        {...header}
+        presenter={presenter}
+        progress={
+          isOpen && wrote.total > 0 ? `${wrote.done}/${wrote.total} yazdı`
+          : votingPhase && voted.total > 0 ? `${voted.done}/${voted.total} oyladı`
+          : null
+        }
+      />
+
       {/* gönderim */}
       {canSubmit && !presenter && (
         <div className="card flex flex-col gap-3">
@@ -155,19 +185,6 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
         </p>
       )}
 
-      {/* how many people are done — so the host knows when to move on */}
-      {isOpen && wrote.total > 0 && (
-        <p className="text-sm font-semibold text-ink-soft text-center">
-          ✍️ {wrote.done}/{wrote.total} kişi yazdı
-        </p>
-      )}
-
-      {votingPhase && !presenter && (
-        <p className="text-sm font-semibold text-ink-soft text-center">
-          🔵 Oy hakkın: {Math.max(0, dotBudget - myDots)} / {dotBudget}
-          {voted.total > 0 && <> · {voted.done}/{voted.total} kişi oyladı</>}
-        </p>
-      )}
 
       {/* kartlar */}
       {visible.length === 0 ? (

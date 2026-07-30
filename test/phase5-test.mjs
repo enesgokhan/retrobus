@@ -195,76 +195,48 @@ const twice = await host.rpc('cn_award', { p_game_id: game.id })
 if (!twice.data?.already) fail('double-award must be idempotent')
 else ok('award is idempotent')
 
-// ============ WAVELENGTH ============
-console.log('\n-- frekans --')
+// ============ WAVELENGTH: target secrecy ============
+// Game RULES for Wavelength live in rules-test.mjs (two teams, median dial,
+// counter-bet, band scoring). What must stay here is the SECURITY property:
+// the hidden target must not reach anyone but the psychic.
+console.log('\n-- frekans: hedef gizliliği --')
 const wStage = await mkStage('wavelength')
+await host.from('stages')
+  .update({ config: { teams: { [idOf('Ayse')]: 'a', [idOf('Baris')]: 'a', [idOf('Ceyda')]: 'b', [idOf('Deniz')]: 'b' } } })
+  .eq('id', wStage)
 const rid = await host.rpc('start_wave_round', {
   p_stage_id: wStage, p_left: 'soğuk', p_right: 'sıcak', p_psychic: idOf('Ayse'),
 })
 if (rid.error) { fail(`start_wave_round: ${rid.error.message}`); process.exit(1) }
 const roundId = rid.data
-ok('round started, target generated server-side')
 
-// only the psychic sees the target
 const psyTarget = await c.Ayse.from('wave_targets').select('target').eq('round_id', roundId)
 if ((psyTarget.data ?? []).length !== 1) fail('psychic must see the target')
 else ok(`psychic sees the target (${psyTarget.data[0].target})`)
 
-const guesserTarget = await c.Baris.from('wave_targets').select('target').eq('round_id', roundId)
-if ((guesserTarget.data ?? []).length !== 0) fail('*** TARGET LEAKED to a guesser ***')
-else ok('*** guesser sees ZERO target rows ***')
+const teammateTarget = await c.Baris.from('wave_targets').select('target').eq('round_id', roundId)
+if ((teammateTarget.data ?? []).length !== 0) fail('*** TARGET LEAKED to a teammate ***')
+else ok('*** even a teammate sees ZERO target rows ***')
+
+const oppTarget = await c.Ceyda.from('wave_targets').select('target').eq('round_id', roundId)
+if ((oppTarget.data ?? []).length !== 0) fail('*** TARGET LEAKED to the opposing team ***')
+else ok('*** opposing team sees ZERO target rows ***')
 
 const hostTarget = await host.from('wave_targets').select('target').eq('round_id', roundId)
 if ((hostTarget.data ?? []).length !== 0) fail('host peeked at the target')
 else ok('even the host cannot see the target')
 
-// only the psychic may clue
 const notPsychic = await c.Baris.rpc('give_wave_clue', { p_round_id: roundId, p_clue: 'hile' })
 if (!notPsychic.error) fail('non-psychic must not give the clue')
 else ok('only the psychic gives the clue')
 
-// guessing before the clue
-const earlyGuess = await c.Baris.rpc('guess_wave', { p_round_id: roundId, p_value: 50 })
-if (!earlyGuess.error) fail('guessing before the clue must be refused')
-else ok('cannot guess before the clue')
-
 await c.Ayse.rpc('give_wave_clue', { p_round_id: roundId, p_clue: 'buzdolabı' })
 const target = psyTarget.data[0].target
+await c.Baris.rpc('guess_wave', { p_round_id: roundId, p_value: target })
+await host.rpc('close_wave_dial', { p_round_id: roundId })
+await host.rpc('reveal_wave', { p_round_id: roundId })
 
-// psychic cannot guess
-const psyGuess = await c.Ayse.rpc('guess_wave', { p_round_id: roundId, p_value: target })
-if (!psyGuess.error) fail('psychic must not guess')
-else ok('psychic does not guess')
-
-// out of range
-const oor = await c.Baris.rpc('guess_wave', { p_round_id: roundId, p_value: 500 })
-if (!oor.error) fail('value 500 must be refused')
-else ok('guess range enforced (0..100)')
-
-await c.Baris.rpc('guess_wave', { p_round_id: roundId, p_value: target })            // bullseye
-await c.Ceyda.rpc('guess_wave', { p_round_id: roundId, p_value: Math.min(100, target + 10) })
-await c.Deniz.rpc('guess_wave', { p_round_id: roundId, p_value: (target + 60) % 101 })
-
-// guesses hidden until reveal
-const peekGuesses = await c.Ceyda.from('wave_guesses').select('member_id, value').eq('round_id', roundId)
-const notMine = (peekGuesses.data ?? []).filter((g) => g.member_id !== idOf('Ceyda'))
-if (notMine.length) fail(`other guesses visible before reveal: ${notMine.length}`)
-else ok('other players\' guesses hidden until reveal')
-
-const revealed = await host.rpc('reveal_wave', { p_round_id: roundId })
-if (revealed.error) fail(`reveal_wave: ${revealed.error.message}`)
-else if (revealed.data.target !== target) fail('revealed target mismatch')
-else ok(`revealed target ${revealed.data.target}, psychic earned ${revealed.data.psychic_points}`)
-
-const { data: wScores } = await host.from('scores').select('member_id, points, reason').eq('stage_id', wStage)
-const wp = (n, r) => (wScores ?? []).filter((s) => s.member_id === idOf(n) && s.reason === r)
-  .reduce((a, b) => a + b.points, 0)
-if (wp('Baris', 'wave_guess') !== 1000) fail(`bullseye should score 1000, got ${wp('Baris', 'wave_guess')}`)
-else if (wp('Ceyda', 'wave_guess') !== 300) fail(`10 off should score 300, got ${wp('Ceyda', 'wave_guess')}`)
-else if (wp('Ayse', 'wave_psychic') <= 0) fail('psychic should earn the room average')
-else ok('wavelength scoring by distance + psychic average')
-
-const afterTarget = await c.Baris.from('wave_targets').select('target').eq('round_id', roundId)
+const afterTarget = await c.Ceyda.from('wave_targets').select('target').eq('round_id', roundId)
 if ((afterTarget.data ?? []).length !== 1) fail('target should be public after reveal')
 else ok('target public after reveal')
 

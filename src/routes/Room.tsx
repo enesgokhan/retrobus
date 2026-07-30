@@ -29,6 +29,9 @@ export default function Room() {
               {S.hostConsole}
             </Link>
           )}
+          <Link to="/kurallar" className="text-ink-soft" title="oyun kuralları">
+            📖
+          </Link>
           <span className="text-ink-soft hidden sm:inline" title="odadaki kişi sayısı">
             🟢 {here.size}
           </span>

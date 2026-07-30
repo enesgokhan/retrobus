@@ -9,6 +9,7 @@ import Host from './routes/host/Host'
 import Members from './routes/host/Members'
 import Profil from './routes/Profil'
 import Yearbook from './routes/Yearbook'
+import Kurallar from './routes/Kurallar'
 
 function Splash() {
   return (
@@ -63,6 +64,14 @@ export default function App() {
         element={
           <RequireMember>
             <Yearbook />
+          </RequireMember>
+        }
+      />
+      <Route
+        path="/kurallar"
+        element={
+          <RequireMember>
+            <Kurallar />
           </RequireMember>
         }
       />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
+import StageHeader from '../components/StageHeader'
 import type { Stage } from '../lib/types'
 
 export interface Dimension {
@@ -18,10 +19,16 @@ export const DEFAULT_DIMENSIONS: Dimension[] = [
   { key: 'support', label: 'Destek' },
 ]
 
+/**
+ * Kırmızı/sarı/yeşil, renk körlüğü için en kötü kombinasyon (deuteranopia
+ * erkeklerin ~%8'inde var; 7-10 kişilik bir grupta ihmal edilebilir değil).
+ * O yüzden her seçenek renkten BAĞIMSIZ olarak da ayırt edilebilir: farklı
+ * şekil, farklı yazı, farklı konum.
+ */
 const RATINGS = [
-  { value: 3, emoji: '🟢', label: 'İyi', bg: 'bg-teal-soft', ring: 'border-teal' },
-  { value: 2, emoji: '🟡', label: 'Orta', bg: 'bg-amber-soft', ring: 'border-amber' },
-  { value: 1, emoji: '🔴', label: 'Kötü', bg: 'bg-rose-soft', ring: 'border-coral' },
+  { value: 3, shape: '▲', emoji: '🟢', label: 'İyi', bg: 'bg-teal-soft', ring: 'border-teal', bar: 'bg-teal' },
+  { value: 2, shape: '●', emoji: '🟡', label: 'Orta', bg: 'bg-amber-soft', ring: 'border-amber', bar: 'bg-amber' },
+  { value: 1, shape: '▼', emoji: '🔴', label: 'Kötü', bg: 'bg-rose-soft', ring: 'border-coral', bar: 'bg-coral' },
 ]
 
 interface Row {
@@ -88,8 +95,22 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
     }
   }
 
+  const allDone = dims.every((d) => done.has(d.key))
+
   return (
     <div className="w-full max-w-2xl flex flex-col gap-4">
+      <StageHeader
+        phase={showResults ? 'Sonuçlar' : 'Takım nabzı'}
+        instruction={
+          showResults ? 'Her boyut için odanın dağılımı.'
+          : allDone ? 'Hepsini oyladın — diğerlerini bekliyoruz.'
+          : `Her boyut için birini seç (${done.size}/${dims.length}). Tamamen anonim.`
+        }
+        waiting={showResults ? false : allDone}
+        progress={`${done.size}/${dims.length}`}
+        presenter={presenter}
+      />
+
       {error && (
         <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
           {error}
@@ -125,8 +146,8 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
                     ].join(' ')}
                     onClick={() => rate(d.key, r.value)}
                   >
-                    <span aria-hidden className="mr-1">
-                      {r.emoji}
+                    <span aria-hidden className="mr-1.5 text-lg">
+                      {r.shape}
                     </span>
                     {r.label}
                   </button>
@@ -141,20 +162,23 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
               <div className="flex h-8 overflow-hidden rounded-full border-2 border-line">
                 {red > 0 && (
                   <div className="bg-coral grid place-items-center text-xs font-bold text-white"
-                       style={{ width: `${(red / total) * 100}%` }}>
-                    {red}
+                       style={{ width: `${(red / total) * 100}%` }}
+                       title={`Kötü: ${red}`}>
+                    ▼{red}
                   </div>
                 )}
                 {yellow > 0 && (
                   <div className="bg-amber grid place-items-center text-xs font-bold text-ink"
-                       style={{ width: `${(yellow / total) * 100}%` }}>
-                    {yellow}
+                       style={{ width: `${(yellow / total) * 100}%` }}
+                       title={`Orta: ${yellow}`}>
+                    ●{yellow}
                   </div>
                 )}
                 {green > 0 && (
                   <div className="bg-teal grid place-items-center text-xs font-bold text-white"
-                       style={{ width: `${(green / total) * 100}%` }}>
-                    {green}
+                       style={{ width: `${(green / total) * 100}%` }}
+                       title={`İyi: ${green}`}>
+                    ▲{green}
                   </div>
                 )}
               </div>
