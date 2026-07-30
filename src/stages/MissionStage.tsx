@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import { MISSIONS_TR } from '../content/tr/missions'
-import { fireConfetti, playReveal } from '../lib/celebrate'
+import { fireConfetti } from '../lib/celebrate'
 import type { Member, Stage } from '../lib/types'
 
 interface Mission {
@@ -56,7 +56,6 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
   useEffect(() => {
     if (anyRevealed && !didCelebrate) {
       setDidCelebrate(true)
-      playReveal()
       fireConfetti()
     }
   }, [anyRevealed, didCelebrate])

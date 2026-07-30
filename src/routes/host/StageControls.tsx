@@ -14,7 +14,16 @@ import type { Stage, StageConfig } from '../../lib/types'
 /** Stage kinds whose setup lives in this panel, so it should open itself. */
 const NEEDS_SETUP_PANEL = new Set(['quiz', 'poll'])
 
-export default function StageControls({ stage, needsSetup = false }: { stage: Stage; needsSetup?: boolean }) {
+export default function StageControls({
+  stage,
+  needsSetup = false,
+  forceOpen = 0,
+}: {
+  stage: Stage
+  needsSetup?: boolean
+  /** increment to force the panel open (host pressed "düzelt") */
+  forceOpen?: number
+}) {
   const sb = supabase
   // Open by default when this stage cannot run until the host does something in
   // here. A quiz with no questions looks identical to a broken app from the
@@ -25,6 +34,11 @@ export default function StageControls({ stage, needsSetup = false }: { stage: St
   useEffect(() => {
     if (needsSetup && NEEDS_SETUP_PANEL.has(stage.kind)) setOpen(true)
   }, [stage.id, stage.kind, needsSetup])
+
+  // the host explicitly asked to be taken to the setup
+  useEffect(() => {
+    if (forceOpen > 0) setOpen(true)
+  }, [forceOpen])
 
   async function patchConfig(patch: Partial<StageConfig>) {
     await sb

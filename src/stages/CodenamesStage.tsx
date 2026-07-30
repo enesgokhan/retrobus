@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import { drawBoard } from '../content/tr/codenames'
-import { fireConfetti, playConfirm, playReveal } from '../lib/celebrate'
+import { fireConfetti } from '../lib/celebrate'
 import StageHeader from '../components/StageHeader'
 import type { Member, Stage } from '../lib/types'
 
@@ -109,7 +109,6 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
   useEffect(() => {
     if (game?.phase === 'done' && game.winner && celebrated !== game.id) {
       setCelebrated(game.id)
-      playReveal()
       fireConfetti()
     }
   }, [game?.phase, game?.winner, game?.id, celebrated])
@@ -141,7 +140,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
         : e.message.includes('started') ? 'Oyun başladı.'
         : 'Katılınamadı.',
       )
-    } else playConfirm()
+    }
   }
   async function deal() {
     setError(null)
@@ -163,12 +162,11 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       )
     } else {
       setClue({ word: '', count: 1 })
-      playConfirm()
     }
   }
   async function guessCard(cardId: string) {
     setError(null)
-    const { data, error: e } = await supabase.rpc('cn_guess', { p_card_id: cardId })
+    const { error: e } = await supabase.rpc('cn_guess', { p_card_id: cardId })
     if (e) {
       setError(
         e.message.includes('turn') ? 'Sıra sizde değil.'
@@ -178,9 +176,6 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       )
       return
     }
-    const res = data as { role: string }
-    if (res.role === 'assassin') playReveal()
-    else playConfirm()
   }
   async function pass() {
     setError(null)

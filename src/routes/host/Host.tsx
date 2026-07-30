@@ -1,6 +1,4 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../../lib/auth'
+import { useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useMeeting } from '../../lib/useMeeting'
 import { S } from '../../lib/strings'
@@ -8,10 +6,11 @@ import type { Stage, StageKind } from '../../lib/types'
 import { AGENDA_MINUTES, DEFAULT_AGENDA, STAGE_PRESETS } from '../../lib/presets'
 import StageControls from './StageControls'
 import NowNext from './NowNext'
+import HostNav from '../../components/HostNav'
 import { useStageReadiness } from '../../lib/useStageReadiness'
 import { usePresence } from '../../lib/usePresence'
 import PresenceBar from '../../components/PresenceBar'
-import { setSoundEnabled, soundEnabled } from '../../lib/celebrate'
+
 
 const ADDABLE_KINDS: StageKind[] = [
   'wordcloud',
@@ -34,12 +33,18 @@ const ADDABLE_KINDS: StageKind[] = [
 
 /** Şoför konsolu — rota, durak kontrolleri, zamanlayıcı. */
 export default function Host() {
-  const { logout } = useAuth()
   const { meeting, stages, activeStage, loading } = useMeeting()
   const [newTitle, setNewTitle] = useState('')
   const [adding, setAdding] = useState(false)
-  const [sound, setSound] = useState(soundEnabled)
   const readiness = useStageReadiness(stages)
+  const setupRef = useRef<HTMLDivElement>(null)
+  // bumping this forces StageControls open, even if the host had collapsed it
+  const [forceSetup, setForceSetup] = useState(0)
+
+  function fixSetup() {
+    setForceSetup((n) => n + 1)
+    setTimeout(() => setupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)
+  }
   const here = usePresence(meeting?.id ?? null)
   const [freezeNote, setFreezeNote] = useState('')
   const sb = supabase
@@ -159,36 +164,14 @@ export default function Host() {
 
   return (
     <main className="min-h-dvh max-w-3xl mx-auto px-5 py-6 flex flex-col gap-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col gap-2">
         <div className="min-w-0">
           <h1 className="text-2xl font-extrabold flex items-center gap-2">
             <span aria-hidden>🚌</span> {S.hostConsole}
           </h1>
           {meeting && <p className="text-sm font-semibold text-ink-soft truncate">{meeting.title}</p>}
         </div>
-        <nav className="flex items-center gap-4 text-sm font-semibold">
-          <Link to="/host/uyeler" className="text-coral">
-            {S.members}
-          </Link>
-          <Link to="/profil" className="text-ink-soft">
-            Profil
-          </Link>
-          <Link to="/oda" className="text-ink-soft">
-            Oda
-          </Link>
-          <Link to="/sunum" className="text-ink-soft">
-            Sunum
-          </Link>
-          <Link to="/kurallar" className="text-ink-soft">
-            Kurallar
-          </Link>
-          <Link to="/yillik" className="text-ink-soft">
-            Yıllık
-          </Link>
-          <button onClick={logout} className="text-ink-soft underline">
-            {S.logout}
-          </button>
-        </nav>
+        <HostNav />
       </header>
 
       {!meeting ? (
@@ -217,6 +200,7 @@ export default function Host() {
             onTimerPause={timerPause}
             onTimerResume={timerResume}
             onTimerPlus={timerPlus}
+            onFixSetup={fixSetup}
           />
 
           <PresenceBar here={here} />
@@ -247,25 +231,16 @@ export default function Host() {
                 Tüm ekranlar donduruldu.
               </span>
             )}
-            <label className="flex items-center gap-2 text-sm font-semibold text-ink-soft ml-auto">
-              <input
-                type="checkbox"
-                className="size-4 accent-teal"
-                checked={sound}
-                onChange={(e) => {
-                  setSoundEnabled(e.target.checked)
-                  setSound(e.target.checked)
-                }}
-              />
-              🔊 ses
-            </label>
           </section>
 
           {activeStage && (
-            <StageControls
-              stage={activeStage}
-              needsSetup={!!readiness[activeStage.id]?.todo}
-            />
+            <div ref={setupRef}>
+              <StageControls
+                stage={activeStage}
+                needsSetup={!!readiness[activeStage.id]?.todo}
+                forceOpen={forceSetup}
+              />
+            </div>
           )}
 
           <section className="flex flex-col gap-2">

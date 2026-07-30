@@ -1,27 +1,17 @@
 /**
- * Confetti and reveal sounds, hand-rolled.
+ * Confetti, hand-rolled.
  *
- * No library: a strict-CSP static page plus ~200 lines of canvas beats adding a
- * dependency, and this way the party polish costs nothing at install time.
+ * No library: a strict-CSP static page plus ~100 lines of canvas beats adding a
+ * dependency, and the party polish costs nothing at install time.
  *
- * Both effects respect prefers-reduced-motion, and sound is opt-in per device
- * (stored in localStorage) because ten people unmuting at once on a video call
- * is a genuinely bad experience.
+ * There is deliberately NO sound anywhere in this app. Ten people on a video
+ * call do not need it, and it is one less thing to go wrong live.
  */
 
-const SOUND_KEY = 'retrobus.sound'
 const COLORS = ['#FF5D5D', '#14B8A6', '#FFB020', '#8B5CF6', '#38BDF8']
 
 function reducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-}
-
-export function soundEnabled(): boolean {
-  return localStorage.getItem(SOUND_KEY) === 'on'
-}
-
-export function setSoundEnabled(on: boolean) {
-  localStorage.setItem(SOUND_KEY, on ? 'on' : 'off')
 }
 
 interface Piece {
@@ -101,52 +91,4 @@ export function fireConfetti(count = 140) {
     }
   }
   requestAnimationFrame(tick)
-}
-
-// --- sound ---
-
-let audioCtx: AudioContext | null = null
-
-function ctxFor(): AudioContext | null {
-  if (!soundEnabled()) return null
-  try {
-    audioCtx ??= new AudioContext()
-    if (audioCtx.state === 'suspended') void audioCtx.resume()
-    return audioCtx
-  } catch {
-    return null
-  }
-}
-
-function blip(freq: number, start: number, dur: number, gain = 0.06) {
-  const ac = ctxFor()
-  if (!ac) return
-  const osc = ac.createOscillator()
-  const g = ac.createGain()
-  osc.type = 'triangle'
-  osc.frequency.value = freq
-  g.gain.setValueAtTime(0, ac.currentTime + start)
-  g.gain.linearRampToValueAtTime(gain, ac.currentTime + start + 0.015)
-  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + start + dur)
-  osc.connect(g).connect(ac.destination)
-  osc.start(ac.currentTime + start)
-  osc.stop(ac.currentTime + start + dur + 0.02)
-}
-
-/** Yükselen üçlü — bir şey açıldığında. */
-export function playReveal() {
-  blip(523, 0, 0.18)
-  blip(659, 0.09, 0.18)
-  blip(784, 0.18, 0.3)
-}
-
-/** Kısa onay — cevap/kart kaydedildiğinde. */
-export function playConfirm() {
-  blip(880, 0, 0.09, 0.045)
-}
-
-/** Zaman doldu. */
-export function playTimeUp() {
-  blip(392, 0, 0.16, 0.05)
-  blip(294, 0.14, 0.28, 0.05)
 }

@@ -16,6 +16,8 @@ export interface NowNextProps {
   onTimerPause: () => void
   onTimerResume: () => void
   onTimerPlus: () => void
+  /** open the setup this stage is blocked on (expands StageControls, scrolls to it) */
+  onFixSetup: () => void
 }
 
 /**
@@ -44,7 +46,9 @@ export default function NowNext(p: NowNextProps) {
     }
     const blocked = todo[activeStage.id]?.todo
     if (blocked) {
-      return { label: `⚠️ ${blocked}`, run: null, tone: 'warn' as const }
+      // Actionable, not a dead end: telling the host what is missing and then
+      // making them go find it themselves is the worst of both worlds.
+      return { label: `⚠️ ${blocked} — düzelt`, run: p.onFixSetup, tone: 'warn' as const }
     }
     if (activeStage.state === 'pending') {
       return { label: '▶ Durağı aç', run: () => p.onSetState(activeStage, 'open'), tone: 'go' as const }
@@ -145,7 +149,7 @@ export default function NowNext(p: NowNextProps) {
           className={[
             'text-lg w-full',
             primary.tone === 'go' ? 'btn-coral' : 'btn-ghost',
-            primary.tone === 'warn' ? 'bg-amber-soft border-amber cursor-default' : '',
+            primary.tone === 'warn' ? 'bg-amber-soft border-amber hover:border-coral' : '',
           ].join(' ')}
           onClick={() => primary.run?.()}
           disabled={!primary.run}
@@ -162,7 +166,16 @@ export default function NowNext(p: NowNextProps) {
             <div className="font-bold truncate">
               {next.title}
               {todo[next.id]?.todo && (
-                <span className="ml-2 text-xs font-bold text-coral-deep">⚠️ {todo[next.id].todo}</span>
+                <button
+                  className="ml-2 text-xs font-bold text-coral-deep underline"
+                  onClick={() => {
+                    p.onActivate(next)
+                    // give the stage a beat to become active, then open its setup
+                    setTimeout(p.onFixSetup, 600)
+                  }}
+                >
+                  ⚠️ {todo[next.id].todo}
+                </button>
               )}
             </div>
           </div>

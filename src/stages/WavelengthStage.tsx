@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import { SPECTRUM_PAIRS } from '../content/tr/spectrums'
-import { fireConfetti, playConfirm, playReveal } from '../lib/celebrate'
+import { fireConfetti } from '../lib/celebrate'
 import StageHeader from '../components/StageHeader'
 import type { Member, Stage } from '../lib/types'
 
@@ -120,7 +120,6 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
   useEffect(() => {
     if (round?.phase === 'revealed' && celebrated !== round.id) {
       setCelebrated(round.id)
-      playReveal()
       const d = round.team_dial
       if (d != null && target != null && Math.abs(d - target) <= 5) fireConfetti(90)
     }
@@ -182,7 +181,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     setError(null)
     const { error: e } = await supabase.rpc('give_wave_clue', { p_round_id: round.id, p_clue: clue })
     if (e) setError('İpucu verilemedi.')
-    else { setClue(''); playConfirm() }
+    else { setClue(''); }
   }
   async function sendGuess() {
     if (!round) return
@@ -194,7 +193,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
         : e.message.includes('psychic') ? 'İpucu veren tahmin etmez.'
         : 'Kaydedilemedi.',
       )
-    } else playConfirm()
+    }
   }
   async function closeDial() {
     if (!round) return
@@ -206,7 +205,6 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     setError(null)
     const { error: e } = await supabase.rpc('bet_wave', { p_round_id: round.id, p_side: side })
     if (e) setError(e.message.includes('opposing') ? 'Bahsi yalnızca karşı takım yapar.' : 'Kaydedilemedi.')
-    else playConfirm()
   }
   async function reveal() {
     if (!round) return
