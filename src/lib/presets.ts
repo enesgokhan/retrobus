@@ -239,6 +239,16 @@ export const STAGE_PRESETS: StagePreset[] = [
     },
   },
   {
+    key: 'break',
+    label: 'Mola',
+    kind: 'break',
+    title: 'Mola',
+    config: {
+      timer_s: 600,
+      prompt: '10 dakika. Kahve al, biraz ayağa kalk.',
+    },
+  },
+  {
     key: 'leaderboard',
     label: 'Şampiyonluk Tablosu (final)',
     kind: 'leaderboard',
@@ -264,3 +274,34 @@ export const STAGE_PRESETS: StagePreset[] = [
 export function presetsByKind(kind: StageKind): StagePreset[] {
   return STAGE_PRESETS.filter((p) => p.kind === kind)
 }
+
+/**
+ * Hazır 3 saatlik rota — yaklaşık 1 saat tartışma, 2 saat oyun.
+ * Tek tıkla eklenir; şoför istemediklerini siler, sırayı değiştirir.
+ * Süreler toplamı kasten ~190 dakika: canlıda mutlaka bir şey atlanır.
+ */
+export const DEFAULT_AGENDA: { preset: string; minutes: number }[] = [
+  // --- ısınma + tartışma saati (~60 dk) ---
+  { preset: 'wordcloud', minutes: 5 },
+  { preset: 'board_ground', minutes: 10 },
+  { preset: 'board_pains', minutes: 12 },
+  { preset: 'board_wins', minutes: 8 },
+  { preset: 'suggestions', minutes: 10 },
+  { preset: 'health_check', minutes: 5 },
+  { preset: 'lean_coffee', minutes: 12 },
+  // --- mola ---
+  { preset: 'break', minutes: 10 },
+  // --- oyun saatleri (~110 dk) ---
+  { preset: 'two_truths', minutes: 15 },
+  { preset: 'quiz', minutes: 20 },
+  { preset: 'fibbage', minutes: 15 },
+  { preset: 'wavelength', minutes: 12 },
+  { preset: 'codenames', minutes: 30 },
+  // --- kapanış (~25 dk) ---
+  { preset: 'kudos_wall', minutes: 8 },
+  { preset: 'feedback_wall', minutes: 12 },
+  { preset: 'secret_mission', minutes: 5 },
+  { preset: 'leaderboard', minutes: 5 },
+]
+
+export const AGENDA_MINUTES = DEFAULT_AGENDA.reduce((n, s) => n + s.minutes, 0)

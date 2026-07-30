@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useMeeting } from '../../lib/useMeeting'
 import { S } from '../../lib/strings'
 import type { Stage, StageKind } from '../../lib/types'
-import { STAGE_PRESETS } from '../../lib/presets'
+import { AGENDA_MINUTES, DEFAULT_AGENDA, STAGE_PRESETS } from '../../lib/presets'
 import TimerStrip from '../../components/TimerStrip'
 import StageControls from './StageControls'
 import { setSoundEnabled, soundEnabled } from '../../lib/celebrate'
@@ -65,6 +65,25 @@ export default function Host() {
       title: S.kind[kind] ?? kind,
       order_index: nextOrder(),
     })
+    setAdding(false)
+  }
+
+  /** Hazır 3 saatlik rotayı tek seferde kur. */
+  async function seedAgenda() {
+    if (!meeting) return
+    let order = nextOrder()
+    const rows = DEFAULT_AGENDA.flatMap((entry) => {
+      const preset = STAGE_PRESETS.find((p) => p.key === entry.preset)
+      if (!preset) return []
+      return [{
+        meeting_id: meeting.id,
+        kind: preset.kind,
+        title: preset.title,
+        order_index: order++,
+        config: { ...preset.config, timer_s: entry.minutes * 60 },
+      }]
+    })
+    await sb.from('stages').insert(rows)
     setAdding(false)
   }
 
@@ -325,6 +344,19 @@ export default function Host() {
 
             {adding ? (
               <div className="card">
+                {stages.length === 0 && (
+                  <div className="mb-5 rounded-2xl border-2 border-coral bg-rose-soft p-4 flex flex-col gap-2">
+                    <div className="font-extrabold">🚌 Hazır 3 saatlik rota</div>
+                    <p className="text-xs font-semibold">
+                      {DEFAULT_AGENDA.length} durak · ~{Math.round(AGENDA_MINUTES / 60)} saat
+                      ({AGENDA_MINUTES} dk). Yaklaşık 1 saat tartışma, 2 saat oyun. İstemediklerini
+                      sonra sil.
+                    </p>
+                    <button className="btn-coral self-start text-sm" onClick={seedAgenda}>
+                      Rotayı kur
+                    </button>
+                  </div>
+                )}
                 <div className="font-bold mb-1">Hazır duraklar</div>
                 <p className="text-xs text-ink-soft font-semibold mb-3">
                   Ayarları (kimlik, oy hakkı, süre, yönlendirme metni) önceden dolu gelir.
