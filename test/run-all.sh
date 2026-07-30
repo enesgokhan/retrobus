@@ -5,7 +5,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 fails=0
-for t in publication flow phase3 phase4 phase5 phase6 reconnect agenda; do
+for t in publication flow phase3 phase4 phase5 phase6 reconnect agenda iteration; do
   echo "################ $t ################"
   node "test/$t-test.mjs" || fails=$((fails + 1))
 done

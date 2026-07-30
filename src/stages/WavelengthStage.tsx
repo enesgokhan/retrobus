@@ -46,15 +46,28 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     if (!member) return
     let cancelled = false
     async function load() {
-      const [{ data: r }, { data: g }, { data: m }] = await Promise.all([
+      // Rounds first, then guesses scoped to them — an unfiltered guess query
+      // would span every round ever played and hit PostgREST's 1000-row cap.
+      const [{ data: r }, { data: m }] = await Promise.all([
         supabase.from('wave_rounds').select('*').eq('stage_id', stage.id).order('order_index'),
-        supabase.from('wave_guesses').select('round_id, member_id, value'),
         supabase.from('members').select('id, display_name, is_host, avatar').order('display_name'),
       ])
       if (cancelled) return
-      setRounds((r as Round[]) ?? [])
-      setGuesses((g as Guess[]) ?? [])
+      const roundList = (r as Round[]) ?? []
+      setRounds(roundList)
       setMembers((m as Member[]) ?? [])
+
+      const roundIds = roundList.map((x) => x.id)
+      if (!roundIds.length) {
+        setGuesses([])
+        return
+      }
+      const { data: g } = await supabase
+        .from('wave_guesses')
+        .select('round_id, member_id, value')
+        .in('round_id', roundIds)
+      if (cancelled) return
+      setGuesses((g as Guess[]) ?? [])
     }
     load()
     const channel = liveChannel(`wave-${stage.id}`, ['wave_rounds', 'wave_guesses'], load)
@@ -97,18 +110,29 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
   const revealed = round?.phase === 'revealed'
 
   async function startRound() {
+    // No silent fallback to members[0]: picking the alphabetically-first person
+    // when the host thought they had chosen someone is worse than refusing.
+    if (!psychic) {
+      setError('Önce ipucu verecek kişiyi seç.')
+      return
+    }
     const pair = SPECTRUM_PAIRS[pairIdx % SPECTRUM_PAIRS.length]
-    const who = psychic || members[0]?.id
-    if (!who) return
     setError(null)
     const { error: e } = await supabase.rpc('start_wave_round', {
       p_stage_id: stage.id,
       p_left: pair.left,
       p_right: pair.right,
-      p_psychic: who,
+      p_psychic: psychic,
     })
-    if (e) setError('Tur başlatılamadı.')
-    else setPairIdx((i) => i + 1)
+    if (e) {
+      setError('Tur başlatılamadı.')
+      return
+    }
+    setPairIdx((i) => i + 1)
+    // rotate to the next person so everybody gets a turn without the host
+    // having to remember whose turn it was
+    const idx = members.findIndex((m) => m.id === psychic)
+    setPsychic(members[(idx + 1) % Math.max(members.length, 1)]?.id ?? '')
   }
 
   async function sendClue() {
@@ -156,7 +180,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
             ))}
           </select>
         </label>
-        <button className="btn-coral" onClick={startRound} disabled={!psychic && !members.length}>
+        <button className="btn-coral" onClick={startRound} disabled={!psychic}>
           Yeni tur
         </button>
       </div>

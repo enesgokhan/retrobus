@@ -50,17 +50,31 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
     if (!member) return
     let cancelled = false
     async function load() {
-      const [{ data: e }, { data: g }, { data: k }, { data: m }] = await Promise.all([
+      // Entries first, then guesses/keys scoped to them. Unfiltered child
+      // queries would span every meeting and hit PostgREST's 1000-row cap.
+      const [{ data: e }, { data: m }] = await Promise.all([
         supabase.from('two_truths_entries').select('*').eq('stage_id', stage.id),
-        supabase.from('two_truths_guesses').select('entry_id, guesser_member_id, guess_index'),
-        supabase.from('two_truths_keys').select('entry_id, lie_index'),
-        supabase.from('members').select('id, display_name, is_host').order('display_name'),
+        supabase.from('members').select('id, display_name, is_host, avatar').order('display_name'),
       ])
       if (cancelled) return
-      setEntries((e as Entry[]) ?? [])
+      const entryList = (e as Entry[]) ?? []
+      setEntries(entryList)
+      setMembers((m as Member[]) ?? [])
+
+      const entryIds = entryList.map((x) => x.id)
+      if (!entryIds.length) {
+        setGuesses([])
+        setKeys([])
+        return
+      }
+      const [{ data: g }, { data: k }] = await Promise.all([
+        supabase.from('two_truths_guesses').select('entry_id, guesser_member_id, guess_index')
+          .in('entry_id', entryIds),
+        supabase.from('two_truths_keys').select('entry_id, lie_index').in('entry_id', entryIds),
+      ])
+      if (cancelled) return
       setGuesses((g as Guess[]) ?? [])
       setKeys((k as Key[]) ?? [])
-      setMembers((m as Member[]) ?? [])
     }
     load()
     const channel = liveChannel(

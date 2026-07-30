@@ -8,6 +8,9 @@ import type { Stage, StageKind } from '../../lib/types'
 import { AGENDA_MINUTES, DEFAULT_AGENDA, STAGE_PRESETS } from '../../lib/presets'
 import TimerStrip from '../../components/TimerStrip'
 import StageControls from './StageControls'
+import { useStageReadiness } from '../../lib/useStageReadiness'
+import { usePresence } from '../../lib/usePresence'
+import PresenceBar from '../../components/PresenceBar'
 import { setSoundEnabled, soundEnabled } from '../../lib/celebrate'
 
 const ADDABLE_KINDS: StageKind[] = [
@@ -36,6 +39,8 @@ export default function Host() {
   const [newTitle, setNewTitle] = useState('')
   const [adding, setAdding] = useState(false)
   const [sound, setSound] = useState(soundEnabled)
+  const readiness = useStageReadiness(stages)
+  const here = usePresence(meeting?.id ?? null)
   const [freezeNote, setFreezeNote] = useState('')
   const sb = supabase
 
@@ -232,6 +237,8 @@ export default function Host() {
             )}
           </section>
 
+          <PresenceBar here={here} />
+
           <section
             className={[
               'card flex items-center gap-3 flex-wrap py-3',
@@ -272,7 +279,12 @@ export default function Host() {
             </label>
           </section>
 
-          {activeStage && <StageControls stage={activeStage} />}
+          {activeStage && (
+            <StageControls
+              stage={activeStage}
+              needsSetup={!!readiness[activeStage.id]?.todo}
+            />
+          )}
 
           <section className="flex flex-col gap-2">
             {[...stages]
@@ -312,6 +324,12 @@ export default function Host() {
                       <div className="text-xs text-ink-soft font-semibold">
                         {S.kind[stage.kind]} · {stage.state === 'pending' ? S.stagePending : stage.state === 'open' ? S.stageOpen : stage.state === 'revealed' ? S.stageRevealed : S.stageClosed}
                       </div>
+                      {readiness[stage.id]?.todo && (
+                        <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-soft border border-amber/50 px-2.5 py-0.5 text-xs font-bold">
+                          <span aria-hidden>⚠️</span>
+                          {readiness[stage.id].todo}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap justify-end">
                       {!isActive && (

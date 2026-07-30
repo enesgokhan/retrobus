@@ -50,25 +50,41 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
     if (!member) return
     let cancelled = false
     async function load() {
-      const [{ data: q }, { data: a }, { data: k }, { data: m }] = await Promise.all([
+      // Questions first, then answers/keys scoped to them. Unfiltered child
+      // queries would span every quiz ever run and hit PostgREST's 1000-row cap.
+      const [{ data: q }, { data: m }] = await Promise.all([
         supabase
           .from('quiz_questions')
           .select('id, kind, prompt, options, order_index, time_limit_s, base_points, state, opened_at')
           .eq('stage_id', stage.id)
           .order('order_index'),
-        supabase.from('quiz_answers').select('question_id, member_id, choice_index, number_value, elapsed_ms'),
-        supabase.from('quiz_keys').select('question_id, correct_index, correct_number'),
         supabase.from('members').select('id, display_name, is_host, avatar').order('display_name'),
       ])
       if (cancelled) return
-      setQuestions((q as Question[]) ?? [])
+      const questionList = (q as Question[]) ?? []
+      setQuestions(questionList)
+      setMembers((m as Member[]) ?? [])
+
+      const qIds = questionList.map((x) => x.id)
+      if (!qIds.length) {
+        setAnswers([])
+        setKeys({})
+        return
+      }
+      const [{ data: a }, { data: k }] = await Promise.all([
+        supabase.from('quiz_answers')
+          .select('question_id, member_id, choice_index, number_value, elapsed_ms')
+          .in('question_id', qIds),
+        supabase.from('quiz_keys').select('question_id, correct_index, correct_number')
+          .in('question_id', qIds),
+      ])
+      if (cancelled) return
       setAnswers((a as Answer[]) ?? [])
-      const km: typeof keys = {}
+      const km: Record<string, { correct_index: number | null; correct_number: number | null }> = {}
       for (const row of (k as { question_id: string; correct_index: number | null; correct_number: number | null }[]) ?? []) {
         km[row.question_id] = { correct_index: row.correct_index, correct_number: row.correct_number }
       }
       setKeys(km)
-      setMembers((m as Member[]) ?? [])
     }
     load()
     const channel = liveChannel(`quiz-${stage.id}`, ['quiz_questions', 'quiz_answers'], load)

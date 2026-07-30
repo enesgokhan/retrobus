@@ -50,18 +50,35 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
     if (!member) return
     let cancelled = false
     async function load() {
-      const [{ data: r }, { data: l }, { data: p }, { data: m }] = await Promise.all([
+      // Rounds first, then children filtered to THIS stage's rounds. Fetching
+      // lies/picks unfiltered would pull every round ever played, and PostgREST
+      // caps responses at 1000 rows — so a reused app eventually starves the
+      // current game of its own data.
+      const [{ data: r }, { data: m }] = await Promise.all([
         supabase.from('fibbage_rounds').select('id, prompt, truth, phase, order_index')
           .eq('stage_id', stage.id).order('order_index'),
-        supabase.from('fibbage_lies').select('id, round_id, body, sort_seed').order('sort_seed'),
-        supabase.from('fibbage_picks').select('round_id, picker_member_id, lie_id, picked_truth'),
         supabase.from('members').select('id, display_name, is_host, avatar').order('display_name'),
       ])
       if (cancelled) return
-      setRounds((r as Round[]) ?? [])
+      const roundList = (r as Round[]) ?? []
+      setRounds(roundList)
+      setMembers((m as Member[]) ?? [])
+
+      const roundIds = roundList.map((x) => x.id)
+      if (!roundIds.length) {
+        setLies([])
+        setPicks([])
+        return
+      }
+      const [{ data: l }, { data: p }] = await Promise.all([
+        supabase.from('fibbage_lies').select('id, round_id, body, sort_seed')
+          .in('round_id', roundIds).order('sort_seed'),
+        supabase.from('fibbage_picks').select('round_id, picker_member_id, lie_id, picked_truth')
+          .in('round_id', roundIds),
+      ])
+      if (cancelled) return
       setLies((l as Lie[]) ?? [])
       setPicks((p as Pick[]) ?? [])
-      setMembers((m as Member[]) ?? [])
     }
     load()
     const channel = liveChannel(

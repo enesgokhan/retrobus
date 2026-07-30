@@ -16,6 +16,23 @@ import { supabase } from './supabase'
  *      dropping over three hours is a certainty, not an edge case.
  *
  * `onChange` must therefore be idempotent (a full refetch, not a patch).
+ *
+ * Two Realtime behaviours verified empirically against this project, because
+ * both are easy to get wrong and neither is obvious:
+ *
+ *   - A binding on a table that is NOT in the supabase_realtime publication
+ *     silently kills EVERY OTHER binding on the same channel, while the channel
+ *     still reports SUBSCRIBED. This caused a real "data doesn't load until
+ *     refresh" bug. test/publication-test.mjs now guards against it.
+ *   - Realtime DOES respect column-level grants: a payload omits columns the
+ *     subscriber has no SELECT privilege on (proven with
+ *     fibbage_lies.author_member_id), and such a binding does not poison its
+ *     siblings. So a revoked column stays secret over the websocket too — but
+ *     never publish a table whose secret matters, since that is one policy
+ *     change away from being wrong.
+ *
+ * Because delivery of any individual event is not guaranteed to be prompt, this
+ * helper never relies on a specific event: every signal triggers a full refetch.
  */
 export function liveChannel(name: string, tables: string[], onChange: () => void): RealtimeChannel {
   let channel = supabase.channel(name)

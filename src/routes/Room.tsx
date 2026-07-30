@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useMeeting } from '../lib/useMeeting'
+import { usePresence } from '../lib/usePresence'
 import { S } from '../lib/strings'
 import StageView from '../components/StageView'
 import FrozenScreen from '../components/FrozenScreen'
@@ -9,6 +10,8 @@ import FrozenScreen from '../components/FrozenScreen'
 export default function Room() {
   const { member, logout } = useAuth()
   const { meeting, activeStage, loading } = useMeeting()
+  // tracking presence here is what makes the host's "kim odada" bar real
+  const here = usePresence(meeting?.id ?? null)
 
   return (
     <main className="min-h-dvh flex flex-col">
@@ -26,6 +29,9 @@ export default function Room() {
               {S.hostConsole}
             </Link>
           )}
+          <span className="text-ink-soft hidden sm:inline" title="odadaki kişi sayısı">
+            🟢 {here.size}
+          </span>
           <button className="text-ink-soft underline" onClick={logout}>
             {S.logout}
           </button>

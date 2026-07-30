@@ -3,6 +3,7 @@ import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { castDot, submitCard, type SubmitError } from '../lib/anon'
 import { useStageData } from '../lib/useStageData'
+import { useProgress } from '../lib/useProgress'
 import ActionsPanel from '../components/ActionsPanel'
 import { S } from '../lib/strings'
 import type { Stage } from '../lib/types'
@@ -34,6 +35,8 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
   const { member } = useAuth()
   const sb = supabase
   const { cards, dots, myCards, myDots } = useStageData(stage.id)
+  const wrote = useProgress(stage.id, 'card')
+  const voted = useProgress(stage.id, 'dot')
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
   const [promoted, setPromoted] = useState<Set<string>>(new Set())
@@ -152,9 +155,17 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
         </p>
       )}
 
+      {/* how many people are done — so the host knows when to move on */}
+      {isOpen && wrote.total > 0 && (
+        <p className="text-sm font-semibold text-ink-soft text-center">
+          ✍️ {wrote.done}/{wrote.total} kişi yazdı
+        </p>
+      )}
+
       {votingPhase && !presenter && (
         <p className="text-sm font-semibold text-ink-soft text-center">
           🔵 Oy hakkın: {Math.max(0, dotBudget - myDots)} / {dotBudget}
+          {voted.total > 0 && <> · {voted.done}/{voted.total} kişi oyladı</>}
         </p>
       )}
 

@@ -11,9 +11,20 @@ import type { Stage, StageConfig } from '../../lib/types'
  * Kimlik ve açığa-çıkarma modu durak açılmadan önce ayarlanmalı; kartlar
  * yazıldıktan sonra kimliği değiştirmek geçmişe dönük etki etmez.
  */
-export default function StageControls({ stage }: { stage: Stage }) {
+/** Stage kinds whose setup lives in this panel, so it should open itself. */
+const NEEDS_SETUP_PANEL = new Set(['quiz', 'poll'])
+
+export default function StageControls({ stage, needsSetup = false }: { stage: Stage; needsSetup?: boolean }) {
   const sb = supabase
-  const [open, setOpen] = useState(false)
+  // Open by default when this stage cannot run until the host does something in
+  // here. A quiz with no questions looks identical to a broken app from the
+  // room's side, and the setup was previously buried behind a collapsed header.
+  const [open, setOpen] = useState(() => needsSetup && NEEDS_SETUP_PANEL.has(stage.kind))
+
+  // reopen if the active stage changes to one that still needs setup
+  useEffect(() => {
+    if (needsSetup && NEEDS_SETUP_PANEL.has(stage.kind)) setOpen(true)
+  }, [stage.id, stage.kind, needsSetup])
 
   async function patchConfig(patch: Partial<StageConfig>) {
     await sb
@@ -33,7 +44,14 @@ export default function StageControls({ stage }: { stage: Stage }) {
         className="flex items-center justify-between font-bold text-left"
         onClick={() => setOpen((o) => !o)}
       >
-        <span>⚙️ Durak ayarları</span>
+        <span className="flex items-center gap-2">
+          ⚙️ Durak ayarları
+          {needsSetup && (
+            <span className="rounded-full bg-amber-soft border border-amber/50 px-2 py-0.5 text-xs font-bold">
+              kurulum gerekli
+            </span>
+          )}
+        </span>
         <span className="text-ink-soft">{open ? '▲' : '▼'}</span>
       </button>
 
