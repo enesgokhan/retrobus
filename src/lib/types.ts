@@ -37,6 +37,8 @@ export interface Meeting {
   /** host panic control: blanks every screen at once */
   frozen: boolean
   frozen_note: string | null
+  /** host-authored greeting, shown once per person */
+  welcome_note: string | null
 }
 
 /** Per-stage knobs. Only the keys a given kind cares about are set. */

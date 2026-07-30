@@ -7,6 +7,7 @@ import { AGENDA_MINUTES, DEFAULT_AGENDA, STAGE_PRESETS } from '../../lib/presets
 import StageControls from './StageControls'
 import NowNext from './NowNext'
 import HostNav from '../../components/HostNav'
+import ConnStatus from '../../components/ConnStatus'
 import { useStageReadiness } from '../../lib/useStageReadiness'
 import { usePresence } from '../../lib/usePresence'
 import PresenceBar from '../../components/PresenceBar'
@@ -164,6 +165,7 @@ export default function Host() {
 
   return (
     <main className="min-h-dvh max-w-3xl mx-auto px-5 py-6 flex flex-col gap-6">
+      <ConnStatus />
       <header className="flex flex-col gap-2">
         <div className="min-w-0">
           <h1 className="text-2xl font-extrabold flex items-center gap-2">
@@ -204,6 +206,32 @@ export default function Host() {
           />
 
           <PresenceBar here={here} />
+
+          <details className="card">
+            <summary className="font-bold cursor-pointer flex items-center gap-2">
+              💬 Karşılama mesajı
+              {!meeting.welcome_note && (
+                <span className="text-xs font-semibold text-ink-soft">(boş — kimseye gösterilmiyor)</span>
+              )}
+            </summary>
+            <div className="flex flex-col gap-2 mt-3">
+              <p className="text-xs text-ink-soft font-semibold">
+                Herkese giriş yaptıktan sonra bir kez gösterilir. Senin sözlerin.
+              </p>
+              <textarea
+                className="input-blob resize-none"
+                rows={4}
+                defaultValue={meeting.welcome_note ?? ''}
+                placeholder={'örn. Hoş geldiniz! Bugün 3 saat boyunca hem konuşacağız hem oynayacağız.\nTelefonunu yanında tut, sırayla ilerleyeceğiz.'}
+                maxLength={1000}
+                onBlur={async (e) => {
+                  const v = e.target.value.trim()
+                  await sb.from('meetings').update({ welcome_note: v || null }).eq('id', meeting.id)
+                }}
+              />
+              <p className="text-xs text-ink-soft">Yazıp başka bir yere tıkla — otomatik kaydedilir.</p>
+            </div>
+          </details>
 
           <section
             className={[

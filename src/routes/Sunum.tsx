@@ -2,6 +2,7 @@ import { useMeeting } from '../lib/useMeeting'
 import { S } from '../lib/strings'
 import StageView from '../components/StageView'
 import FrozenScreen from '../components/FrozenScreen'
+import ConnStatus from '../components/ConnStatus'
 
 /** Sunum modu — ekran paylaşımı için büyük, kontrolsüz görünüm. */
 export default function Sunum() {
@@ -9,6 +10,7 @@ export default function Sunum() {
 
   return (
     <main className="min-h-dvh flex flex-col">
+      <ConnStatus />
       {loading ? (
         <div className="flex-1 grid place-items-center">
           <p className="text-ink-soft text-2xl">{S.loading}</p>

@@ -17,6 +17,8 @@ interface AuthCtx {
   loading: boolean
   login: (name: string, code: string) => Promise<LoginResult>
   logout: () => Promise<void>
+  /** merge a change into the local member (e.g. a freshly picked avatar) */
+  patchMember: (patch: Partial<Member>) => void
 }
 
 const Ctx = createContext<AuthCtx>({
@@ -24,6 +26,7 @@ const Ctx = createContext<AuthCtx>({
   loading: true,
   login: async () => ({ ok: false, reason: 'error' }),
   logout: async () => {},
+  patchMember: () => {},
 })
 
 /** Shape returned by the claim_member RPC (a single jsonb object). */
@@ -117,12 +120,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const patchMember = useCallback((patch: Partial<Member>) => {
+    setMember((m) => (m ? { ...m, ...patch } : m))
+  }, [])
+
   const logout = useCallback(async () => {
     await supabase.auth.signOut()
     setMember(null)
   }, [])
 
-  const value = useMemo(() => ({ member, loading, login, logout }), [member, loading, login, logout])
+  const value = useMemo(
+    () => ({ member, loading, login, logout, patchMember }),
+    [member, loading, login, logout, patchMember],
+  )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 

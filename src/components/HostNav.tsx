@@ -13,7 +13,7 @@ const ITEMS: Item[] = [
   { to: '/host', icon: '🚌', label: 'Konsol', hostOnly: true },
   { to: '/oda', icon: '🪑', label: 'Oda' },
   { to: '/host/uyeler', icon: '🧑‍🤝‍🧑', label: S.members, hostOnly: true },
-  { to: '/sunum', icon: '🖥', label: 'Sunum' },
+  { to: '/sunum', icon: '🖥', label: 'Sunum', hostOnly: true },
   { to: '/kurallar', icon: '📖', label: 'Kurallar' },
   { to: '/yillik', icon: '📖', label: 'Yıllık', hostOnly: true },
   { to: '/profil', icon: '🙂', label: 'Profil' },

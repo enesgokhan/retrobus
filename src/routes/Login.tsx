@@ -1,57 +1,124 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import { supabase } from '../lib/supabase'
 import { S } from '../lib/strings'
+import CodeInput from '../components/CodeInput'
 
 const LAST_NAME_KEY = 'retrobus.lastName'
 
+const AVATARS = [
+  '🦊', '🐼', '🐙', '🦉', '🐝', '🦔', '🐧', '🦁',
+  '🐳', '🦄', '🐢', '🦋', '🐨', '🦩', '🐺', '🦇',
+  '🍕', '🌮', '🍩', '☕', '🎸', '🚀', '⚡', '🌵',
+]
+
+/**
+ * Otobüse binme ekranı.
+ *
+ * Bu, arkadaşların uygulamayı ilk gördüğü an; sürpriz gibi mi form gibi mi
+ * hissettireceğine burada karar veriliyor. O yüzden: oyun PIN'i gibi ayrı kod
+ * kutuları, girişin kendisinde avatar seçimi (profilin dibine gömülü değil) ve
+ * girdikten sonra şoförün yazdığı karşılama mesajı.
+ */
 export default function Login() {
-  const { member, login } = useAuth()
+  const { member, login, patchMember } = useAuth()
   const navigate = useNavigate()
   const [name, setName] = useState(() => localStorage.getItem(LAST_NAME_KEY) ?? '')
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** after a successful claim we ask for an avatar before entering the room */
+  const [step, setStep] = useState<'credentials' | 'avatar'>('credentials')
+  const [picked, setPicked] = useState<string | null>(null)
 
-  if (member) return <Navigate to={member.is_host ? '/host' : '/oda'} replace />
+  if (member && step === 'credentials') {
+    return <Navigate to={member.is_host ? '/host' : '/oda'} replace />
+  }
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault()
+  async function submit(codeOverride?: string) {
+    const theCode = codeOverride ?? code
     if (busy) return
     setError(null)
-    if (!/^\d{6}$/.test(code)) {
+    if (!name.trim()) {
+      setError('Adını yaz.')
+      return
+    }
+    if (!/^\d{6}$/.test(theCode)) {
       setError(S.codeInvalid)
       return
     }
     setBusy(true)
-    const result = await login(name, code)
+    const result = await login(name, theCode)
     setBusy(false)
     if (result.ok) {
       localStorage.setItem(LAST_NAME_KEY, name.trim())
-      navigate('/oda', { replace: true })
+      setStep('avatar')
       return
     }
     switch (result.reason) {
-      case 'wrong':
-        setError(S.loginWrong)
-        break
-      case 'no_code':
-        setError(S.loginNoCode)
-        break
-      case 'locked':
-        setError(S.loginLocked(result.retryAfterS))
-        break
-      case 'unconfigured':
-        setError(S.loginUnconfigured)
-        break
-      case 'rate_limited':
-        setError(S.loginRateLimited)
-        break
-      default:
-        setError(S.loginError)
+      case 'wrong': setError(S.loginWrong); break
+      case 'no_code': setError(S.loginNoCode); break
+      case 'locked': setError(S.loginLocked(result.retryAfterS)); break
+      case 'unconfigured': setError(S.loginUnconfigured); break
+      case 'rate_limited': setError(S.loginRateLimited); break
+      default: setError(S.loginError)
     }
+    setCode('')
   }
 
+  async function chooseAvatar(a: string) {
+    setPicked(a)
+    if (member) {
+      await supabase.from('members').update({ avatar: a }).eq('id', member.id)
+      // reflect it locally too, or the header keeps showing the fallback face
+      patchMember({ avatar: a })
+    }
+    setTimeout(() => navigate(member?.is_host ? '/host' : '/oda', { replace: true }), 350)
+  }
+
+  function onSubmitForm(e: FormEvent) {
+    e.preventDefault()
+    void submit()
+  }
+
+  // ---------- avatar step ----------
+  if (step === 'avatar') {
+    return (
+      <main className="min-h-dvh flex flex-col items-center justify-center px-6 py-10 gap-6">
+        <div className="text-center">
+          <div className="text-6xl mb-2 animate-bounce" aria-hidden>
+            🎉
+          </div>
+          <h1 className="text-3xl font-extrabold">Hoş geldin{member ? `, ${member.display_name}` : ''}!</h1>
+          <p className="text-ink-soft font-semibold mt-1">Kendine bir avatar seç.</p>
+        </div>
+        <div className="grid grid-cols-6 gap-2 max-w-sm w-full">
+          {AVATARS.map((a, i) => (
+            <button
+              key={`${a}-${i}`}
+              onClick={() => chooseAvatar(a)}
+              aria-label={a}
+              className={[
+                'aspect-square rounded-2xl border-2 text-2xl transition min-h-11',
+                picked === a ? 'border-coral bg-rose-soft scale-110' : 'border-line hover:border-coral hover:scale-105',
+              ].join(' ')}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+        <button
+          className="text-ink-soft underline text-sm min-h-11"
+          onClick={() => navigate(member?.is_host ? '/host' : '/oda', { replace: true })}
+        >
+          Şimdilik geç
+        </button>
+      </main>
+    )
+  }
+
+  // ---------- credentials step ----------
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center px-6 py-10">
       <div className="text-7xl mb-3" aria-hidden>
@@ -60,8 +127,9 @@ export default function Login() {
       <h1 className="text-4xl font-extrabold tracking-tight">{S.appName}</h1>
       <p className="text-ink-soft mt-1 mb-8 text-center max-w-xs">{S.tagline}</p>
 
-      <form onSubmit={onSubmit} className="card w-full max-w-sm flex flex-col gap-4">
+      <form onSubmit={onSubmitForm} className="card w-full max-w-sm flex flex-col gap-5">
         <h2 className="text-xl font-bold">{S.loginTitle}</h2>
+
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-ink-soft">{S.loginName}</span>
           <input
@@ -74,23 +142,23 @@ export default function Login() {
             maxLength={40}
           />
         </label>
-        <label className="flex flex-col gap-1.5">
+
+        <div className="flex flex-col gap-2">
           <span className="text-sm font-semibold text-ink-soft">{S.loginCode}</span>
-          <input
-            className="input-blob tracking-[0.5em] text-center text-2xl font-bold"
+          <CodeInput
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-            placeholder="••••••"
-            inputMode="numeric"
-            autoComplete="current-password"
-            required
+            onChange={setCode}
+            onComplete={(full) => void submit(full)}
+            disabled={busy}
           />
-        </label>
+        </div>
+
         {error && (
           <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
             {error}
           </p>
         )}
+
         <button type="submit" className="btn-coral text-lg" disabled={busy || !name.trim() || code.length !== 6}>
           {busy ? S.loading : S.loginButton}
         </button>

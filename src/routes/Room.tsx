@@ -5,6 +5,8 @@ import { S } from '../lib/strings'
 import StageView from '../components/StageView'
 import FrozenScreen from '../components/FrozenScreen'
 import HostNav from '../components/HostNav'
+import WelcomeNote from '../components/WelcomeNote'
+import ConnStatus from '../components/ConnStatus'
 
 /** Yolcu görünümü — şoför nereye sürerse ekran oraya gider. */
 export default function Room() {
@@ -15,6 +17,8 @@ export default function Room() {
 
   return (
     <main className="min-h-dvh flex flex-col">
+      {meeting && <WelcomeNote meetingId={meeting.id} note={meeting.welcome_note} />}
+      <ConnStatus />
       <header className="flex items-center justify-between gap-3 px-4 py-2 border-b-2 border-line bg-card flex-wrap">
         <div className="flex items-center gap-2 font-extrabold shrink-0">
           <span aria-hidden>🚌</span>

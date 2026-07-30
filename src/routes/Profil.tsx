@@ -12,7 +12,7 @@ const AVATARS = [
 
 /** Profil — avatar seç, kendi kodunu değiştir. */
 export default function Profil() {
-  const { member } = useAuth()
+  const { member, patchMember } = useAuth()
   const [avatar, setAvatar] = useState(member?.avatar ?? '')
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
@@ -28,7 +28,10 @@ export default function Profil() {
     setAvatar(a)
     const { error } = await supabase.from('members').update({ avatar: a }).eq('id', member!.id)
     if (error) say('Avatar kaydedilemedi.', true)
-    else say('Avatar kaydedildi.')
+    else {
+      patchMember({ avatar: a })
+      say('Avatar kaydedildi.')
+    }
   }
 
   async function changeCode() {
