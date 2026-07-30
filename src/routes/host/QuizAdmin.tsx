@@ -34,6 +34,8 @@ export default function QuizAdmin({ stage }: { stage: Stage }) {
 
   useEffect(() => {
     load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `load` is recreated
+    // each render; including it would refetch on every keystroke in the form.
   }, [stage.id])
 
   function nextIndex() {

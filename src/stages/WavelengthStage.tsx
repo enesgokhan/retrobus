@@ -82,6 +82,8 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     return () => {
       cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only id/phase matter;
+    // depending on the whole `round` object would refire on every unrelated field.
   }, [round?.id, round?.phase])
 
   useEffect(() => {

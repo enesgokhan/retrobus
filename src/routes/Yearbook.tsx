@@ -78,6 +78,9 @@ export default function Yearbook() {
 
   const isHost = member?.is_host ?? false
   const stageIds = useMemo(() => stages.map((s) => s.id), [stages])
+  // a stable primitive key: the effect should re-run when the SET of stages
+  // changes, not on every new array identity from the realtime refetch
+  const stageKey = stageIds.join(',')
 
   useEffect(() => {
     if (!meeting || !stageIds.length) {
@@ -130,7 +133,10 @@ export default function Yearbook() {
     return () => {
       cancelled = true
     }
-  }, [meeting?.id, stageIds.join(',')])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on stageKey
+    // deliberately: `stages` gets a new array identity on every realtime
+    // refetch, which would re-run this whole ten-query load continuously.
+  }, [meeting?.id, stageKey])
 
   const nameOf = (id: string | null) =>
     id ? (members.find((m) => m.id === id)?.display_name ?? '—') : 'sahibi yok'

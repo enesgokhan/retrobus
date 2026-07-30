@@ -91,6 +91,8 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
     return () => {
       cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only id/phase/pick-count
+    // matter; the whole `round` object changes identity on every refetch.
   }, [round?.id, round?.phase, picks.length])
 
   const nameOf = (id: string) => members.find((m) => m.id === id)?.display_name ?? '—'

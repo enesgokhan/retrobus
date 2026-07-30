@@ -122,7 +122,7 @@ const lateRead = await pax[0].from('health_responses').select('rating, dimension
 if ((lateRead.data ?? []).length !== 3) fail(`expected 3 ratings, got ${lateRead.data?.length}`)
 else ok('health results visible after reveal')
 
-const hCols = Object.keys(lateRead.data[0] ?? {})
+await Object.keys(lateRead.data[0] ?? {})
 const { data: rawHealth } = await host.from('health_responses').select('*').eq('stage_id', hStage)
 const hAll = Object.keys(rawHealth?.[0] ?? {})
 if (hAll.some((c) => /member|user|author/i.test(c))) fail(`health row leaks rater: ${hAll}`)
@@ -174,7 +174,7 @@ if (fbCols.some((c) => /author|writer|from_member|sender/i.test(c))) fail(`feedb
 else ok(`feedback rows carry no author (${fbCols.join(', ')})`)
 
 // passenger cannot hide a card
-const sneakyHide = await pax[2].from('feedback_items').update({ hidden: true }).eq('id', rawFb[0].id)
+await await pax[2].from('feedback_items').update({ hidden: true }).eq('id', rawFb[0].id)
 const { data: checkHidden } = await host.from('feedback_items').select('hidden').eq('id', rawFb[0].id).single()
 if (checkHidden.hidden === true) fail('passenger managed to hide a card')
 else ok('only host can hide cards')

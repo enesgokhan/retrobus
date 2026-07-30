@@ -27,7 +27,7 @@ const { data: meeting } = await host.from('meetings')
 
 // ============ FREEZE ============
 console.log('\n-- dondurma (panik butonu) --')
-const paxFreeze = await c.Ayse.from('meetings').update({ frozen: true }).eq('id', meeting.id)
+await await c.Ayse.from('meetings').update({ frozen: true }).eq('id', meeting.id)
 const { data: afterPax } = await host.from('meetings').select('frozen').eq('id', meeting.id).single()
 if (afterPax.frozen) fail('a passenger managed to freeze the meeting')
 else ok('only the host can freeze')
@@ -72,7 +72,7 @@ else ok('host cannot see who got which mission before reveal')
 
 // mark one done, then reveal
 const { data: ayseMission } = await c.Ayse.from('missions').select('id').eq('meeting_id', meeting.id).single()
-const sneakyMark = await c.Baris.from('missions').update({ completed: true }).eq('id', ayseMission.id)
+await await c.Baris.from('missions').update({ completed: true }).eq('id', ayseMission.id)
 const { data: stillNull } = await c.Ayse.from('missions').select('completed').eq('id', ayseMission.id).single()
 if (stillNull.completed === true) fail('a passenger marked a mission complete')
 else ok('only the host can mark a mission complete')
@@ -81,7 +81,7 @@ else ok('only the host can mark a mission complete')
 // RLS hides assignments from them by design, and an UPDATE ... WHERE has to
 // find the row through the SELECT policy first. So the real order is
 // reveal -> mark -> score, which is exactly what the UI does.
-const earlyMark = await host.from('missions').update({ completed: true }).eq('id', ayseMission.id)
+await await host.from('missions').update({ completed: true }).eq('id', ayseMission.id)
 const { data: notYet } = await c.Ayse.from('missions').select('completed').eq('id', ayseMission.id).single()
 if (notYet.completed === true) fail('host marked a mission before reveal despite not being able to see it')
 else ok('host cannot mark before reveal (cannot see the row)')
