@@ -2,21 +2,14 @@
 //
 // The single most important assertion in this project is here: an operative must
 // not be able to read the key card. If that leaks, Codenames is pointless.
-import { createClient } from '@supabase/supabase-js'
+import { hostClient, client, claim } from './_clients.mjs'
 
-const URL = 'https://mxskxexxyazddcdusnvz.supabase.co'
-const KEY = 'sb_publishable_EdAjymtekBQR6Hg6vtjpPg_1Gd6E4Ge'
-const HOST_CODE = process.env.RETROBUS_HOST_CODE ?? '424242'
-const mk = () => createClient(URL, KEY, { auth: { persistSession: false } })
 
 let failed = 0
 const fail = (m) => { console.error('  FAIL:', m); failed++ }
 const ok = (m) => console.log('  ok:', m)
 
-const host = mk()
-await host.auth.signInAnonymously()
-const hc = await host.rpc('claim_member', { p_name: 'Enes', p_code: HOST_CODE })
-if (!hc.data?.ok) { console.error('host claim failed'); process.exit(1) }
+const host = await hostClient()
 
 // 4 players: red spymaster, red operative, blue spymaster, blue operative
 const names = ['Ayse', 'Baris', 'Ceyda', 'Deniz']
@@ -29,9 +22,8 @@ for (let i = 0; i < names.length; i++) {
 }
 const c = {}
 for (let i = 0; i < names.length; i++) {
-  const cl = mk()
-  await cl.auth.signInAnonymously()
-  await cl.rpc('claim_member', { p_name: names[i], p_code: codes[i] })
+  const cl = await client(`member${i + 1}`)
+  await claim(cl, names[i], codes[i])
   c[names[i]] = cl
 }
 const { data: meeting } = await host.from('meetings')
@@ -104,11 +96,8 @@ const oppKeys = await c.Ceyda.from('cn_keys').select('card_id, role').eq('game_i
 if ((oppKeys.data ?? []).length !== 25) fail('opposing spymaster should also see the key (they play too)')
 else ok('opposing spymaster also sees the key')
 
-// a member not in this game at all
-const outsider = mk()
-await outsider.auth.signInAnonymously()
-await outsider.rpc('claim_member', { p_name: 'Enes', p_code: HOST_CODE })
-const outKeys = await outsider.from('cn_keys').select('role').eq('game_id', game.id)
+// the host is a member but not a spymaster in this game
+const outKeys = await host.from('cn_keys').select('role').eq('game_id', game.id)
 if ((outKeys.data ?? []).length !== 0) fail(`non-player (host) saw ${outKeys.data.length} key rows`)
 else ok('a member who is not a spymaster in this game sees zero key rows')
 

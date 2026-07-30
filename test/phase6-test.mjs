@@ -1,19 +1,12 @@
 // Phase 6: Secret Mission secrecy, host freeze, awards.
-import { createClient } from '@supabase/supabase-js'
+import { hostClient, client, claim } from './_clients.mjs'
 
-const URL = 'https://mxskxexxyazddcdusnvz.supabase.co'
-const KEY = 'sb_publishable_EdAjymtekBQR6Hg6vtjpPg_1Gd6E4Ge'
-const HOST_CODE = process.env.RETROBUS_HOST_CODE ?? '424242'
-const mk = () => createClient(URL, KEY, { auth: { persistSession: false } })
 
 let failed = 0
 const fail = (m) => { console.error('  FAIL:', m); failed++ }
 const ok = (m) => console.log('  ok:', m)
 
-const host = mk()
-await host.auth.signInAnonymously()
-const hc = await host.rpc('claim_member', { p_name: 'Enes', p_code: HOST_CODE })
-if (!hc.data?.ok) { console.error('host claim failed'); process.exit(1) }
+const host = await hostClient()
 
 const names = ['Ayse', 'Baris', 'Ceyda']
 const codes = ['111111', '222222', '333333']
@@ -25,9 +18,8 @@ for (let i = 0; i < names.length; i++) {
 }
 const c = {}
 for (const [i, n] of names.entries()) {
-  const cl = mk()
-  await cl.auth.signInAnonymously()
-  await cl.rpc('claim_member', { p_name: n, p_code: codes[i] })
+  const cl = await client(`member${i + 1}`)
+  await claim(cl, n, codes[i])
   c[n] = cl
 }
 const { data: meeting } = await host.from('meetings')

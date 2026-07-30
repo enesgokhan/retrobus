@@ -1,18 +1,12 @@
 // End-to-end discussion-hour test with multiple concurrent members.
-import { createClient } from '@supabase/supabase-js'
+import { hostClient, client, claim } from './_clients.mjs'
 
-const URL = 'https://mxskxexxyazddcdusnvz.supabase.co'
-const KEY = 'sb_publishable_EdAjymtekBQR6Hg6vtjpPg_1Gd6E4Ge'
-const mk = () => createClient(URL, KEY, { auth: { persistSession: false } })
 
 const fail = (m) => { console.error('FAIL:', m); process.exitCode = 1 }
 const ok = (m) => console.log('  ok:', m)
 
 // --- host logs in ---
-const host = mk()
-await host.auth.signInAnonymously()
-const hc = await host.rpc('claim_member', { p_name: 'Enes', p_code: '424242' })
-if (!hc.data?.ok || !hc.data.is_host) { fail('host claim'); process.exit(1) }
+const host = await hostClient()
 console.log('host claimed')
 
 // --- host creates 3 passengers with codes ---
@@ -32,9 +26,8 @@ ok('3 passengers created with codes')
 // --- passengers log in ---
 const pax = []
 for (let i = 0; i < names.length; i++) {
-  const c = mk()
-  await c.auth.signInAnonymously()
-  const r = await c.rpc('claim_member', { p_name: names[i], p_code: codes[i] })
+  const c = await client(`member${i + 1}`)
+  const r = { data: await claim(c, names[i], codes[i]) }
   if (!r.data?.ok) { fail(`login ${names[i]}: ${JSON.stringify(r.data ?? r.error?.message)}`); process.exit(1) }
   if (r.data.is_host) fail(`${names[i]} must NOT be host`)
   pax.push(c)

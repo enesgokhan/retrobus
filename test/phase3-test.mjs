@@ -1,20 +1,13 @@
 // Phase 3 end-to-end: two truths (dual scoring), health check, feedback wall.
 // Runs 4 concurrent clients against the real project.
-import { createClient } from '@supabase/supabase-js'
+import { hostClient, client, claim } from './_clients.mjs'
 
-const URL = 'https://mxskxexxyazddcdusnvz.supabase.co'
-const KEY = 'sb_publishable_EdAjymtekBQR6Hg6vtjpPg_1Gd6E4Ge'
-const HOST_CODE = process.env.RETROBUS_HOST_CODE ?? '424242'
-const mk = () => createClient(URL, KEY, { auth: { persistSession: false } })
 
 let failed = 0
 const fail = (m) => { console.error('  FAIL:', m); failed++ }
 const ok = (m) => console.log('  ok:', m)
 
-const host = mk()
-await host.auth.signInAnonymously()
-const hc = await host.rpc('claim_member', { p_name: 'Enes', p_code: HOST_CODE })
-if (!hc.data?.ok) { console.error('host claim failed — set RETROBUS_HOST_CODE'); process.exit(1) }
+const host = await hostClient()
 
 const names = ['Ayse', 'Baris', 'Ceyda']
 const codes = ['111111', '222222', '333333']
@@ -26,9 +19,8 @@ for (let i = 0; i < names.length; i++) {
 }
 const pax = []
 for (let i = 0; i < names.length; i++) {
-  const c = mk()
-  await c.auth.signInAnonymously()
-  const r = await c.rpc('claim_member', { p_name: names[i], p_code: codes[i] })
+  const c = await client(`member${i + 1}`)
+  const r = { data: await claim(c, names[i], codes[i]) }
   if (!r.data?.ok) { fail(`login ${names[i]}`); process.exit(1) }
   pax.push(c)
 }
@@ -195,11 +187,10 @@ else ok('code change requires the current code')
 const goodCur = await pax[0].rpc('change_my_code', { p_current: '111111', p_new: '555555' })
 if (!goodCur.data?.ok) fail(`code change failed: ${JSON.stringify(goodCur.data)}`)
 else ok('code change works with correct current code')
-const relog = mk()
-await relog.auth.signInAnonymously()
-const r2 = await relog.rpc('claim_member', { p_name: 'Ayse', p_code: '555555' })
+// reuse member1's session but re-claim with the new code
+const r2 = await pax[0].rpc('claim_member', { p_name: 'Ayse', p_code: '555555' })
 if (!r2.data?.ok) fail('cannot log in with the new code')
-else ok('new code works on next login')
+else ok('new code works with the rotated code')
 
 // ============ cleanup ============
 await host.from('meetings').delete().eq('id', meeting.id)

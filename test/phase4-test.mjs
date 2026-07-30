@@ -1,20 +1,13 @@
 // Phase 4 end-to-end: quiz scoring, Fibbage, Rank These, leaderboard.
-import { createClient } from '@supabase/supabase-js'
+import { hostClient, client, claim } from './_clients.mjs'
 
-const URL = 'https://mxskxexxyazddcdusnvz.supabase.co'
-const KEY = 'sb_publishable_EdAjymtekBQR6Hg6vtjpPg_1Gd6E4Ge'
-const HOST_CODE = process.env.RETROBUS_HOST_CODE ?? '424242'
-const mk = () => createClient(URL, KEY, { auth: { persistSession: false } })
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 let failed = 0
 const fail = (m) => { console.error('  FAIL:', m); failed++ }
 const ok = (m) => console.log('  ok:', m)
 
-const host = mk()
-await host.auth.signInAnonymously()
-const hc = await host.rpc('claim_member', { p_name: 'Enes', p_code: HOST_CODE })
-if (!hc.data?.ok) { console.error('host claim failed'); process.exit(1) }
+const host = await hostClient()
 
 const names = ['Ayse', 'Baris', 'Ceyda']
 const codes = ['111111', '222222', '333333']
@@ -26,9 +19,8 @@ for (let i = 0; i < names.length; i++) {
 }
 const pax = []
 for (let i = 0; i < names.length; i++) {
-  const c = mk()
-  await c.auth.signInAnonymously()
-  await c.rpc('claim_member', { p_name: names[i], p_code: codes[i] })
+  const c = await client(`member${i + 1}`)
+  await claim(c, names[i], codes[i])
   pax.push(c)
 }
 const { data: meeting } = await host.from('meetings')
