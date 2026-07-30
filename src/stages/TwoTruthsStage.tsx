@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
+import StageHeader from '../components/StageHeader'
 import type { Member, Stage } from '../lib/types'
 
 interface Entry {
@@ -171,8 +172,33 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
   }
 
   // --- waiting / guessing / reveal ---
+  const header = (() => {
+    if (!current) {
+      return isOpen && mine
+        ? { phase: 'Cümlelerin kayıtlı', instruction: 'Şoför bir kart seçmeyi bekliyoruz.', waiting: true }
+        : { phase: 'İki Doğru Bir Yalan', instruction: 'Şoför bir kart seçecek.', waiting: true }
+    }
+    const revealed = current.revealed
+    const isMine = current.member_id === member?.id
+    const guessed = guesses.some((g) => g.entry_id === current.id && g.guesser_member_id === member?.id)
+    if (revealed) return { phase: 'Açıldı', instruction: 'Yalan hangisiymiş?', waiting: false }
+    if (isMine) return { phase: 'Bu senin kartın', instruction: 'Sessiz kal — oda tahmin ediyor.', waiting: true }
+    if (guessed) return { phase: 'Tahminin kayıtlı', instruction: 'Diğerlerini bekliyoruz.', waiting: true }
+    return { phase: 'Tahmin zamanı', instruction: 'Hangi cümle yalan? Birine bas.', waiting: false }
+  })()
+
   return (
     <div className="w-full max-w-2xl flex flex-col gap-4">
+      <StageHeader
+        {...header}
+        presenter={presenter}
+        progress={
+          isOpen && !current ? `${entries.length}/${members.length} yazdı`
+          : current && !current.revealed
+            ? `${guesses.filter((g) => g.entry_id === current.id).length} tahmin`
+            : null
+        }
+      />
       {error && (
         <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
           {error}

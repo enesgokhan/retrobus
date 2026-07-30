@@ -4,6 +4,7 @@ import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import { MISSIONS_TR } from '../content/tr/missions'
 import { fireConfetti } from '../lib/celebrate'
+import StageHeader from '../components/StageHeader'
 import type { Member, Stage } from '../lib/types'
 
 interface Mission {
@@ -85,6 +86,17 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
 
   return (
     <div className="w-full max-w-2xl flex flex-col gap-4">
+      <StageHeader
+        phase={anyRevealed ? 'Görevler açıldı' : 'Gizli görev'}
+        instruction={
+          anyRevealed ? 'Kim başardı, kim yakalandı?'
+          : mine ? 'Görevini kimseye söyleme. Fırsat kolla.'
+          : isHost ? 'Görevleri dağıt — toplantının başında yap.'
+          : 'Sana görev atanmamış.'
+        }
+        waiting={!anyRevealed && !mine}
+        presenter={presenter}
+      />
       {note && <p className="rounded-2xl bg-teal-soft px-4 py-2.5 text-sm font-semibold">{note}</p>}
 
       {!anyRevealed ? (

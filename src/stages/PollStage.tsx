@@ -3,6 +3,7 @@ import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { submitPollResponse, type Poll, type SubmitError } from '../lib/anon'
+import StageHeader from '../components/StageHeader'
 import type { Stage } from '../lib/types'
 
 const ERR: Record<SubmitError, string> = {
@@ -72,8 +73,23 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
     return <p className="text-ink-soft text-center">Anket bekleniyor…</p>
   }
 
+  const openPolls = polls.filter((x) => x.state === 'open')
+  const allAnswered = openPolls.length > 0 && openPolls.every((x) => answered[x.id])
+
   return (
     <div className="w-full max-w-2xl flex flex-col gap-4">
+      <StageHeader
+        phase={openPolls.length ? 'Anket' : 'Sonuçlar'}
+        instruction={
+          !openPolls.length ? 'Sonuçlara bak.'
+          : allAnswered ? 'Cevapladın — diğerlerini bekliyoruz.'
+          : 'Bir seçenek işaretle.'
+        }
+        waiting={!openPolls.length ? false : allAnswered}
+        progress={polls.length > 1 ? `${polls.length} anket` : null}
+        presenter={presenter}
+      />
+
       {error && (
         <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
           {error}

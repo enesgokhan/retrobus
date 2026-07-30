@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import { useLeaderboard } from '../lib/useLeaderboard'
+import StageHeader from '../components/StageHeader'
 import type { Member, Stage } from '../lib/types'
 
 interface Question {
@@ -146,8 +147,25 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
     )
   }
 
+  const header = (() => {
+    if (!active) return { phase: 'Bilgi Yarışması', instruction: 'Şoför bir soru açmayı bekliyoruz.', waiting: true }
+    if (revealed) return { phase: 'Cevap açıldı', instruction: 'Puanlar düştü — sıralamaya bak.', waiting: false }
+    if (myAnswer) return { phase: 'Cevabın kayıtlı', instruction: 'Hız da sayılıyor. Diğerlerini bekliyoruz.', waiting: true }
+    return {
+      phase: `Soru ${active.order_index}/${questions.length}`,
+      instruction: active.kind === 'number' ? 'Bir sayı tahmin et.' : 'Hızlı ol — erken doğru cevap daha çok puan.',
+      waiting: false,
+    }
+  })()
+
   return (
     <div className="w-full max-w-2xl flex flex-col gap-4">
+      <StageHeader
+        {...header}
+        presenter={presenter}
+        progress={active ? `${forQ.length}/${members.length} cevapladı` : null}
+      />
+
       {error && (
         <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
           {error}
@@ -156,14 +174,6 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
 
       {active ? (
         <section className="card flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-bold uppercase tracking-widest text-ink-soft">
-              Soru {active.order_index}/{questions.length}
-            </span>
-            <span className="text-xs font-semibold text-ink-soft">
-              {forQ.length}/{members.length} cevapladı
-            </span>
-          </div>
           <h3 className={presenter ? 'text-4xl font-extrabold' : 'text-2xl font-extrabold'}>{active.prompt}</h3>
 
           {active.kind === 'choice' ? (

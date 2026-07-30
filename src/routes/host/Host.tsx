@@ -280,8 +280,8 @@ export default function Host() {
                   <div
                     key={stage.id}
                     className={[
-                      'card flex items-center gap-3 py-3',
-                      isActive ? 'border-coral bg-rose-soft/40' : '',
+                      'flex items-center gap-2 rounded-2xl border-2 px-3 py-2 bg-card',
+                      isActive ? 'border-coral bg-rose-soft/40' : 'border-line',
                     ].join(' ')}
                   >
                     <div className="flex flex-col gap-0.5">
