@@ -1,65 +1,105 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { liveStatus, onLiveStatusChange } from '../lib/realtime'
 
-type State = 'ok' | 'reconnecting' | 'offline'
+type Shown = 'none' | 'polling' | 'stale' | 'offline'
+
+/** How long a state must hold before we show it, so nothing flickers. */
+const SETTLE_MS = 3000
+/** No successful refresh for this long is genuinely worth alarming about. */
+const STALE_MS = 20000
 
 /**
- * Bağlantı göstergesi.
+ * Bağlantı göstergesi — gerçeği söyleyen sürümü.
  *
- * Neden gerekli: gerçek zamanlı bağlantı düşerse ekran son gördüğü halde
- * KALIYOR. Kullanıcı hiçbir şey olmadığını sanıp bekliyor; şoför sonraki durağa
- * geçmiş ama o hâlâ eskisinde. Üç saatlik bir toplantıda en kötü sessiz hata bu.
+ * Önceki hâli `realtime.isConnected()` gibi iç durumlara bakıyordu ve iki yönde
+ * de yanlıştı: geçici durumlarda yanıp sönüyor (kullanıcıya "sürekli açık" gibi
+ * geliyordu), bağlantı gerçekten öldüğünde ise susuyordu. Ölçtüm: websocket
+ * engellendiğinde 3. saniyede uyarı çıkıyor, 8. saniyede kayboluyor, bağlantı
+ * hâlâ yok. Böyle bir gösterge yok olmasından kötüdür, çünkü göz ardı etmeyi
+ * öğretir.
  *
- * `liveChannel` her SUBSCRIBED'da yeniden veri çekiyor, yani toparlanma zaten
- * çalışıyor — eksik olan tek şey, bozukken bunu KİŞİYE söylemek.
+ * Şimdi karar, kanalların KENDİ bildirdiği duruma ve son başarılı veri
+ * yenilemesinin yaşına dayanıyor:
+ *   live    → hiçbir şey gösterme
+ *   polling → sakin bilgi: canlı bağlantı yok, birkaç saniyede bir yenileniyor
+ *             (kullanıcı için bozuk bir şey yok, o yüzden alarm da yok)
+ *   stale   → 20 saniyedir yenilenemedi: tek gerçek alarm, üstelik "Yenile"
+ *             düğmesiyle — sorunu anlatmak yetmez, çözümü de sun
  */
 export default function ConnStatus() {
-  const [state, setState] = useState<State>('ok')
+  const [shown, setShown] = useState<Shown>('none')
 
   useEffect(() => {
-    function check() {
-      if (!navigator.onLine) {
-        setState('offline')
+    let candidate: Shown = 'none'
+    let since = 0
+
+    function evaluate() {
+      const now = Date.now()
+      const { mode, staleMs, channels } = liveStatus()
+
+      let want: Shown = 'none'
+      if (!navigator.onLine) want = 'offline'
+      else if (channels.length && staleMs > STALE_MS) want = 'stale'
+      else if (mode === 'polling') want = 'polling'
+
+      // Recovery is instant; degradation has to settle first.
+      if (want === 'none') {
+        candidate = 'none'
+        since = 0
+        setShown('none')
         return
       }
-      // realtime-js exposes the socket; if it is not connected while any channel
-      // is joined, we are in a gap the user should know about
-      const anyChannels = supabase.getChannels().length > 0
-      const connected = supabase.realtime.isConnected()
-      setState(anyChannels && !connected ? 'reconnecting' : 'ok')
+      if (want !== candidate) {
+        candidate = want
+        since = now
+        return
+      }
+      if (now - since >= SETTLE_MS) setShown(want)
     }
-    check()
-    const t = setInterval(check, 3000)
-    const on = () => check()
-    window.addEventListener('online', on)
-    window.addEventListener('offline', on)
+
+    evaluate()
+    const t = setInterval(evaluate, 1000)
+    const off = onLiveStatusChange(evaluate)
+    window.addEventListener('online', evaluate)
+    window.addEventListener('offline', evaluate)
     return () => {
       clearInterval(t)
-      window.removeEventListener('online', on)
-      window.removeEventListener('offline', on)
+      off()
+      window.removeEventListener('online', evaluate)
+      window.removeEventListener('offline', evaluate)
     }
   }, [])
 
-  if (state === 'ok') return null
+  if (shown === 'none') return null
+
+  const alarming = shown === 'stale' || shown === 'offline'
 
   return (
     <div
       role="status"
       aria-live="polite"
       className={[
-        'fixed bottom-4 left-1/2 -translate-x-1/2 z-40 rounded-full px-4 py-2.5',
-        'text-sm font-bold shadow-lg border-2 flex items-center gap-2',
-        state === 'offline'
-          ? 'bg-ink text-white border-ink'
-          : 'bg-amber-soft text-ink border-amber',
+        'fixed bottom-4 left-1/2 -translate-x-1/2 z-40 rounded-full pl-4 pr-3 py-2',
+        'text-sm font-semibold shadow-lg border-2 flex items-center gap-2 max-w-[92vw]',
+        alarming ? 'bg-ink text-white border-ink' : 'bg-card text-ink-soft border-line',
       ].join(' ')}
     >
-      <span aria-hidden className="animate-pulse">
-        {state === 'offline' ? '📴' : '🔄'}
+      <span aria-hidden>{shown === 'offline' ? '📴' : shown === 'stale' ? '⚠️' : '🔄'}</span>
+      <span className="truncate">
+        {shown === 'offline'
+          ? 'İnternet yok — bağlanınca kaldığın yerden devam edeceksin.'
+          : shown === 'stale'
+            ? 'Ekran güncellenemiyor.'
+            : 'Canlı bağlantı yok — birkaç saniyede bir yenileniyor.'}
       </span>
-      {state === 'offline'
-        ? 'İnternet yok — bağlanınca kaldığın yerden devam edeceksin.'
-        : 'Yeniden bağlanıyor… ekran birazdan güncellenecek.'}
+      {alarming && (
+        <button
+          className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-xs font-bold hover:bg-white/25"
+          onClick={() => window.location.reload()}
+        >
+          Yenile
+        </button>
+      )}
     </div>
   )
 }
