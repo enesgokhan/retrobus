@@ -14,6 +14,9 @@ export type StageKind =
   | 'wavelength'
   | 'leaderboard'
   | 'break'
+  | 'fibbage'
+  | 'rank'
+  | 'secret_mission'
 
 export type StageState = 'pending' | 'open' | 'revealed' | 'closed'
 export type MeetingStatus = 'draft' | 'live' | 'done'

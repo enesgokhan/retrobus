@@ -1,0 +1,213 @@
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { liveChannel } from '../lib/realtime'
+import { useAuth } from '../lib/auth'
+import type { Stage } from '../lib/types'
+
+interface Item {
+  id: string
+  label: string
+  order_index: number
+}
+interface Submission {
+  id: string
+  ordering: string[]
+  sort_seed: number
+}
+
+/**
+ * Rank These — herkes listeyi gizlice sıralar, sonra oda ne kadar benzer
+ * düşündüğünü görür. Gönderimler anonim (submitter kolonu yok).
+ */
+export default function RankStage({ stage, presenter = false }: { stage: Stage; presenter?: boolean }) {
+  const { member } = useAuth()
+  const isHost = member?.is_host ?? false
+  const [items, setItems] = useState<Item[]>([])
+  const [subs, setSubs] = useState<Submission[]>([])
+  const [order, setOrder] = useState<string[]>([])
+  const [mySubmitted, setMySubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [newLabel, setNewLabel] = useState('')
+
+  const isOpen = stage.state === 'open'
+  const revealed = stage.state === 'revealed' || stage.state === 'closed'
+
+  useEffect(() => {
+    if (!member) return
+    let cancelled = false
+    async function load() {
+      const [{ data: i }, { data: s }, { data: p }] = await Promise.all([
+        supabase.from('rank_items').select('id, label, order_index').eq('stage_id', stage.id).order('order_index'),
+        supabase.from('rank_submissions').select('id, ordering, sort_seed').eq('stage_id', stage.id).order('sort_seed'),
+        supabase.from('participation').select('action_key, count').eq('stage_id', stage.id),
+      ])
+      if (cancelled) return
+      const list = (i as Item[]) ?? []
+      setItems(list)
+      setSubs((s as Submission[]) ?? [])
+      setMySubmitted(
+        ((p as { action_key: string; count: number }[]) ?? []).some(
+          (r) => r.action_key === 'ranking' && r.count > 0,
+        ),
+      )
+      // seed the local ordering once
+      setOrder((prev) => (prev.length === list.length ? prev : list.map((x) => x.id)))
+    }
+    load()
+    const channel = liveChannel(`rank-${stage.id}`, ['rank_items', 'rank_submissions', 'participation'], load)
+    return () => {
+      cancelled = true
+      supabase.removeChannel(channel)
+    }
+  }, [member, stage.id])
+
+  function move(idx: number, dir: -1 | 1) {
+    const j = idx + dir
+    if (j < 0 || j >= order.length) return
+    const next = [...order]
+    ;[next[idx], next[j]] = [next[j], next[idx]]
+    setOrder(next)
+  }
+
+  async function submit() {
+    setError(null)
+    const { error: e } = await supabase.rpc('submit_ranking', {
+      p_stage_id: stage.id,
+      p_ordering: order,
+    })
+    if (e) {
+      setError(e.message.includes('limit') ? 'Zaten sıraladın.' : 'Gönderilemedi.')
+    } else {
+      setMySubmitted(true)
+    }
+  }
+
+  async function addItem() {
+    if (!newLabel.trim()) return
+    const at = items.length ? Math.max(...items.map((i) => i.order_index)) + 1 : 1
+    await supabase.from('rank_items').insert({ stage_id: stage.id, label: newLabel.trim(), order_index: at })
+    setNewLabel('')
+  }
+
+  const labelOf = (id: string) => items.find((i) => i.id === id)?.label ?? '—'
+
+  /** Average position across all submissions — the room's consensus order. */
+  const consensus = (() => {
+    if (!subs.length) return []
+    const totals = new Map<string, number>()
+    for (const s of subs) {
+      s.ordering.forEach((id, pos) => totals.set(id, (totals.get(id) ?? 0) + pos))
+    }
+    return [...totals.entries()]
+      .map(([id, sum]) => ({ id, avg: sum / subs.length }))
+      .sort((a, b) => a.avg - b.avg)
+  })()
+
+  if (!items.length) {
+    return (
+      <div className="w-full max-w-lg flex flex-col gap-3">
+        <p className="text-center text-ink-soft">
+          {isHost ? 'Sıralanacak öğe yok — aşağıdan ekle.' : 'Şoför listeyi hazırlıyor…'}
+        </p>
+        {isHost && !presenter && (
+          <div className="card flex items-center gap-2">
+            <input
+              className="input-blob flex-1"
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+              placeholder="Öğe (örn. Pizza)"
+              maxLength={100}
+              onKeyDown={(e) => e.key === 'Enter' && addItem()}
+            />
+            <button className="btn-coral" onClick={addItem} disabled={!newLabel.trim()}>
+              Ekle
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full max-w-lg flex flex-col gap-4">
+      {error && (
+        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
+          {error}
+        </p>
+      )}
+
+      {revealed ? (
+        <section className="card flex flex-col gap-2">
+          <h3 className="font-extrabold">Odanın ortak sıralaması ({subs.length} kişi)</h3>
+          {consensus.map((c, i) => (
+            <div key={c.id} className="flex items-center gap-3 rounded-2xl border-2 border-line px-4 py-2.5">
+              <span className="w-6 text-right font-extrabold text-ink-soft">{i + 1}</span>
+              <span className={['flex-1 font-bold', presenter ? 'text-2xl' : ''].join(' ')}>
+                {labelOf(c.id)}
+              </span>
+              <span className="text-xs text-ink-soft tabular-nums">ort. {(c.avg + 1).toFixed(1)}</span>
+            </div>
+          ))}
+        </section>
+      ) : mySubmitted ? (
+        <p className="text-center font-bold text-teal">
+          ✅ Sıralaman kaydedildi ({subs.length > 0 ? `${subs.length} kişi gönderdi` : 'anonim'}).
+        </p>
+      ) : isOpen && !presenter ? (
+        <section className="card flex flex-col gap-2">
+          <h3 className="font-extrabold mb-1">En iyiden en kötüye sırala</h3>
+          {order.map((id, i) => (
+            <div key={id} className="flex items-center gap-2 rounded-2xl border-2 border-line px-3 py-2">
+              <span className="w-5 text-right font-bold text-ink-soft">{i + 1}</span>
+              <span className="flex-1 font-bold truncate">{labelOf(id)}</span>
+              <div className="flex flex-col">
+                <button
+                  className="text-ink-soft disabled:opacity-20 leading-none"
+                  disabled={i === 0}
+                  onClick={() => move(i, -1)}
+                  aria-label="Yukarı"
+                >
+                  ▲
+                </button>
+                <button
+                  className="text-ink-soft disabled:opacity-20 leading-none"
+                  disabled={i === order.length - 1}
+                  onClick={() => move(i, 1)}
+                  aria-label="Aşağı"
+                >
+                  ▼
+                </button>
+              </div>
+            </div>
+          ))}
+          <button className="btn-coral self-start mt-2" onClick={submit}>
+            Sıralamamı gönder
+          </button>
+          <p className="text-xs font-semibold text-ink-soft">
+            🔒 Anonim ve gizli — herkes gönderdikten sonra ortak sıralama açılır.
+          </p>
+        </section>
+      ) : (
+        <p className="text-center text-ink-soft">
+          {presenter ? `${subs.length} kişi sıraladı…` : 'Şoför bu durağı açmayı bekliyor.'}
+        </p>
+      )}
+
+      {isHost && !presenter && !revealed && (
+        <div className="card flex items-center gap-2">
+          <input
+            className="input-blob flex-1"
+            value={newLabel}
+            onChange={(e) => setNewLabel(e.target.value)}
+            placeholder="Öğe ekle"
+            maxLength={100}
+            onKeyDown={(e) => e.key === 'Enter' && addItem()}
+          />
+          <button className="btn-coral" onClick={addItem} disabled={!newLabel.trim()}>
+            Ekle
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}

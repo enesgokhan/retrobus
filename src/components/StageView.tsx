@@ -9,6 +9,8 @@ import TwoTruthsStage from '../stages/TwoTruthsStage'
 import FeedbackWallStage from '../stages/FeedbackWallStage'
 import QuizStage from '../stages/QuizStage'
 import LeaderboardStage from '../stages/LeaderboardStage'
+import FibbageStage from '../stages/FibbageStage'
+import RankStage from '../stages/RankStage'
 
 const KIND_EMOJI: Record<string, string> = {
   wordcloud: '☁️',
@@ -24,6 +26,9 @@ const KIND_EMOJI: Record<string, string> = {
   wavelength: '📻',
   leaderboard: '🥇',
   break: '🧃',
+  fibbage: '🤫',
+  rank: '🔢',
+  secret_mission: '🕶️',
 }
 
 /**
@@ -61,6 +66,10 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
     body = <QuizStage stage={stage} presenter={presenter} />
   } else if (stage.kind === 'leaderboard') {
     body = <LeaderboardStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'fibbage') {
+    body = <FibbageStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'rank') {
+    body = <RankStage stage={stage} presenter={presenter} />
   }
 
   return (

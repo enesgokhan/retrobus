@@ -22,6 +22,8 @@ const ADDABLE_KINDS: StageKind[] = [
   'codenames',
   'wavelength',
   'leaderboard',
+  'fibbage',
+  'rank',
   'break',
 ]
 

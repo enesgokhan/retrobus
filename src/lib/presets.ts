@@ -190,6 +190,27 @@ export const STAGE_PRESETS: StagePreset[] = [
     },
   },
   {
+    key: 'fibbage',
+    label: 'Fibbage (inandırıcı yalan)',
+    kind: 'fibbage',
+    title: 'Fibbage',
+    config: {
+      timer_s: 180,
+      prompt: 'Gerçek cevabı bul, bu arada kendi yalanınla başkalarını kandır.',
+    },
+  },
+  {
+    key: 'rank',
+    label: 'Sırala Bakalım',
+    kind: 'rank',
+    title: 'Sırala Bakalım',
+    config: {
+      reveal: 'batch',
+      timer_s: 180,
+      prompt: 'Listeyi gizlice sırala — sonra ne kadar benzer düşündüğümüzü göreceğiz.',
+    },
+  },
+  {
     key: 'leaderboard',
     label: 'Şampiyonluk Tablosu (final)',
     kind: 'leaderboard',

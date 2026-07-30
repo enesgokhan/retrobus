@@ -82,6 +82,9 @@ export const S = {
     wavelength: 'Frekans',
     leaderboard: 'Şampiyonluk Tablosu',
     break: 'Mola',
+    fibbage: 'Fibbage — İnandırıcı Yalan',
+    rank: 'Sırala Bakalım',
+    secret_mission: 'Gizli Görev',
   } as Record<string, string>,
 
   // Hazır panolar

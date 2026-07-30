@@ -121,7 +121,7 @@ else ok('number question ranks by distance (1000/600/300)')
 
 // ============ FIBBAGE ============
 console.log('\n-- fibbage --')
-const fStage = await mkStage('quiz')
+const fStage = await mkStage('fibbage')
 const { data: round } = await host.from('fibbage_rounds').insert({
   stage_id: fStage, prompt: 'Enes’in en sevdiği film?', truth: 'Kurtlar Vadisi',
 }).select().single()
@@ -187,7 +187,7 @@ else ok('all authorship revealed after reveal')
 
 // ============ RANK THESE ============
 console.log('\n-- rank these --')
-const rStage = await mkStage('poll')
+const rStage = await mkStage('rank')
 const labels = ['Pizza', 'Burger', 'Lahmacun']
 const itemIds = []
 for (let i = 0; i < labels.length; i++) {
