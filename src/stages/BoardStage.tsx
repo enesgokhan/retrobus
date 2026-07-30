@@ -3,6 +3,7 @@ import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { castDot, submitCard, type SubmitError } from '../lib/anon'
 import { useStageData } from '../lib/useStageData'
+import ActionsPanel from '../components/ActionsPanel'
 import { S } from '../lib/strings'
 import type { Stage } from '../lib/types'
 
@@ -35,6 +36,7 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
   const { cards, dots, myCards, myDots } = useStageData(stage.id)
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
+  const [promoted, setPromoted] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
 
   const columns = stage.config.columns?.length ? stage.config.columns : DEFAULT_COLUMNS
@@ -68,7 +70,48 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
     await sb.from('cards').update({ hidden }).eq('id', cardId)
   }
 
+  /** Kartı karara dönüştür — tartışmanın çıktısı bu. */
+  async function promote(cardId: string, body: string) {
+    const { error: e } = await sb.from('actions').insert({
+      meeting_id: stage.meeting_id,
+      source_card_id: cardId,
+      body,
+    })
+    if (e) setError('Karara dönüştürülemedi.')
+    else setPromoted((p) => new Set(p).add(cardId))
+  }
+
   const visible = cards.filter((c) => isHost || !c.hidden)
+
+  /**
+   * Cards for a column. During submission the order is `sort_seed` (set by the
+   * server) — never insertion order, which would leak who wrote when. Once
+   * voting opens, ordering by votes is both safe and what the room wants:
+   * popularity says nothing about authorship, and the top items are what you
+   * actually discuss.
+   */
+  function cardsFor(colKey: string) {
+    const inCol = visible.filter((c) => (colKey === 'all' ? true : c.column_key === colKey))
+    if (!votingPhase) return inCol
+    return [...inCol].sort((a, b) => (dots[b.id] ?? 0) - (dots[a.id] ?? 0) || a.sort_seed - b.sort_seed)
+  }
+
+  const tile = (c: (typeof visible)[number]) => (
+    <CardTile
+      key={c.id}
+      body={c.body}
+      hidden={c.hidden}
+      votes={dots[c.id] ?? 0}
+      showVotes={votingPhase}
+      canVote={votingPhase && !presenter && myDots < dotBudget}
+      isHost={isHost && !presenter}
+      promoted={promoted.has(c.id)}
+      canPromote={isHost && !presenter && votingPhase}
+      onVote={() => dot(c.id)}
+      onToggleHidden={() => toggleHidden(c.id, !c.hidden)}
+      onPromote={() => promote(c.id, c.body)}
+    />
+  )
 
   return (
     <div className="w-full max-w-4xl flex flex-col gap-4">
@@ -125,47 +168,22 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
       ) : (
         <div className={GRID_BY_COLUMNS[Math.min(columns.length, 4)] ?? GRID_BY_COLUMNS[4]}>
           {columns.map((col) => {
-            const inCol = visible.filter((c) =>
-              col.key === 'all' ? true : c.column_key === col.key,
-            )
-            if (columns.length === 1) {
-              return inCol.map((c) => (
-                <CardTile
-                  key={c.id}
-                  body={c.body}
-                  hidden={c.hidden}
-                  votes={dots[c.id] ?? 0}
-                  showVotes={votingPhase}
-                  canVote={votingPhase && !presenter && myDots < dotBudget}
-                  isHost={isHost && !presenter}
-                  onVote={() => dot(c.id)}
-                  onToggleHidden={() => toggleHidden(c.id, !c.hidden)}
-                />
-              ))
-            }
+            const inCol = cardsFor(col.key)
+            if (columns.length === 1) return inCol.map(tile)
             return (
               <div key={col.key} className="flex flex-col gap-2">
                 <h3 className="font-extrabold text-sm uppercase tracking-wide text-ink-soft px-1">
                   {col.label} <span className="text-ink-soft/60">({inCol.length})</span>
                 </h3>
-                {inCol.map((c) => (
-                  <CardTile
-                    key={c.id}
-                    body={c.body}
-                    hidden={c.hidden}
-                    votes={dots[c.id] ?? 0}
-                    showVotes={votingPhase}
-                    canVote={votingPhase && !presenter && myDots < dotBudget}
-                    isHost={isHost && !presenter}
-                    onVote={() => dot(c.id)}
-                    onToggleHidden={() => toggleHidden(c.id, !c.hidden)}
-                  />
-                ))}
+                {inCol.map(tile)}
               </div>
             )
           })}
         </div>
       )}
+
+      {/* kararlar: oylama bitince tartışmanın çıktısını topla */}
+      {votingPhase && !presenter && <ActionsPanel meetingId={stage.meeting_id} />}
     </div>
   )
 }
@@ -177,8 +195,11 @@ function CardTile({
   showVotes,
   canVote,
   isHost,
+  promoted,
+  canPromote,
   onVote,
   onToggleHidden,
+  onPromote,
 }: {
   body: string
   hidden: boolean
@@ -186,8 +207,11 @@ function CardTile({
   showVotes: boolean
   canVote: boolean
   isHost: boolean
+  promoted: boolean
+  canPromote: boolean
   onVote: () => void
   onToggleHidden: () => void
+  onPromote: () => void
 }) {
   return (
     <div
@@ -197,7 +221,7 @@ function CardTile({
       ].join(' ')}
     >
       <p className="whitespace-pre-wrap break-words">{body}</p>
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         {showVotes ? (
           <button
             className={[
@@ -212,11 +236,21 @@ function CardTile({
         ) : (
           <span />
         )}
-        {isHost && (
-          <button className="text-xs text-ink-soft underline" onClick={onToggleHidden}>
-            {hidden ? 'göster' : 'gizle'}
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {canPromote &&
+            (promoted ? (
+              <span className="text-xs font-bold text-teal">✅ karara eklendi</span>
+            ) : (
+              <button className="text-xs font-bold text-teal underline" onClick={onPromote}>
+                → karara dönüştür
+              </button>
+            ))}
+          {isHost && (
+            <button className="text-xs text-ink-soft underline" onClick={onToggleHidden}>
+              {hidden ? 'göster' : 'gizle'}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )

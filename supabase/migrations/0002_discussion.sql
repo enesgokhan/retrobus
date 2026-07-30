@@ -124,6 +124,11 @@ end;
 $$;
 
 -- Spend one dot on a card. The stage's config.dots caps the total per person.
+--
+-- Votable in 'open' AND 'revealed', unlike submit_card which is 'open' only:
+-- the room writes cards while the stage is open, then votes on them once the
+-- host reveals. Requiring 'open' here made voting impossible in the very phase
+-- it exists for.
 create or replace function public.cast_dot(p_card_id uuid)
 returns void
 language plpgsql
@@ -133,17 +138,20 @@ as $$
 declare
   v_stage uuid;
   v_dots int;
+  v_state text;
 begin
-  select c.stage_id, coalesce((s.config ->> 'dots')::int, 3)
-    into v_stage, v_dots
+  select c.stage_id, coalesce((s.config ->> 'dots')::int, 3), s.state
+    into v_stage, v_dots, v_state
   from cards c join stages s on s.id = c.stage_id
   where c.id = p_card_id;
 
   if v_stage is null then
     raise exception 'unknown card' using errcode = 'P0002';
   end if;
+  if v_state not in ('open', 'revealed') then
+    raise exception 'voting closed' using errcode = 'P0002';
+  end if;
 
-  perform assert_stage_open(v_stage);
   perform bump_participation(v_stage, 'dot', v_dots);
 
   insert into votes (stage_id, card_id) values (v_stage, p_card_id);
