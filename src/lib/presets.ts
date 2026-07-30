@@ -211,6 +211,25 @@ export const STAGE_PRESETS: StagePreset[] = [
     },
   },
   {
+    key: 'codenames',
+    label: 'Kelime Ajanları (Codenames TR)',
+    kind: 'codenames',
+    title: 'Kelime Ajanları',
+    config: {
+      prompt: 'Takımını seç, spymaster gönüllü olsun. Suikastçıya dokunan kaybeder.',
+    },
+  },
+  {
+    key: 'wavelength',
+    label: 'Frekans (Wavelength)',
+    kind: 'wavelength',
+    title: 'Frekans',
+    config: {
+      timer_s: 120,
+      prompt: 'Bir kişi gizli noktayı görür, tek kelimeyle anlatır; herkes kadranı kaydırır.',
+    },
+  },
+  {
     key: 'leaderboard',
     label: 'Şampiyonluk Tablosu (final)',
     kind: 'leaderboard',

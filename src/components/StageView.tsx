@@ -11,6 +11,8 @@ import QuizStage from '../stages/QuizStage'
 import LeaderboardStage from '../stages/LeaderboardStage'
 import FibbageStage from '../stages/FibbageStage'
 import RankStage from '../stages/RankStage'
+import CodenamesStage from '../stages/CodenamesStage'
+import WavelengthStage from '../stages/WavelengthStage'
 
 const KIND_EMOJI: Record<string, string> = {
   wordcloud: '☁️',
@@ -70,6 +72,10 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
     body = <FibbageStage stage={stage} presenter={presenter} />
   } else if (stage.kind === 'rank') {
     body = <RankStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'codenames') {
+    body = <CodenamesStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'wavelength') {
+    body = <WavelengthStage stage={stage} presenter={presenter} />
   }
 
   return (
