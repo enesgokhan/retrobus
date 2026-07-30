@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../lib/auth'
 import { supabase } from '../../lib/supabase'
+import { liveChannel } from '../../lib/realtime'
 import type { Poll } from '../../lib/anon'
 import type { Stage, StageConfig } from '../../lib/types'
 
@@ -125,10 +126,7 @@ function PollComposer({ stage }: { stage: Stage }) {
       if (!cancelled) setPolls((data as Poll[]) ?? [])
     }
     load()
-    const channel = sb
-      .channel(`host-polls-${stage.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'polls' }, () => load())
-      .subscribe()
+    const channel = liveChannel(`host-polls-${stage.id}`, ['polls'], load)
     return () => {
       cancelled = true
       sb.removeChannel(channel)

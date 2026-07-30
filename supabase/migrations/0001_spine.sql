@@ -310,7 +310,7 @@ revoke all on public.login_attempts from anon, authenticated;
 -- meetings / stages: readable by members, writable by the host.
 revoke all on public.meetings from anon, authenticated;
 grant select on public.meetings to authenticated;
-grant insert (title, status, active_stage_id), update (title, status, active_stage_id)
+grant insert (title, status, active_stage_id), update (title, status, active_stage_id), delete
   on public.meetings to authenticated;
 
 create policy meetings_select on public.meetings
@@ -319,6 +319,10 @@ create policy meetings_insert_host on public.meetings
   for insert to authenticated with check (auth_is_host());
 create policy meetings_update_host on public.meetings
   for update to authenticated using (auth_is_host()) with check (auth_is_host());
+-- without this the host can never discard a test meeting; deletes just affect
+-- zero rows silently, which is how this omission was found
+create policy meetings_delete_host on public.meetings
+  for delete to authenticated using (auth_is_host());
 
 revoke all on public.stages from anon, authenticated;
 grant select on public.stages to authenticated;

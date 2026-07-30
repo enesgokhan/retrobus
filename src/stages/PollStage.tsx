@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
+import { liveChannel } from '../lib/realtime'
 import { submitPollResponse, type Poll, type SubmitError } from '../lib/anon'
 import type { Stage } from '../lib/types'
 
@@ -51,12 +52,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
       }
     }
     load()
-
-    const channel = sb
-      .channel(`poll-stage-${stage.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'polls' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'poll_responses' }, () => load())
-      .subscribe()
+    const channel = liveChannel(`poll-stage-${stage.id}`, ['polls', 'poll_responses'], load)
 
     return () => {
       cancelled = true

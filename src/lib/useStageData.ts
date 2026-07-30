@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from './auth'
 import { supabase } from './supabase'
+import { liveChannel } from './realtime'
 import { fetchCards, fetchDotCounts, fetchMyUsage, type Card } from './anon'
 
 export interface StageData {
@@ -48,12 +49,7 @@ export function useStageData(stageId: string | null): StageData {
       setMyDots(ud)
     }
     load()
-
-    const channel = supabase
-      .channel(`stage-${stageId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, () => load())
-      .subscribe()
+    const channel = liveChannel(`stage-${stageId}`, ['cards', 'votes'], load)
 
     return () => {
       cancelled = true

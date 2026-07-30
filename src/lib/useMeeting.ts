@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from './auth'
 import { supabase } from './supabase'
+import { liveChannel } from './realtime'
 import type { Meeting, Stage } from './types'
 
 export interface MeetingLive {
@@ -50,12 +51,7 @@ export function useMeeting(meetingId?: string): MeetingLive {
     }
 
     load()
-
-    const channel = supabase
-      .channel('meeting-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'meetings' }, () => load())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'stages' }, () => load())
-      .subscribe()
+    const channel = liveChannel('meeting-live', ['meetings', 'stages'], load)
 
     return () => {
       cancelled = true
