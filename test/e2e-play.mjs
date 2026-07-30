@@ -180,8 +180,15 @@ console.log('\n-- kelime ajanları --')
     fail('codenames: lobby has no team cards — this is the shape of the avatar bug')
   } else {
     await redCard.getByRole('button', { name: /Spymaster/ }).first().click()
-    await p1.waitForTimeout(1500)
-    const txt = await redCard.textContent()
+    // Poll rather than sleep once. Measured: the seat lands in about a second,
+    // but a single fixed 1.5s wait made this assertion flaky under load and
+    // reported a working app as broken.
+    let txt = ''
+    for (let i = 0; i < 14; i++) {
+      txt = (await redCard.textContent()) ?? ''
+      if (txt.includes('E2E1')) break
+      await p1.waitForTimeout(600)
+    }
     if (!txt.includes('E2E1')) fail(`codenames: seated player not listed (lobby said: ${txt.replace(/\s+/g, ' ').slice(0, 80)})`)
     else ok('lobby lists the seated player by name')
   }
