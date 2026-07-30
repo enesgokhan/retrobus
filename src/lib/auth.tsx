@@ -1,8 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { Session } from './types'
-import { FUNCTIONS_URL, IS_CONFIGURED, resetSupabase } from './supabase'
-
-const STORAGE_KEY = 'retrobus.session'
+import type { Member } from './types'
+import { IS_CONFIGURED, supabase } from './supabase'
 
 export type LoginResult =
   | { ok: true }
@@ -10,68 +8,109 @@ export type LoginResult =
   | { ok: false; reason: 'locked'; retryAfterS: number }
 
 interface AuthCtx {
-  session: Session | null
+  member: Member | null
+  /** true until we've checked for an existing session */
+  loading: boolean
   login: (name: string, code: string) => Promise<LoginResult>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
-const Ctx = createContext<AuthCtx>({ session: null, login: async () => ({ ok: false, reason: 'error' }), logout: () => {} })
+const Ctx = createContext<AuthCtx>({
+  member: null,
+  loading: true,
+  login: async () => ({ ok: false, reason: 'error' }),
+  logout: async () => {},
+})
 
-function loadSession(): Session | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const s = JSON.parse(raw) as Session
-    if (!s.token || !s.member?.id) return null
-    if (s.exp * 1000 < Date.now() + 60_000) return null // expired or about to
-    return s
-  } catch {
-    return null
-  }
+interface ClaimRow {
+  ok: boolean
+  reason: string | null
+  retry_after_s: number | null
+  member_id: string | null
+  display_name: string | null
+  is_host: boolean | null
+}
+
+/** Resolves the member linked to the current anonymous auth user, if any. */
+async function fetchCurrentMember(): Promise<Member | null> {
+  const { data, error } = await supabase.rpc('current_member')
+  if (error || !data?.length) return null
+  const row = data[0] as Member
+  return { id: row.id, display_name: row.display_name, is_host: row.is_host }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(loadSession)
+  const [member, setMember] = useState<Member | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Drop the session automatically when the token expires mid-meeting.
+  // Restore on load: if supabase still holds a session, ask who it maps to.
   useEffect(() => {
-    if (!session) return
-    const ms = session.exp * 1000 - Date.now()
-    const t = setTimeout(() => setSession(null), Math.max(ms, 0))
-    return () => clearTimeout(t)
-  }, [session])
+    if (!IS_CONFIGURED) {
+      setLoading(false)
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabase.auth.getSession()
+      if (data.session) {
+        const m = await fetchCurrentMember()
+        if (!cancelled) setMember(m)
+      }
+      if (!cancelled) setLoading(false)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const login = useCallback(async (name: string, code: string): Promise<LoginResult> => {
     if (!IS_CONFIGURED) return { ok: false, reason: 'unconfigured' }
     try {
-      const res = await fetch(`${FUNCTIONS_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), code }),
-      })
-      if (res.status === 429) {
-        const body = await res.json().catch(() => ({}))
-        return { ok: false, reason: 'locked', retryAfterS: Number(body.retry_after_s) || 900 }
+      // Any visitor can hold an anonymous token; it proves nothing on its own.
+      // claim_member is what turns it into a member identity.
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session) {
+        const { error } = await supabase.auth.signInAnonymously()
+        if (error) return { ok: false, reason: 'error' }
       }
-      if (res.status === 403) return { ok: false, reason: 'no_code' }
-      if (!res.ok) return { ok: false, reason: res.status === 401 ? 'wrong' : 'error' }
-      const s = (await res.json()) as Session
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(s))
-      resetSupabase()
-      setSession(s)
+
+      const { data, error } = await supabase.rpc('claim_member', {
+        p_name: name.trim(),
+        p_code: code,
+      })
+      if (error || !data?.length) return { ok: false, reason: 'error' }
+
+      const row = data[0] as ClaimRow
+      if (!row.ok) {
+        switch (row.reason) {
+          case 'no_code':
+            return { ok: false, reason: 'no_code' }
+          case 'locked':
+            return { ok: false, reason: 'locked', retryAfterS: row.retry_after_s ?? 900 }
+          case 'invalid':
+            return { ok: false, reason: 'wrong' }
+          default:
+            return { ok: false, reason: 'error' }
+        }
+      }
+
+      setMember({
+        id: row.member_id!,
+        display_name: row.display_name!,
+        is_host: row.is_host ?? false,
+      })
       return { ok: true }
     } catch {
       return { ok: false, reason: 'error' }
     }
   }, [])
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY)
-    resetSupabase()
-    setSession(null)
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut()
+    setMember(null)
   }, [])
 
-  const value = useMemo(() => ({ session, login, logout }), [session, login, logout])
+  const value = useMemo(() => ({ member, loading, login, logout }), [member, loading, login, logout])
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 

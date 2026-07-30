@@ -63,10 +63,3 @@ export interface Stage {
   /** when paused, seconds left on the clock */
   timer_remaining_s: number | null
 }
-
-export interface Session {
-  token: string
-  member: Member
-  /** epoch seconds */
-  exp: number
-}

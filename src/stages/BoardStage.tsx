@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../lib/auth'
-import { getSupabase } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { castDot, submitCard, type SubmitError } from '../lib/anon'
 import { useStageData } from '../lib/useStageData'
 import { S } from '../lib/strings'
@@ -30,8 +30,8 @@ const ERR: Record<SubmitError, string> = {
  * Kartlar `sort_seed` sırasına göre gelir; gönderim sırası asla görünmez.
  */
 export default function BoardStage({ stage, presenter = false }: { stage: Stage; presenter?: boolean }) {
-  const { session } = useAuth()
-  const sb = getSupabase(session)
+  const { member } = useAuth()
+  const sb = supabase
   const { cards, dots, myCards, myDots } = useStageData(stage.id)
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -39,7 +39,7 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
 
   const columns = stage.config.columns?.length ? stage.config.columns : DEFAULT_COLUMNS
   const dotBudget = stage.config.dots ?? 3
-  const isHost = session?.member.is_host ?? false
+  const isHost = member?.is_host ?? false
   const isOpen = stage.state === 'open'
   const votingPhase = stage.state === 'revealed' || (isOpen && stage.config.reveal === 'live')
   const canSubmit = isOpen && myCards < 20

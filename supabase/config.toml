@@ -1,8 +1,0 @@
-# Function-level config — both functions do their own auth:
-#   login: unauthenticated by definition
-#   set-member-code: verifies our custom JWT in code (host claim)
-[functions.login]
-verify_jwt = false
-
-[functions.set-member-code]
-verify_jwt = false

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../../lib/auth'
-import { FUNCTIONS_URL, getSupabase } from '../../lib/supabase'
+import { supabase } from '../../lib/supabase'
 import { S } from '../../lib/strings'
 
 interface MemberRow {
@@ -11,18 +10,17 @@ interface MemberRow {
   code_set: boolean
 }
 
-/** Yolcu yönetimi — ekle, yeniden adlandır, 6 haneli kod ata. */
+/** Yolcu yönetimi — ekle, 6 haneli kod ata. */
 export default function Members() {
-  const { session } = useAuth()
-  const sb = getSupabase(session)
   const [members, setMembers] = useState<MemberRow[]>([])
   const [newName, setNewName] = useState('')
   const [codeFor, setCodeFor] = useState<string | null>(null)
   const [code, setCode] = useState('')
   const [note, setNote] = useState<string | null>(null)
+  const [isError, setIsError] = useState(false)
 
   async function load() {
-    const { data } = await sb
+    const { data } = await supabase
       .from('members')
       .select('id, display_name, is_host, code_set')
       .order('display_name')
@@ -31,39 +29,43 @@ export default function Members() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  function say(msg: string, error = false) {
+    setNote(msg)
+    setIsError(error)
+  }
 
   async function addMember() {
     const name = newName.trim()
     if (!name) return
-    await sb.from('members').insert({ display_name: name })
+    const { error } = await supabase.from('members').insert({ display_name: name })
+    if (error) {
+      say(error.code === '23505' ? 'Bu isim zaten var.' : S.loginError, true)
+      return
+    }
     setNewName('')
+    say(`${name} eklendi.`)
     load()
   }
 
   async function saveCode(memberId: string) {
-    setNote(null)
     if (!/^\d{6}$/.test(code)) {
-      setNote(S.codeInvalid)
+      say(S.codeInvalid, true)
       return
     }
-    const res = await fetch(`${FUNCTIONS_URL}/set-member-code`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session?.token}`,
-      },
-      body: JSON.stringify({ member_id: memberId, code }),
+    const { error } = await supabase.rpc('set_member_code', {
+      p_member_id: memberId,
+      p_code: code,
     })
-    if (res.ok) {
-      setNote(S.codeSaved)
-      setCodeFor(null)
-      setCode('')
-      load()
-    } else {
-      setNote(S.loginError)
+    if (error) {
+      say(S.loginError, true)
+      return
     }
+    say(S.codeSaved)
+    setCodeFor(null)
+    setCode('')
+    load()
   }
 
   return (
@@ -77,11 +79,20 @@ export default function Members() {
         </Link>
       </header>
 
-      {note && <p className="rounded-2xl bg-teal-soft px-4 py-2.5 text-sm font-semibold">{note}</p>}
+      {note && (
+        <p
+          className={[
+            'rounded-2xl px-4 py-2.5 text-sm font-semibold',
+            isError ? 'bg-rose-soft text-coral-deep' : 'bg-teal-soft',
+          ].join(' ')}
+        >
+          {note}
+        </p>
+      )}
 
       <section className="flex flex-col gap-2">
         {members.map((m) => (
-          <div key={m.id} className="card flex items-center gap-3 py-3">
+          <div key={m.id} className="card flex items-center gap-3 py-3 flex-wrap">
             <div className="flex-1 min-w-0">
               <div className="font-bold truncate">
                 {m.display_name}
@@ -99,6 +110,7 @@ export default function Members() {
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder={S.codePlaceholder}
                   inputMode="numeric"
+                  autoFocus
                 />
                 <button className="btn-coral text-xs px-3 py-1.5" onClick={() => saveCode(m.id)}>
                   {S.save}
@@ -114,8 +126,15 @@ export default function Members() {
                 </button>
               </div>
             ) : (
-              <button className="btn-ghost text-xs px-3 py-1.5" onClick={() => setCodeFor(m.id)}>
-                {S.setCode}
+              <button
+                className="btn-ghost text-xs px-3 py-1.5"
+                onClick={() => {
+                  setCodeFor(m.id)
+                  setCode('')
+                  setNote(null)
+                }}
+              >
+                {m.code_set ? 'Kodu değiştir' : S.setCode}
               </button>
             )}
           </div>
@@ -129,6 +148,7 @@ export default function Members() {
           onChange={(e) => setNewName(e.target.value)}
           placeholder={S.memberNamePlaceholder}
           maxLength={40}
+          onKeyDown={(e) => e.key === 'Enter' && addMember()}
         />
         <button className="btn-coral" onClick={addMember} disabled={!newName.trim()}>
           {S.addMember}

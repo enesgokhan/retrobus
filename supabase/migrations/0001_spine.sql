@@ -1,39 +1,39 @@
--- Retrobüs 0001 — spine: members, meetings, stages, participation ledger.
--- Security model:
---   * Clients authenticate with a custom JWT minted by the `login` edge function.
---     Claims: sub = member id, member_id, is_host, role = 'authenticated'.
---   * RLS everywhere; code hashes and login throttling are service-role-only.
---   * The participation ledger enforces per-person limits for anonymous features
---     WITHOUT any link to the content rows (see bump_participation).
-
--- ---------- helpers ----------
-
-create or replace function public.auth_member_id()
-returns uuid
-language sql stable
-as $$
-  select nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'member_id', '')::uuid
-$$;
-
-create or replace function public.auth_is_host()
-returns boolean
-language sql stable
-as $$
-  select coalesce((current_setting('request.jwt.claims', true)::jsonb ->> 'is_host')::boolean, false)
-$$;
+-- Retrobüs 0001 — spine: members, identity, meetings, stages, participation ledger.
+--
+-- IDENTITY MODEL
+--   Supabase signs JWTs with an asymmetric (ES256) key we cannot sign with, so
+--   we do NOT mint our own tokens. Instead:
+--     1. the browser gets a real Supabase token via anonymous sign-in
+--     2. it calls claim_member(name, code), which verifies the 6-digit code and
+--        links that anonymous auth user to a Retrobüs member
+--     3. RLS resolves identity through member_links
+--
+--   CONSEQUENCE (important): anonymous sign-in means ANY visitor can hold the
+--   `authenticated` role. "Authenticated" therefore does NOT mean "member", and
+--   every policy below requires a real member link — never `using (true)`.
 
 -- ---------- tables ----------
 
 create table public.members (
   id uuid primary key default gen_random_uuid(),
   display_name text not null check (length(trim(display_name)) between 1 and 40),
-  code_hash text, -- pbkdf2$<iter>$<salt>$<hash>; null until the host assigns a code
+  -- bcrypt (pgcrypto); null until the host assigns a code
+  code_hash text,
   code_set boolean generated always as (code_hash is not null) stored,
   is_host boolean not null default false,
   created_at timestamptz not null default now()
 );
--- names are unique case-insensitively (login matches by name)
+-- login matches on name case-insensitively, so names must be unique that way
 create unique index members_display_name_key on public.members (lower(display_name));
+
+-- Maps a Supabase (anonymous) auth user onto a member. One device/browser
+-- session = one row. Re-logging in as someone else overwrites the link.
+create table public.member_links (
+  auth_uid uuid primary key references auth.users (id) on delete cascade,
+  member_id uuid not null references public.members (id) on delete cascade,
+  linked_at timestamptz not null default now()
+);
+create index member_links_member_idx on public.member_links (member_id);
 
 create table public.login_attempts (
   member_id uuid primary key references public.members (id) on delete cascade,
@@ -84,12 +84,145 @@ create table public.participation (
   primary key (stage_id, member_id, action_key)
 );
 
+-- ---------- identity helpers ----------
+-- SECURITY DEFINER so policies can call them without recursing into
+-- member_links' own RLS.
+
+create or replace function public.auth_member_id()
+returns uuid
+language sql stable security definer
+set search_path = public
+as $$
+  select member_id from member_links where auth_uid = auth.uid()
+$$;
+
+create or replace function public.auth_is_host()
+returns boolean
+language sql stable security definer
+set search_path = public
+as $$
+  select coalesce(
+    (select m.is_host
+       from member_links l join members m on m.id = l.member_id
+      where l.auth_uid = auth.uid()),
+    false)
+$$;
+
+grant execute on function public.auth_member_id() to anon, authenticated;
+grant execute on function public.auth_is_host() to anon, authenticated;
+
+-- ---------- login ----------
+
+-- Verifies name + 6-digit code and links the caller's anonymous auth user.
+--
+-- Returns a status row instead of raising on bad credentials: raising would roll
+-- back the transaction and discard the failed-attempt counter we just wrote,
+-- silently defeating the rate limit.
+create or replace function public.claim_member(p_name text, p_code text)
+returns table (ok boolean, reason text, retry_after_s int, member_id uuid, display_name text, is_host boolean)
+language plpgsql security definer
+set search_path = public, extensions
+as $$
+declare
+  v_member members;
+  v_att login_attempts;
+  v_window constant interval := interval '15 minutes';
+  v_max constant int := 5;
+  v_fresh boolean;
+begin
+  if auth.uid() is null then
+    return query select false, 'no_session', null::int, null::uuid, null::text, null::boolean;
+    return;
+  end if;
+  if p_name is null or btrim(p_name) = '' or p_code !~ '^\d{6}$' then
+    return query select false, 'invalid', null::int, null::uuid, null::text, null::boolean;
+    return;
+  end if;
+
+  select * into v_member from members where lower(display_name) = lower(btrim(p_name));
+  if not found then
+    -- same answer as a wrong code, so the roster can't be probed by name
+    return query select false, 'invalid', null::int, null::uuid, null::text, null::boolean;
+    return;
+  end if;
+  if v_member.code_hash is null then
+    return query select false, 'no_code', null::int, null::uuid, null::text, null::boolean;
+    return;
+  end if;
+
+  select * into v_att from login_attempts where login_attempts.member_id = v_member.id;
+  if found and v_att.fail_count >= v_max and now() - v_att.window_start < v_window then
+    return query select
+      false,
+      'locked',
+      ceil(extract(epoch from (v_window - (now() - v_att.window_start))))::int,
+      null::uuid, null::text, null::boolean;
+    return;
+  end if;
+
+  if crypt(p_code, v_member.code_hash) <> v_member.code_hash then
+    -- start a new window if the old one has aged out, else increment in place
+    v_fresh := (v_att.member_id is null) or (now() - v_att.window_start >= v_window);
+    insert into login_attempts as la (member_id, window_start, fail_count)
+    values (v_member.id, now(), 1)
+    on conflict (member_id) do update
+      set window_start = case when v_fresh then now() else la.window_start end,
+          fail_count   = case when v_fresh then 1 else la.fail_count + 1 end;
+    return query select false, 'invalid', null::int, null::uuid, null::text, null::boolean;
+    return;
+  end if;
+
+  delete from login_attempts where login_attempts.member_id = v_member.id;
+
+  insert into member_links (auth_uid, member_id)
+  values (auth.uid(), v_member.id)
+  on conflict (auth_uid) do update
+    set member_id = excluded.member_id, linked_at = now();
+
+  return query select true, null::text, null::int, v_member.id, v_member.display_name, v_member.is_host;
+end;
+$$;
+grant execute on function public.claim_member(text, text) to anon, authenticated;
+
+-- Who am I? Used on page load to restore the session.
+create or replace function public.current_member()
+returns table (id uuid, display_name text, is_host boolean)
+language sql stable security definer
+set search_path = public
+as $$
+  select m.id, m.display_name, m.is_host
+  from member_links l join members m on m.id = l.member_id
+  where l.auth_uid = auth.uid()
+$$;
+grant execute on function public.current_member() to authenticated;
+
+-- Host assigns/rotates a member's 6-digit code. The only write path to code_hash.
+create or replace function public.set_member_code(p_member_id uuid, p_code text)
+returns void
+language plpgsql security definer
+set search_path = public, extensions
+as $$
+begin
+  if not auth_is_host() then
+    raise exception 'host only' using errcode = '42501';
+  end if;
+  if p_code !~ '^\d{6}$' then
+    raise exception 'code must be exactly 6 digits' using errcode = '22023';
+  end if;
+  update members set code_hash = crypt(p_code, gen_salt('bf', 10)) where id = p_member_id;
+  if not found then
+    raise exception 'unknown member' using errcode = 'P0002';
+  end if;
+  -- a fresh code also clears any lockout
+  delete from login_attempts where login_attempts.member_id = p_member_id;
+end;
+$$;
+grant execute on function public.set_member_code(uuid, text) to authenticated;
+
 -- ---------- ledger primitive ----------
 
--- Called from SECURITY DEFINER feature RPCs (phase 2+) inside the same
--- transaction as their content insert: raises if the caller would exceed
--- p_max for this action, otherwise bumps their counter. Atomic under
--- concurrency thanks to the upsert + row lock.
+-- Called from SECURITY DEFINER feature RPCs inside the same transaction as their
+-- content insert: raises if the caller would exceed p_max, else bumps the count.
 create or replace function public.bump_participation(
   p_stage_id uuid,
   p_action_key text,
@@ -97,8 +230,7 @@ create or replace function public.bump_participation(
   p_add int default 1
 )
 returns void
-language plpgsql
-security definer
+language plpgsql security definer
 set search_path = public
 as $$
 declare
@@ -106,33 +238,29 @@ declare
   v_new int;
 begin
   if v_member is null then
-    raise exception 'not authenticated' using errcode = '28000';
+    raise exception 'not a member' using errcode = '28000';
   end if;
   if p_add < 1 then
     raise exception 'invalid increment';
   end if;
 
-  insert into participation (stage_id, member_id, action_key, count)
+  insert into participation as p (stage_id, member_id, action_key, count)
   values (p_stage_id, v_member, p_action_key, p_add)
   on conflict (stage_id, member_id, action_key)
-  do update set count = participation.count + excluded.count
-  returning count into v_new;
+  do update set count = p.count + excluded.count
+  returning p.count into v_new;
 
   if v_new > p_max then
     raise exception 'limit reached' using errcode = 'P0001';
   end if;
 end;
 $$;
-
--- Not callable directly by clients — only via feature RPCs.
 revoke execute on function public.bump_participation(uuid, text, int, int) from public, anon, authenticated;
 
--- Guard: only stages that are open accept submissions. Feature RPCs call this.
+-- Guard: only open stages accept submissions.
 create or replace function public.assert_stage_open(p_stage_id uuid)
 returns void
-language plpgsql
-stable
-security definer
+language plpgsql stable security definer
 set search_path = public
 as $$
 begin
@@ -144,35 +272,47 @@ $$;
 revoke execute on function public.assert_stage_open(uuid) from public, anon, authenticated;
 
 -- ---------- RLS ----------
+-- Every policy demands a real member link. `authenticated` alone is not enough,
+-- because anonymous sign-in hands that role to any visitor.
 
 alter table public.members enable row level security;
+alter table public.member_links enable row level security;
 alter table public.login_attempts enable row level security;
 alter table public.meetings enable row level security;
 alter table public.stages enable row level security;
 alter table public.participation enable row level security;
 
--- members: everyone logged in can see the roster, but never code_hash
--- (column-level privilege), and login_attempts is service-role-only (no policy).
+-- members: roster visible to members; code_hash never selectable (no column grant).
 revoke all on public.members from anon, authenticated;
 grant select (id, display_name, is_host, created_at, code_set) on public.members to authenticated;
 grant insert (display_name), update (display_name) on public.members to authenticated;
 
 create policy members_select on public.members
-  for select to authenticated using (true);
+  for select to authenticated using (auth_member_id() is not null);
 create policy members_insert_host on public.members
   for insert to authenticated with check (auth_is_host());
 create policy members_update_host on public.members
   for update to authenticated using (auth_is_host()) with check (auth_is_host());
--- no delete policy: removing people (and their history) stays a service-role task
 
--- meetings / stages: readable by all members, writable by the host
+-- member_links: you may read your own link; writes only via claim_member.
+revoke all on public.member_links from anon, authenticated;
+grant select on public.member_links to authenticated;
+
+create policy member_links_select_own on public.member_links
+  for select to authenticated using (auth_uid = auth.uid());
+
+-- login_attempts: service-role only. No grants, no policies.
+revoke all on public.login_attempts from anon, authenticated;
+
+-- meetings / stages: readable by members, writable by the host.
 revoke all on public.meetings from anon, authenticated;
 grant select on public.meetings to authenticated;
-grant insert (title, status, active_stage_id), update (title, status, active_stage_id) on public.meetings to authenticated;
+grant insert (title, status, active_stage_id), update (title, status, active_stage_id)
+  on public.meetings to authenticated;
 
 create policy meetings_select on public.meetings
-  for select to authenticated using (true);
-create policy meetings_write_host on public.meetings
+  for select to authenticated using (auth_member_id() is not null);
+create policy meetings_insert_host on public.meetings
   for insert to authenticated with check (auth_is_host());
 create policy meetings_update_host on public.meetings
   for update to authenticated using (auth_is_host()) with check (auth_is_host());
@@ -185,7 +325,7 @@ grant insert (meeting_id, kind, title, order_index, config, state),
   on public.stages to authenticated;
 
 create policy stages_select on public.stages
-  for select to authenticated using (true);
+  for select to authenticated using (auth_member_id() is not null);
 create policy stages_insert_host on public.stages
   for insert to authenticated with check (auth_is_host());
 create policy stages_update_host on public.stages
@@ -193,8 +333,7 @@ create policy stages_update_host on public.stages
 create policy stages_delete_host on public.stages
   for delete to authenticated using (auth_is_host());
 
--- participation: you may see only your own ledger rows ("2 hakkın kaldı");
--- all writes happen inside security-definer RPCs.
+-- participation: you see only your own ledger ("2 hakkın kaldı").
 revoke all on public.participation from anon, authenticated;
 grant select on public.participation to authenticated;
 
@@ -203,6 +342,5 @@ create policy participation_select_own on public.participation
 
 -- ---------- realtime ----------
 
--- Meetings + stages stream to every client; feature tables opt in per phase.
 alter publication supabase_realtime add table public.meetings;
 alter publication supabase_realtime add table public.stages;

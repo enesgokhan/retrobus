@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/auth'
-import { getSupabase } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { submitPollResponse, type Poll, type SubmitError } from '../lib/anon'
 import type { Stage } from '../lib/types'
 
@@ -14,15 +14,15 @@ const ERR: Record<SubmitError, string> = {
 
 /** Anket durağı — aynı durakta birden fazla anket sırayla açılabilir. */
 export default function PollStage({ stage, presenter = false }: { stage: Stage; presenter?: boolean }) {
-  const { session } = useAuth()
-  const sb = getSupabase(session)
+  const { member } = useAuth()
+  const sb = supabase
   const [polls, setPolls] = useState<Poll[]>([])
   const [responses, setResponses] = useState<Record<string, number[]>>({})
   const [answered, setAnswered] = useState<Record<string, boolean>>({})
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!session) return
+    if (!member) return
     let cancelled = false
 
     async function load() {
@@ -63,7 +63,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
       sb.removeChannel(channel)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, stage.id])
+  }, [member, stage.id])
 
   async function answer(poll: Poll, choice: number) {
     setError(null)

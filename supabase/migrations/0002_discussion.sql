@@ -10,6 +10,10 @@
 --     transaction, so authorship cannot be recovered by any join.
 --   * Named boards are the explicit exception: `author_member_id` is filled only
 --     when the stage config says identity = 'named'.
+--
+-- Every policy here also requires `auth_member_id() is not null`: anonymous
+-- sign-in (see 0001) gives any visitor the `authenticated` role, so that role
+-- by itself proves nothing.
 
 -- ---------- cards: boards, lean coffee topics, suggestions ----------
 
@@ -225,7 +229,8 @@ grant delete on public.cards to authenticated;
 
 create policy cards_select on public.cards
   for select to authenticated using (
-    exists (
+    auth_member_id() is not null
+    and exists (
       select 1 from stages s
       where s.id = cards.stage_id
         and (
@@ -246,7 +251,8 @@ grant select on public.votes to authenticated;
 
 create policy votes_select on public.votes
   for select to authenticated using (
-    exists (
+    auth_member_id() is not null
+    and exists (
       select 1 from stages s
       where s.id = votes.stage_id
         and (s.state in ('revealed', 'closed')
@@ -263,7 +269,7 @@ grant insert (meeting_id, source_card_id, body, owner_member_id),
   on public.actions to authenticated;
 
 create policy actions_select on public.actions
-  for select to authenticated using (true);
+  for select to authenticated using (auth_member_id() is not null);
 create policy actions_insert_host on public.actions
   for insert to authenticated with check (auth_is_host());
 create policy actions_update_host on public.actions
@@ -279,7 +285,9 @@ grant insert (stage_id, meeting_id, question, kind, options, reveal, state),
   on public.polls to authenticated;
 
 create policy polls_select on public.polls
-  for select to authenticated using (state <> 'draft' or auth_is_host());
+  for select to authenticated using (
+    auth_member_id() is not null and (state <> 'draft' or auth_is_host())
+  );
 create policy polls_insert_host on public.polls
   for insert to authenticated with check (auth_is_host());
 create policy polls_update_host on public.polls
@@ -294,7 +302,8 @@ grant select on public.poll_responses to authenticated;
 
 create policy poll_responses_select on public.poll_responses
   for select to authenticated using (
-    exists (
+    auth_member_id() is not null
+    and exists (
       select 1 from polls p
       where p.id = poll_responses.poll_id
         and (p.state in ('revealed', 'closed') or p.reveal = 'live' or auth_is_host())

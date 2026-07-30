@@ -1,36 +1,21 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { Session } from './types'
+import { createClient } from '@supabase/supabase-js'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
-export const SUPABASE_URL = url
-export const FUNCTIONS_URL = url ? `${url}/functions/v1` : ''
-
 /** False until VITE_SUPABASE_* are wired up (fresh deploy, missing .env.local). */
 export const IS_CONFIGURED = Boolean(url && anonKey)
 
-let client: SupabaseClient | null = null
-let currentToken: string | null = null
-
 /**
- * Single shared client. We do NOT use supabase-auth (login is our own
- * 6-digit-code edge function); instead every request carries the custom JWT.
+ * One client for the whole app. Supabase owns the session: anonymous sign-in
+ * provides the token, supabase-js persists and refreshes it, and Realtime picks
+ * up auth changes on its own. Identity beyond "some anonymous user" comes from
+ * member_links, resolved server-side by the RLS helpers (see migration 0001).
  */
-export function getSupabase(session: Session | null): SupabaseClient {
-  const token = session?.token ?? null
-  if (client && token === currentToken) return client
-  currentToken = token
-  client = createClient(url, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: token ? { headers: { Authorization: `Bearer ${token}` } } : {},
-  })
-  if (token) client.realtime.setAuth(token)
-  return client
-}
-
-export function resetSupabase() {
-  client?.removeAllChannels()
-  client = null
-  currentToken = null
-}
+export const supabase = createClient(url || 'http://localhost', anonKey || 'missing', {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    storageKey: 'retrobus.auth',
+  },
+})

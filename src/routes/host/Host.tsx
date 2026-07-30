@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
-import { getSupabase } from '../../lib/supabase'
+import { supabase } from '../../lib/supabase'
 import { useMeeting } from '../../lib/useMeeting'
 import { S } from '../../lib/strings'
 import type { Stage, StageKind } from '../../lib/types'
@@ -27,11 +27,11 @@ const ADDABLE_KINDS: StageKind[] = [
 
 /** Şoför konsolu — rota, durak kontrolleri, zamanlayıcı. */
 export default function Host() {
-  const { session, logout } = useAuth()
+  const { logout } = useAuth()
   const { meeting, stages, activeStage, loading } = useMeeting()
   const [newTitle, setNewTitle] = useState('')
   const [adding, setAdding] = useState(false)
-  const sb = getSupabase(session)
+  const sb = supabase
 
   async function createMeeting() {
     if (!newTitle.trim()) return

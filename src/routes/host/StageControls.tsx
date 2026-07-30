@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../lib/auth'
-import { getSupabase } from '../../lib/supabase'
+import { supabase } from '../../lib/supabase'
 import type { Poll } from '../../lib/anon'
 import type { Stage, StageConfig } from '../../lib/types'
 
@@ -10,8 +10,7 @@ import type { Stage, StageConfig } from '../../lib/types'
  * yazıldıktan sonra kimliği değiştirmek geçmişe dönük etki etmez.
  */
 export default function StageControls({ stage }: { stage: Stage }) {
-  const { session } = useAuth()
-  const sb = getSupabase(session)
+  const sb = supabase
   const [open, setOpen] = useState(false)
 
   async function patchConfig(patch: Partial<StageConfig>) {
@@ -105,8 +104,8 @@ export default function StageControls({ stage }: { stage: Stage }) {
 
 /** Hızlı anket — konuşma sırasında 15 saniyede bir anket açmak için. */
 function PollComposer({ stage }: { stage: Stage }) {
-  const { session } = useAuth()
-  const sb = getSupabase(session)
+  const { member } = useAuth()
+  const sb = supabase
   const [question, setQuestion] = useState('')
   const [kind, setKind] = useState<'single' | 'multi' | 'scale5' | 'scale10'>('single')
   const [optionsText, setOptionsText] = useState('Evet\nHayır')
@@ -115,7 +114,7 @@ function PollComposer({ stage }: { stage: Stage }) {
   const [polls, setPolls] = useState<Poll[]>([])
 
   useEffect(() => {
-    if (!session) return
+    if (!member) return
     let cancelled = false
     async function load() {
       const { data } = await sb
@@ -135,7 +134,7 @@ function PollComposer({ stage }: { stage: Stage }) {
       sb.removeChannel(channel)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session, stage.id])
+  }, [member, stage.id])
 
   async function setPollState(id: string, state: Poll['state']) {
     await sb.from('polls').update({ state }).eq('id', id)

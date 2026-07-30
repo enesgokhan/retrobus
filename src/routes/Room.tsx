@@ -6,8 +6,8 @@ import StageView from '../components/StageView'
 
 /** Yolcu görünümü — şoför nereye sürerse ekran oraya gider. */
 export default function Room() {
-  const { session, logout } = useAuth()
-  const { meeting, activeStage, loading } = useMeeting()
+  const { member, logout } = useAuth()
+  const { activeStage, loading } = useMeeting()
 
   return (
     <main className="min-h-dvh flex flex-col">
@@ -16,8 +16,8 @@ export default function Room() {
           <span aria-hidden>🚌</span> {S.appName}
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <span className="font-semibold text-ink-soft">{session?.member.display_name}</span>
-          {session?.member.is_host && (
+          <span className="font-semibold text-ink-soft">{member?.display_name}</span>
+          {member?.is_host && (
             <Link className="font-bold text-coral" to="/host">
               {S.hostConsole}
             </Link>
@@ -39,7 +39,7 @@ export default function Room() {
               🚏
             </div>
             <h2 className="text-2xl font-extrabold mb-1">{S.waitingTitle}</h2>
-            <p className="text-ink-soft">{meeting ? S.waitingBody : S.waitingBody}</p>
+            <p className="text-ink-soft">{S.waitingBody}</p>
           </div>
         )}
       </section>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from './auth'
-import { getSupabase } from './supabase'
+import { supabase } from './supabase'
 import { fetchCards, fetchDotCounts, fetchMyUsage, type Card } from './anon'
 
 export interface StageData {
@@ -13,11 +13,11 @@ export interface StageData {
 
 /**
  * Live cards + dot tallies for a stage, plus the caller's own ledger usage.
- * Re-fetches on any realtime change to cards/votes (small data, 10 people —
- * a refetch is simpler and less bug-prone than patching local state).
+ * Re-fetches on any realtime change to cards/votes (small data, 10 people — a
+ * refetch is simpler and less bug-prone than patching local state).
  */
 export function useStageData(stageId: string | null): StageData {
-  const { session } = useAuth()
+  const { member } = useAuth()
   const [cards, setCards] = useState<Card[]>([])
   const [dots, setDots] = useState<Record<string, number>>({})
   const [myCards, setMyCards] = useState(0)
@@ -27,20 +27,19 @@ export function useStageData(stageId: string | null): StageData {
   const reload = useCallback(() => setTick((t) => t + 1), [])
 
   useEffect(() => {
-    if (!session || !stageId) {
+    if (!member || !stageId) {
       setCards([])
       setDots({})
       return
     }
-    const sb = getSupabase(session)
     let cancelled = false
 
     async function load() {
       const [c, d, uc, ud] = await Promise.all([
-        fetchCards(sb, stageId!),
-        fetchDotCounts(sb, stageId!),
-        fetchMyUsage(sb, stageId!, 'card'),
-        fetchMyUsage(sb, stageId!, 'dot'),
+        fetchCards(supabase, stageId!),
+        fetchDotCounts(supabase, stageId!),
+        fetchMyUsage(supabase, stageId!, 'card'),
+        fetchMyUsage(supabase, stageId!, 'dot'),
       ])
       if (cancelled) return
       setCards(c)
@@ -50,7 +49,7 @@ export function useStageData(stageId: string | null): StageData {
     }
     load()
 
-    const channel = sb
+    const channel = supabase
       .channel(`stage-${stageId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cards' }, () => load())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, () => load())
@@ -58,9 +57,9 @@ export function useStageData(stageId: string | null): StageData {
 
     return () => {
       cancelled = true
-      sb.removeChannel(channel)
+      supabase.removeChannel(channel)
     }
-  }, [session, stageId, tick])
+  }, [member, stageId, tick])
 
   return { cards, dots, myCards, myDots, reload }
 }

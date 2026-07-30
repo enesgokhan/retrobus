@@ -1,23 +1,38 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from './lib/auth'
+import { S } from './lib/strings'
 import Login from './routes/Login'
 import Room from './routes/Room'
 import Sunum from './routes/Sunum'
 import Host from './routes/host/Host'
 import Members from './routes/host/Members'
 
-function RequireAuth({ children }: { children: ReactNode }) {
-  const { session } = useAuth()
-  const location = useLocation()
-  if (!session) return <Navigate to="/" replace state={{ from: location }} />
+function Splash() {
+  return (
+    <main className="min-h-dvh grid place-items-center">
+      <div className="text-center">
+        <div className="text-6xl mb-3 animate-bounce" aria-hidden>
+          🚌
+        </div>
+        <p className="text-ink-soft font-semibold">{S.loading}</p>
+      </div>
+    </main>
+  )
+}
+
+function RequireMember({ children }: { children: ReactNode }) {
+  const { member, loading } = useAuth()
+  if (loading) return <Splash />
+  if (!member) return <Navigate to="/" replace />
   return children
 }
 
 function RequireHost({ children }: { children: ReactNode }) {
-  const { session } = useAuth()
-  if (!session) return <Navigate to="/" replace />
-  if (!session.member.is_host) return <Navigate to="/oda" replace />
+  const { member, loading } = useAuth()
+  if (loading) return <Splash />
+  if (!member) return <Navigate to="/" replace />
+  if (!member.is_host) return <Navigate to="/oda" replace />
   return children
 }
 
@@ -28,17 +43,17 @@ export default function App() {
       <Route
         path="/oda"
         element={
-          <RequireAuth>
+          <RequireMember>
             <Room />
-          </RequireAuth>
+          </RequireMember>
         }
       />
       <Route
         path="/sunum"
         element={
-          <RequireAuth>
+          <RequireMember>
             <Sunum />
-          </RequireAuth>
+          </RequireMember>
         }
       />
       <Route

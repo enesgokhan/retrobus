@@ -6,14 +6,14 @@ import { S } from '../lib/strings'
 const LAST_NAME_KEY = 'retrobus.lastName'
 
 export default function Login() {
-  const { session, login } = useAuth()
+  const { member, login } = useAuth()
   const navigate = useNavigate()
   const [name, setName] = useState(() => localStorage.getItem(LAST_NAME_KEY) ?? '')
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (session) return <Navigate to={session.member.is_host ? '/host' : '/oda'} replace />
+  if (member) return <Navigate to={member.is_host ? '/host' : '/oda'} replace />
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
