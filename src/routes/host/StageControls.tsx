@@ -131,6 +131,12 @@ export default function StageControls({
 
           {stage.kind === 'poll' && <PollComposer stage={stage} />}
           {stage.kind === 'quiz' && <QuizAdmin stage={stage} />}
+          {!NEEDS_SETUP_PANEL.has(stage.kind) && (
+            <p className="text-xs font-semibold text-ink-soft">
+              Bu durağın kurulumu <strong>Oda</strong> ekranında, durağın kendi üzerinde yapılır —
+              tur eklemek, öğe yazmak, takım kurmak için oraya geç.
+            </p>
+          )}
         </div>
       )}
     </section>

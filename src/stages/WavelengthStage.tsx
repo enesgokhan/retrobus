@@ -347,7 +347,9 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     }
     if (round.phase === 'clue') {
       return amPsychic && !presenter
-        ? { phase: 'Sen medyumsun', instruction: `Hedef ${target}. Tek kelimeyle anlat.`, waiting: false }
+        ? target == null
+          ? { phase: 'Sen medyumsun', instruction: 'Hedef yükleniyor…', waiting: true }
+          : { phase: 'Sen medyumsun', instruction: `Hedef ${target}. Tek kelimeyle anlat.`, waiting: false }
         : { phase: `${teamLabel(round.active_team)} turu`, instruction: `${nameOf(round.psychic_member_id)} ipucu düşünüyor…`, waiting: true }
     }
     if (round.phase === 'guess') {

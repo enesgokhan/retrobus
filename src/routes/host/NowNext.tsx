@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { S } from '../../lib/strings'
@@ -32,6 +33,7 @@ export interface NowNextProps {
  * sunulur; geri kalan her şey ikincil.
  */
 export default function NowNext(p: NowNextProps) {
+  const navigate = useNavigate()
   const { meeting, stages, activeStage, todo } = p
   const sorted = [...stages].sort((a, b) => a.order_index - b.order_index)
   const idx = activeStage ? sorted.findIndex((s) => s.id === activeStage.id) : -1
@@ -48,7 +50,18 @@ export default function NowNext(p: NowNextProps) {
     if (blocked) {
       // Actionable, not a dead end: telling the host what is missing and then
       // making them go find it themselves is the worst of both worlds.
-      return { label: `⚠️ ${blocked} — düzelt`, run: p.onFixSetup, tone: 'warn' as const }
+      //
+      // Only quiz and poll are set up in the console panel. A Fibbage round, a
+      // rank list, a Codenames board and the secret missions are all built on
+      // the stage screen itself — so pressing "düzelt" for those used to open a
+      // settings panel with nothing relevant in it, and the console has no link
+      // to where the setup actually lives. Send the host there instead.
+      const inPanel = activeStage.kind === 'quiz' || activeStage.kind === 'poll'
+      return {
+        label: `⚠️ ${blocked} — ${inPanel ? 'düzelt' : 'oda ekranında kur'}`,
+        run: inPanel ? p.onFixSetup : () => navigate('/oda'),
+        tone: 'warn' as const,
+      }
     }
     if (activeStage.state === 'pending') {
       return { label: '▶ Durağı aç', run: () => p.onSetState(activeStage, 'open'), tone: 'go' as const }
