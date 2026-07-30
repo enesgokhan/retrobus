@@ -7,6 +7,7 @@ import Room from './routes/Room'
 import Sunum from './routes/Sunum'
 import Host from './routes/host/Host'
 import Members from './routes/host/Members'
+import Profil from './routes/Profil'
 
 function Splash() {
   return (
@@ -45,6 +46,14 @@ export default function App() {
         element={
           <RequireMember>
             <Room />
+          </RequireMember>
+        }
+      />
+      <Route
+        path="/profil"
+        element={
+          <RequireMember>
+            <Profil />
           </RequireMember>
         }
       />

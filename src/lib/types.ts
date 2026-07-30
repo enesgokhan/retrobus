@@ -22,6 +22,7 @@ export interface Member {
   id: string
   display_name: string
   is_host: boolean
+  avatar?: string | null
 }
 
 export interface Meeting {

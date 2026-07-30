@@ -3,6 +3,10 @@ import { S } from '../lib/strings'
 import TimerStrip from './TimerStrip'
 import BoardStage from '../stages/BoardStage'
 import PollStage from '../stages/PollStage'
+import WordCloudStage from '../stages/WordCloudStage'
+import HealthCheckStage from '../stages/HealthCheckStage'
+import TwoTruthsStage from '../stages/TwoTruthsStage'
+import FeedbackWallStage from '../stages/FeedbackWallStage'
 
 const KIND_EMOJI: Record<string, string> = {
   wordcloud: '☁️',
@@ -20,7 +24,10 @@ const KIND_EMOJI: Record<string, string> = {
   break: '🧃',
 }
 
-/** Card-and-dot-vote kinds all share BoardStage. */
+/**
+ * Card-and-dot-vote kinds all share BoardStage. AMA rides on it too: anonymous
+ * questions plus dot voting is exactly what surfaces the ones worth answering.
+ */
 const BOARD_KINDS = new Set(['board', 'lean_coffee', 'suggestions'])
 
 /**
@@ -40,6 +47,14 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
     body = <BoardStage stage={stage} presenter={presenter} />
   } else if (stage.kind === 'poll') {
     body = <PollStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'wordcloud') {
+    body = <WordCloudStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'health_check') {
+    body = <HealthCheckStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'two_truths') {
+    body = <TwoTruthsStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'feedback_wall') {
+    body = <FeedbackWallStage stage={stage} presenter={presenter} />
   }
 
   return (

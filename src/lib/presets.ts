@@ -114,6 +114,83 @@ export const STAGE_PRESETS: StagePreset[] = [
       prompt: 'Gelecek dönem neye odaklanalım? (anonim — sonra oylayacağız)',
     },
   },
+
+  // --- AMA: anonim soru + oylama, en iyi sorular yukarı çıkar ---
+  {
+    key: 'ama',
+    label: 'Ne Sorsan Söylerim (AMA)',
+    kind: 'suggestions',
+    title: 'Ne sorsan söylerim',
+    config: {
+      identity: 'anon',
+      reveal: 'batch',
+      dots: 3,
+      timer_s: 300,
+      prompt: 'Merak ettiğin her şeyi sor — anonim. En çok oy alanları canlı cevaplayacağız.',
+    },
+  },
+
+  // --- buz kırıcılar ---
+  {
+    key: 'wordcloud',
+    label: 'Kelime Bulutu',
+    kind: 'wordcloud',
+    title: 'Geçen dönem tek kelimeyle',
+    config: {
+      identity: 'anon',
+      reveal: 'live',
+      timer_s: 120,
+      maxWords: 3,
+      prompt: 'Geçen dönemi anlatan tek kelime yaz. Aynı kelimeler büyür.',
+    },
+  },
+  {
+    key: 'two_truths',
+    label: 'İki Doğru Bir Yalan',
+    kind: 'two_truths',
+    title: 'İki Doğru Bir Yalan',
+    config: {
+      timer_s: 240,
+      prompt: 'Üç cümle yaz, biri yalan olsun. Doğru tahmin +2, kandırdığın her kişi +1.',
+    },
+  },
+  {
+    key: 'health_check',
+    label: 'Takım Nabzı',
+    kind: 'health_check',
+    title: 'Takım Nabzı',
+    config: {
+      reveal: 'batch',
+      timer_s: 300,
+      prompt: 'Her boyut için kırmızı / sarı / yeşil seç. Tamamen anonim.',
+    },
+  },
+
+  // --- geri bildirim ---
+  {
+    key: 'feedback_wall',
+    label: 'Geri Bildirim Duvarı',
+    kind: 'feedback_wall',
+    title: 'Geri Bildirim Duvarı',
+    config: {
+      reveal: 'batch',
+      timer_s: 900,
+      prompt:
+        'Takım arkadaşların için güçlü yön ve gelişim alanı yaz. Anonim — hepsi aynı anda açılacak.',
+    },
+  },
+  {
+    key: 'kudos_wall',
+    label: 'Teşekkür Duvarı',
+    kind: 'feedback_wall',
+    title: 'Teşekkür Duvarı',
+    config: {
+      mode: 'kudos',
+      reveal: 'batch',
+      timer_s: 420,
+      prompt: 'Kime, ne için teşekkür etmek istersin? Anonim, hepsi birden açılacak.',
+    },
+  },
 ]
 
 export function presetsByKind(kind: StageKind): StagePreset[] {

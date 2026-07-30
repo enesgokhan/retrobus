@@ -37,7 +37,7 @@ async function fetchCurrentMember(): Promise<Member | null> {
   const { data, error } = await supabase.rpc('current_member')
   if (error || !data?.length) return null
   const row = data[0] as Member
-  return { id: row.id, display_name: row.display_name, is_host: row.is_host }
+  return { id: row.id, display_name: row.display_name, is_host: row.is_host, avatar: row.avatar ?? null }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

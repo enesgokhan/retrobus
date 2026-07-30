@@ -133,6 +133,9 @@ export default function Host() {
           <Link to="/host/uyeler" className="text-coral">
             {S.members}
           </Link>
+          <Link to="/profil" className="text-ink-soft">
+            Profil
+          </Link>
           <Link to="/oda" className="text-ink-soft">
             Oda
           </Link>

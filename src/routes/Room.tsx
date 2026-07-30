@@ -16,7 +16,10 @@ export default function Room() {
           <span aria-hidden>🚌</span> {S.appName}
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <span className="font-semibold text-ink-soft">{member?.display_name}</span>
+          <Link to="/profil" className="font-semibold text-ink-soft hover:text-ink flex items-center gap-1.5">
+            <span aria-hidden>{member?.avatar || '🙂'}</span>
+            {member?.display_name}
+          </Link>
           {member?.is_host && (
             <Link className="font-bold text-coral" to="/host">
               {S.hostConsole}
