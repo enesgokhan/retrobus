@@ -53,7 +53,7 @@ export default function LeaderboardStage({ stage, presenter = false }: { stage: 
   const visibleFromIndex = Math.max(0, ordered.length - shown)
 
   return (
-    <div className="w-full max-w-xl flex flex-col gap-2">
+    <div className={['w-full flex flex-col gap-2', presenter ? 'max-w-4xl gap-3' : 'max-w-2xl'].join(' ')}>
       {ordered.map((r, i) => {
         const place = i + 1
         const visible = i >= visibleFromIndex
@@ -63,21 +63,21 @@ export default function LeaderboardStage({ stage, presenter = false }: { stage: 
             key={r.member_id}
             className={[
               'flex items-center gap-3 rounded-2xl border-2 px-4 transition-all duration-500',
-              presenter ? 'py-5' : 'py-3',
+              presenter ? 'py-7' : 'py-3',
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3',
               isWinner ? 'bg-amber-soft border-amber scale-105' : 'bg-card border-line',
             ].join(' ')}
           >
-            <span className={presenter ? 'text-4xl w-14' : 'text-2xl w-10'} aria-hidden>
+            <span className={presenter ? 'text-6xl w-20' : 'text-2xl w-10'} aria-hidden>
               {PODIUM[i] ?? place}
             </span>
-            <span className={presenter ? 'text-4xl' : 'text-2xl'} aria-hidden>
+            <span className={presenter ? 'text-6xl' : 'text-2xl'} aria-hidden>
               {r.avatar || '🙂'}
             </span>
-            <span className={['flex-1 font-extrabold truncate', presenter ? 'text-3xl' : 'text-lg'].join(' ')}>
+            <span className={['flex-1 font-extrabold truncate', presenter ? 'text-5xl' : 'text-lg'].join(' ')}>
               {r.display_name}
             </span>
-            <span className={['font-extrabold tabular-nums', presenter ? 'text-4xl' : 'text-xl'].join(' ')}>
+            <span className={['font-extrabold tabular-nums', presenter ? 'text-6xl' : 'text-xl'].join(' ')}>
               {r.points}
             </span>
           </div>

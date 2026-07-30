@@ -95,7 +95,11 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
 
   return (
     <div
-      className="stage-world flex-1 flex flex-col items-center gap-5 w-full px-3 py-7 sm:px-6"
+      className={[
+        'stage-world flex-1 flex flex-col items-center gap-5 w-full px-3 py-7 sm:px-6',
+        // a shared screen should sit in the middle of the display, not hug the top
+        presenter ? 'justify-center' : '',
+      ].join(' ')}
       style={themeVars(theme)}
       data-stage-kind={stage.kind}
       data-stage-mood={theme.mood}
@@ -112,7 +116,11 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
             {emoji}
           </div>
           <div className="text-center">
-            <div className="text-sm font-bold uppercase tracking-widest text-ink-soft">{kindLabel}</div>
+            {/* several presets name the stage after its kind, so printing both
+                just repeats the same words twice */}
+            {kindLabel.toLocaleLowerCase('tr') !== stage.title.trim().toLocaleLowerCase('tr') && (
+              <div className="text-sm font-bold uppercase tracking-widest text-ink-soft">{kindLabel}</div>
+            )}
             <h2 className={presenter ? 'text-5xl font-extrabold' : 'stage-title font-extrabold'}>
               {stage.title}
             </h2>
