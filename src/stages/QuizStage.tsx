@@ -45,6 +45,9 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
   const [members, setMembers] = useState<Member[]>([])
   const [guess, setGuess] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // Counted server-side: quiz_answers hides other people's rows until the
+  // question is revealed, so counting what we can read always said 0.
+  const [answeredCount, setAnsweredCount] = useState(0)
   const board = useLeaderboard(stage.meeting_id)
 
   useEffect(() => {
@@ -70,8 +73,14 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
       if (!qIds.length) {
         setAnswers([])
         setKeys({})
+        setAnsweredCount(0)
         return
       }
+      const live = questionList.find((x) => x.state === 'open') ?? questionList.find((x) => x.state !== 'closed')
+      if (live) {
+        const { data: c } = await supabase.rpc('answered_count', { p_kind: 'quiz', p_id: live.id })
+        if (!cancelled) setAnsweredCount((c as number) ?? 0)
+      } else if (!cancelled) setAnsweredCount(0)
       const [{ data: a }, { data: k }] = await Promise.all([
         supabase.from('quiz_answers')
           .select('question_id, member_id, choice_index, number_value, elapsed_ms')
@@ -88,7 +97,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
       setKeys(km)
     }
     load()
-    const channel = liveChannel(`quiz-${stage.id}`, ['quiz_questions', 'quiz_answers'], load)
+    const channel = liveChannel(`quiz-${stage.id}`, ['quiz_questions', 'quiz_answers', 'stages'], load)
     return () => {
       cancelled = true
       supabase.removeChannel(channel)
@@ -163,7 +172,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
       <StageHeader
         {...header}
         presenter={presenter}
-        progress={active ? `${forQ.length}/${members.length} cevapladı` : null}
+        progress={active ? `${answeredCount}/${members.length} cevapladı` : null}
       />
 
       {error && (

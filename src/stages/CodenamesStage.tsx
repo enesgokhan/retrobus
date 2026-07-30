@@ -99,7 +99,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       setMembers((m as Member[]) ?? [])
     }
     load()
-    const channel = liveChannel(`cn-${stage.id}`, ['cn_games', 'cn_players', 'cn_cards'], load)
+    const channel = liveChannel(`cn-${stage.id}`, ['cn_games', 'cn_players', 'cn_cards', 'stages'], load)
     return () => {
       cancelled = true
       supabase.removeChannel(channel)
@@ -115,8 +115,11 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
 
   const me = players.find((p) => p.member_id === member?.id) ?? null
   const amSpymaster = me?.is_spymaster ?? false
-  /** spymaster who has NOT flipped to operative view */
-  const seeingKey = amSpymaster && !asOperative
+  /** spymaster who has NOT flipped to operative view.
+   *  Never on the presenter screen: /sunum is shared to the whole call, and if
+   *  the projecting session happens to be a spymaster's, this paints all 25
+   *  colours — including the assassin — on the wall for both teams. */
+  const seeingKey = amSpymaster && !asOperative && !presenter
   const keyOf = (cardId: string) => keys.find((k) => k.card_id === cardId)?.role ?? null
   const nameOf = (id: string) => members.find((m) => m.id === id)?.display_name ?? '—'
 
@@ -125,6 +128,12 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
     cards.filter((c) => c.revealed && keyOf(c.id) === team).length
   const leftFor = (team: 'red' | 'blue') => totalFor(team) - flippedFor(team)
 
+  /** Host-only escape for a turn that will never come — see cn_host_pass. */
+  async function forcePass() {
+    if (!game) return
+    const { error: e } = await supabase.rpc('cn_host_pass', { p_game_id: game.id })
+    if (e) setError('Sıra geçirilemedi.')
+  }
   async function newGame() {
     const { error: e } = await supabase.from('cn_games').insert({ stage_id: stage.id })
     if (e) setError('Oyun kurulamadı.')
@@ -216,7 +225,17 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
   if (game.phase === 'lobby') {
     const redSm = players.find((p) => p.team === 'red' && p.is_spymaster)
     const blueSm = players.find((p) => p.team === 'blue' && p.is_spymaster)
-    const canDeal = !!redSm && !!blueSm
+    const redOp = players.find((p) => p.team === 'red' && !p.is_spymaster)
+    const blueOp = players.find((p) => p.team === 'blue' && !p.is_spymaster)
+    // Both roles on both teams. A team with a spymaster but no operative
+    // deadlocks the moment its turn arrives: spymasters may not guess and may
+    // not pass, so nobody on that team can legally act.
+    const canDeal = !!redSm && !!blueSm && !!redOp && !!blueOp
+    const missing = !redSm ? 'Kırmızı takıma spymaster lazım'
+      : !blueSm ? 'Mavi takıma spymaster lazım'
+      : !redOp ? 'Kırmızı takıma en az bir operatör lazım'
+      : !blueOp ? 'Mavi takıma en az bir operatör lazım'
+      : null
     return (
       <div className="w-full max-w-4xl flex flex-col gap-4">
         <StageHeader
@@ -277,7 +296,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
           })}
         </div>
         <p className="text-xs font-semibold text-ink-soft text-center">
-          {canDeal ? '✅ İki spymaster hazır.' : '⚠️ Her takımda tam bir spymaster olmalı.'}
+          {canDeal ? '✅ Takımlar hazır — dağıtabilirsin.' : `⚠️ ${missing}.`}
         </p>
         {isHost && !presenter && (
           <button className="btn-coral self-center text-lg" onClick={deal} disabled={!canDeal}>
@@ -479,6 +498,20 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
             </div>
           ) : null}
         </section>
+      )}
+
+      {game.phase === 'playing' && isHost && !presenter && (
+        <div className="flex gap-2 justify-center flex-wrap">
+          {/* The turn can stall for reasons the rules cannot fix: someone's tab
+              died, a spymaster went to make tea. Without a host escape the whole
+              stage deadlocks in front of everyone. */}
+          <button className="btn-ghost text-sm" onClick={forcePass}>
+            ⏭ Sırayı diğer takıma ver
+          </button>
+          <button className="btn-ghost text-sm" onClick={newGame}>
+            ↺ Oyunu baştan kur
+          </button>
+        </div>
       )}
 
       {game.phase === 'done' && isHost && !presenter && (

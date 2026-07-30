@@ -65,5 +65,39 @@ if (missing.length) {
   ok('every subscribed table is in the realtime publication')
 }
 
+// ---------------------------------------------------------------------------
+// Every stage screen must be told when the stage state changes.
+//
+// Most stage policies open their rows the moment stages.state becomes
+// 'revealed'. If the channel is not bound to `stages`, nothing tells the client
+// that moment arrived — the host's screen fills and every passenger keeps
+// staring at an empty one until they reload. That is exactly what happened to
+// the discussion boards, which are the biggest hour of the meeting.
+console.log('\n-- her sahne kanalı `stages`e bağlı mı --')
+{
+  const { readdirSync, readFileSync } = await import('node:fs')
+  const { join, dirname } = await import('node:path')
+  const { fileURLToPath } = await import('node:url')
+  const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', 'src')
+  const files = [
+    ...readdirSync(join(SRC, 'stages')).map((f) => join(SRC, 'stages', f)),
+    join(SRC, 'lib', 'useStageData.ts'),
+  ].filter((f) => /\.(tsx?|ts)$/.test(f))
+
+  for (const f of files) {
+    const body = readFileSync(f, 'utf8')
+    const call = body.match(/liveChannel\(([\s\S]{0,400}?)\)\s*$/m) || body.match(/liveChannel\(([\s\S]{0,400}?)load,?\s*\)/)
+    if (!call) continue
+    const tables = (call[1].match(/\[[^\]]*\]/) || [''])[0]
+    if (!tables) continue
+    const short = f.split('/').slice(-1)[0]
+    if (!tables.includes("'stages'")) {
+      fail(`${short}: liveChannel binds ${tables} but not 'stages' — it will not refetch at reveal`)
+    } else {
+      ok(`${short} listens for stage state changes`)
+    }
+  }
+}
+
 console.log(failed ? `\n${failed} CHECK(S) FAILED` : '\nALL CHECKS PASSED')
 process.exit(failed ? 1 : 0)

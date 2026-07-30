@@ -38,9 +38,15 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
   const [rounds, setRounds] = useState<Round[]>([])
   const [lies, setLies] = useState<Lie[]>([])
   const [picks, setPicks] = useState<Pick[]>([])
-  // truth per round — the key table only yields rows once the round is revealed
-  // (or to the host, who wrote it), so an empty map here is the normal state
-  const [truths, setTruths] = useState<Record<string, string>>({})
+  // Options come from fib_options: the lies AND the truth, in one list, with
+  // opaque ids. Nothing in the payload says which is which until the reveal.
+  //
+  // The obvious alternative — letting the client read fibbage_keys during the
+  // guess phase — puts the answer in a JSON field literally called "truth", so
+  // anyone with devtools open wins every round. And gating that key on the host
+  // alone (what 0016 did) meant the truth was on NOBODY's list but the host's,
+  // which made the game unwinnable for the room.
+  const [options, setOptions] = useState<{ opt_id: string; body: string; is_truth: boolean | null }[]>([])
   const [authors, setAuthors] = useState<Record<string, string>>({})
   const [members, setMembers] = useState<Member[]>([])
   const [draft, setDraft] = useState('')
@@ -72,22 +78,25 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
       if (!roundIds.length) {
         setLies([])
         setPicks([])
-        setTruths({})
+        setOptions([])
         return
       }
-      const [{ data: l }, { data: k }, { data: p }] = await Promise.all([
+      const [{ data: l }, { data: p }] = await Promise.all([
         supabase.from('fibbage_lies').select('id, round_id, body, sort_seed')
           .in('round_id', roundIds).order('sort_seed'),
-        supabase.from('fibbage_keys').select('round_id, truth').in('round_id', roundIds),
         supabase.from('fibbage_picks').select('round_id, picker_member_id, lie_id, picked_truth')
           .in('round_id', roundIds),
       ])
       if (cancelled) return
       setLies((l as Lie[]) ?? [])
       setPicks((p as Pick[]) ?? [])
-      setTruths(Object.fromEntries(
-        ((k as { round_id: string; truth: string }[]) ?? []).map((x) => [x.round_id, x.truth]),
-      ))
+      // the option list only exists once writing has finished
+      const cur = roundList.find((x) => x.id === ((stage.config.current_round_id as string) ?? '')) ??
+        roundList.find((x) => x.phase !== 'revealed') ?? null
+      if (cur && cur.phase !== 'lie') {
+        const { data: o } = await supabase.rpc('fib_options', { p_round_id: cur.id })
+        if (!cancelled) setOptions((o as typeof options) ?? [])
+      } else if (!cancelled) setOptions([])
     }
     load()
     const channel = liveChannel(
@@ -142,15 +151,23 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
     }
   }
 
-  async function pick(lieId: string | null, truth: boolean) {
+  // We send back the opaque option id and let the database decide whether it was
+  // the truth — the client is not told, so it cannot be asked.
+  async function pick(optId: string) {
     if (!round) return
     setError(null)
-    const { error: e } = await supabase.rpc('pick_fib', {
+    const { error: e } = await supabase.rpc('pick_fib_option', {
       p_round_id: round.id,
-      p_lie_id: lieId,
-      p_truth: truth,
+      p_opt_id: optId,
     })
     if (e) setError(e.message.includes('own') ? 'Kendi yalanını seçemezsin.' : 'Seçilemedi.')
+  }
+
+  /** Stable pseudo-random order from an id, so the truth never sits in a tell-tale place. */
+  function seedOf(id: string): number {
+    let h = 0
+    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 100000
+    return h / 100000
   }
 
   async function setPhase(phase: Round['phase']) {
@@ -340,28 +357,24 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
 
         {round.phase !== 'lie' && (
           <div className="flex flex-col gap-2">
-            {/* truth is mixed in among the lies */}
-            {[
-              ...roundLies.map((l) => ({ kind: 'lie' as const, id: l.id, body: l.body, seed: l.sort_seed })),
-              ...(truths[round.id]
-                ? [{ kind: 'truth' as const, id: 'truth', body: truths[round.id], seed: 0.5 }]
-                : []),
-            ]
+            {/* the truth is in here, indistinguishable until the reveal */}
+            {options
+              .map((o) => ({ ...o, seed: seedOf(o.opt_id) }))
               .sort((a, b) => a.seed - b.seed)
               .map((opt) => {
-                const isTruth = opt.kind === 'truth'
                 const revealed = round.phase === 'revealed'
-                const author = opt.kind === 'lie' ? authors[opt.id] : null
+                const isTruth = opt.is_truth === true
+                const author = authors[opt.opt_id] ?? null
                 const isMine = author === member?.id
                 const takers = roundPicks.filter((p) =>
-                  isTruth ? p.picked_truth : p.lie_id === opt.id,
+                  isTruth ? p.picked_truth : p.lie_id === opt.opt_id,
                 )
-                const picked = isTruth ? myPick?.picked_truth : myPick?.lie_id === opt.id
+                const picked = isTruth ? myPick?.picked_truth : myPick?.lie_id === opt.opt_id
                 const canPick = round.phase === 'guess' && !myPick && !isMine && !presenter
 
                 return (
                   <button
-                    key={opt.id}
+                    key={opt.opt_id}
                     className={[
                       'rounded-2xl border-2 px-4 py-3 text-left font-bold transition',
                       revealed
@@ -374,7 +387,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                       canPick ? 'hover:border-coral cursor-pointer' : 'cursor-default',
                       isMine && !revealed ? 'opacity-60' : '',
                     ].join(' ')}
-                    onClick={() => canPick && pick(isTruth ? null : opt.id, isTruth)}
+                    onClick={() => canPick && pick(opt.opt_id)}
                     disabled={!canPick}
                   >
                     <div className="flex items-start justify-between gap-3">

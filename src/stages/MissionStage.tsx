@@ -47,7 +47,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
       setMembers((mem as Member[]) ?? [])
     }
     load()
-    const channel = liveChannel(`missions-${stage.meeting_id}`, ['missions'], load)
+    const channel = liveChannel(`missions-${stage.meeting_id}`, ['missions', 'stages'], load)
     return () => {
       cancelled = true
       supabase.removeChannel(channel)
@@ -90,7 +90,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
         phase={anyRevealed ? 'Görevler açıldı' : 'Gizli görev'}
         instruction={
           anyRevealed ? 'Kim başardı, kim yakalandı?'
-          : mine ? 'Görevini kimseye söyleme. Fırsat kolla.'
+          : mine && !presenter ? 'Görevini kimseye söyleme. Fırsat kolla.'
           : isHost ? 'Görevleri dağıt — toplantının başında yap.'
           : 'Sana görev atanmamış.'
         }
@@ -101,7 +101,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
 
       {!anyRevealed ? (
         <>
-          {mine ? (
+          {mine && !presenter ? (
             <section className="card flex flex-col gap-2 border-grape bg-grape-soft">
               <span className="text-xs font-bold uppercase tracking-widest text-grape">
                 🕶️ Gizli görevin — kimseye söyleme

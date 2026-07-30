@@ -54,6 +54,8 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
   const isHost = member?.is_host ?? false
   const [rounds, setRounds] = useState<Round[]>([])
   const [guesses, setGuesses] = useState<Guess[]>([])
+  const [dialCount, setDialCount] = useState(0)
+  const [betCount, setBetCount] = useState(0)
   const [bets, setBets] = useState<Bet[]>([])
   const [target, setTarget] = useState<number | null>(null)
   const [members, setMembers] = useState<Member[]>([])
@@ -85,16 +87,25 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
         setGuesses([]); setBets([])
         return
       }
-      const [{ data: g }, { data: b }] = await Promise.all([
+      const cur = list.find((x) => x.phase !== 'revealed') ?? list[list.length - 1] ?? null
+      const [{ data: g }, { data: b }, { data: dc }, { data: bc }] = await Promise.all([
         supabase.from('wave_guesses').select('round_id, member_id, value').in('round_id', ids),
         supabase.from('wave_bets').select('round_id, member_id, side').in('round_id', ids),
+        // RLS hides other people's dials and bets until the reveal — rightly, or
+        // the last person to move would just copy. But that left the host's
+        // counters reading 0/8 all meeting with no way to know when to move on.
+        // These return a count and nothing else.
+        cur ? supabase.rpc('answered_count', { p_kind: 'wave_guess', p_id: cur.id }) : { data: 0 },
+        cur ? supabase.rpc('answered_count', { p_kind: 'wave_bet', p_id: cur.id }) : { data: 0 },
       ])
       if (cancelled) return
       setGuesses((g as Guess[]) ?? [])
       setBets((b as Bet[]) ?? [])
+      setDialCount((dc as number) ?? 0)
+      setBetCount((bc as number) ?? 0)
     }
     load()
-    const channel = liveChannel(`wave-${stage.id}`, ['wave_rounds', 'wave_guesses', 'wave_bets'], load)
+    const channel = liveChannel(`wave-${stage.id}`, ['wave_rounds', 'wave_guesses', 'wave_bets', 'stages'], load)
     return () => {
       cancelled = true
       supabase.removeChannel(channel)
@@ -234,16 +245,25 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
       <h4 className="font-bold text-sm">Şoför</h4>
       {round && round.phase === 'guess' && (
         <button className="btn-coral text-sm self-start" onClick={closeDial}>
-          🔒 Kadranı kilitle ({roundGuesses.length}/{activeTeamSize}) → bahis
+          🔒 Kadranı kilitle ({dialCount}/{activeTeamSize}) → bahis
         </button>
       )}
       {round && round.phase === 'bet' && (
         <button className="btn-coral text-sm self-start" onClick={reveal}>
-          🎯 Hedefi aç ve puanla ({roundBets.length}/{otherTeamSize} bahis)
+          🎯 Hedefi aç ve puanla ({betCount}/{otherTeamSize} bahis)
         </button>
       )}
       {round && round.phase === 'clue' && (
-        <p className="text-xs text-ink-soft">{nameOf(round.psychic_member_id)} ipucu veriyor…</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-xs text-ink-soft flex-1">{nameOf(round.psychic_member_id)} ipucu veriyor…</p>
+          {/* If the psychic cannot or will not act, the host must still be able
+              to move the meeting on. Without this the stage deadlocks: nothing
+              but give_wave_clue leaves this phase, and only the psychic may
+              call it. */}
+          <button className="btn-ghost text-xs" onClick={reveal}>
+            Turu bitir ve geç
+          </button>
+        </div>
       )}
 
       {!Object.keys(teams).length ? (
@@ -326,7 +346,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
       }
     }
     if (round.phase === 'clue') {
-      return amPsychic
+      return amPsychic && !presenter
         ? { phase: 'Sen medyumsun', instruction: `Hedef ${target}. Tek kelimeyle anlat.`, waiting: false }
         : { phase: `${teamLabel(round.active_team)} turu`, instruction: `${nameOf(round.psychic_member_id)} ipucu düşünüyor…`, waiting: true }
     }
@@ -381,8 +401,10 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
 
         {/* spektrum */}
         <div className="relative h-16 rounded-2xl overflow-hidden border-2 border-line bg-gradient-to-r from-coral via-amber to-sky">
-          {/* hedef bantları — açılışta görünür, medyum her zaman görür */}
-          {target != null && (
+          {/* Target bands: the psychic sees them, and so does everyone after the
+              reveal — but NEVER on the shared screen, which would hand the answer
+              to the guessing team. */}
+          {target != null && (!presenter || revealed) && (
             <>
               {[...BANDS].reverse().map((b) => (
                 <div

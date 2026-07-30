@@ -133,6 +133,15 @@ export default function Host() {
   }
 
   async function setState(stage: Stage, state: Stage['state']) {
+    // Rank These is scored by a function, not by the state column. Setting
+    // state='revealed' directly opened the results with nobody scored — and
+    // RankStage only renders its own scoring button while NOT revealed, so the
+    // points became permanently unreachable. reveal_ranking scores and sets the
+    // state itself, so the console's big button must go through it.
+    if (state === 'revealed' && stage.kind === 'rank') {
+      const { error } = await sb.rpc('reveal_ranking', { p_stage_id: stage.id })
+      if (!error) return
+    }
     await sb.from('stages').update({ state }).eq('id', stage.id)
   }
 

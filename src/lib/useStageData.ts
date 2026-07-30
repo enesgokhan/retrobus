@@ -49,7 +49,12 @@ export function useStageData(stageId: string | null): StageData {
       setMyDots(ud)
     }
     load()
-    const channel = liveChannel(`stage-${stageId}`, ['cards', 'votes'], load)
+    // `stages` is bound deliberately. cards_select hides every card while the
+    // stage is 'open' under the default batch reveal, and opens them the instant
+    // stages.state flips. Without a binding on `stages` nothing tells the client
+    // that moment arrived: the host's screen fills and every passenger keeps
+    // staring at an empty board until they happen to reload.
+    const channel = liveChannel(`stage-${stageId}`, ['cards', 'votes', 'stages'], load)
 
     return () => {
       cancelled = true

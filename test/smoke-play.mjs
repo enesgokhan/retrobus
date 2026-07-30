@@ -129,14 +129,25 @@ console.log('\n=== CODENAMES: play to a winner ===')
 
   const spyOf = (t) => (t === 'red' ? p1 : p3)
   const opOf = (t) => (t === 'red' ? p2 : host)
-  const keys = (await p1.evaluate(() => null), (await api.from('cn_keys').select('card_id, role').eq('game_id', g.id)).data)
-  const cards = (await api.from('cn_cards').select('id, word, revealed').eq('game_id', g.id)).data
+  const spyApi = await client('p1')
+  await claim(spyApi, NAMES[0], CODES[0])
+  const { data: keys, error: keyErr } = await spyApi.from('cn_keys').select('card_id, role').eq('game_id', g.id)
+  if (keyErr || !(keys ?? []).length) {
+    bad('codenames', `a spymaster cannot read their own key: ${keyErr?.message ?? 'empty'}`)
+  } else {
+    good(`spymaster reads the key (${keys.length} cards)`)
+    const hostPeek = await api.from('cn_keys').select('card_id').eq('game_id', g.id)
+    if ((hostPeek.data ?? []).length) bad('codenames', 'a non-spymaster can read the key')
+    else good('a non-spymaster cannot read the key')
+  }
+  const cards = (await api.from('cn_cards').select('id, word, position, revealed')
+    .eq('game_id', g.id).order('position')).data
   const roleOf = (id) => keys.find((k) => k.card_id === id)?.role
 
   // play up to 12 turns, always guessing a correct card for whoever is on turn
   let turns = 0
   let winner = null
-  while (turns++ < 14) {
+  while (turns++ < 40) {
     g = (await api.from('cn_games').select('*').eq('id', g.id).single()).data
     if (g.phase === 'done') { winner = g.winner; break }
     const spy = spyOf(g.turn)
@@ -152,7 +163,8 @@ console.log('\n=== CODENAMES: play to a winner ===')
       if (!g.clue_word) { bad('codenames', 'clue did not register'); break }
     }
     // pick one of this team's own unrevealed cards
-    const fresh = (await api.from('cn_cards').select('id, revealed').eq('game_id', g.id)).data
+    const fresh = (await api.from('cn_cards').select('id, revealed, position')
+      .eq('game_id', g.id).order('position')).data
     const mine = fresh.find((c) => !c.revealed && roleOf(c.id) === g.turn)
     if (!mine) { note('codenames: no own cards left to guess'); break }
     await room(op)
@@ -160,6 +172,8 @@ console.log('\n=== CODENAMES: play to a winner ===')
     if (!(await tile.count())) { bad('codenames', 'tile not clickable for the operative on turn'); break }
     await tile.click()
     await op.waitForTimeout(1600)
+    // (guesses_left is read AFTER the guess, so a clue of 1 correctly shows 1
+    // remaining — the official number+1 allowance)
   }
   g = (await api.from('cn_games').select('*').eq('id', g.id).single()).data
   if (g.phase === 'done') {
@@ -211,13 +225,22 @@ console.log('\n=== WAVELENGTH: clue → dial → bet → reveal ===')
   if (!round) { bad('wavelength', 'round did not start') }
   else {
     const pageFor = (id) => ({ [idOf(NAMES[0])]: p1, [idOf(NAMES[1])]: p2, [idOf(NAMES[2])]: p3 })[id] ?? host
+    const psychicName = roster.find((r) => r.id === round.psychic_member_id)?.display_name
+    note(`wavelength: round psychic is ${psychicName}; asked for ${roster.find((r) => r.id === psychicId)?.display_name}`)
+    if (!driven.has(round.psychic_member_id)) {
+      bad('wavelength', `the round started with ${psychicName}, who has no browser in this test`)
+    }
     const psychic = pageFor(round.psychic_member_id)
     await room(psychic)
-    const clueBox = psychic.getByPlaceholder(/İpucun/)
+    note(`wavelength: psychic browser shows "${(await psychic.locator('.stage-world').textContent().catch(() => '')).replace(/\s+/g, ' ').trim().slice(0, 110)}"`)
+    // was /İpucun/, which matches nothing — the real placeholder is
+    // "Tek kelime ipucu…". Six "app bugs" in the first run of this suite were
+    // this one wrong string, plus a psychic the test drove no browser for.
+    const clueBox = psychic.getByPlaceholder('Tek kelime ipucu').first()
     if (!(await clueBox.count())) bad('wavelength', 'psychic has no clue input')
     else {
       await clueBox.fill('buzdolabı')
-      await psychic.getByRole('button', { name: /^Ver$/ }).click()
+      await psychic.getByRole('button', { name: /^Ver$/ }).first().click()
       await psychic.waitForTimeout(1600)
       good('psychic gave the clue')
     }

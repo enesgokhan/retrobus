@@ -35,6 +35,10 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
   const [error, setError] = useState<string | null>(null)
   const [newLabel, setNewLabel] = useState('')
   const [members, setMembers] = useState<Member[]>([])
+  // How many people have ranked. Cannot come from `subs`: RLS hides other
+  // people's submissions until reveal — including from the host — so the host's
+  // own count read 0 and the reveal button was never offered to them.
+  const [submittedCount, setSubmittedCount] = useState(0)
 
   const isOpen = stage.state === 'open'
   const revealed = stage.state === 'revealed' || stage.state === 'closed'
@@ -43,17 +47,19 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
     if (!member) return
     let cancelled = false
     async function load() {
-      const [{ data: i }, { data: s }, { data: p }, { data: mem }] = await Promise.all([
+      const [{ data: i }, { data: s }, { data: p }, { data: mem }, { data: cnt }] = await Promise.all([
         supabase.from('rank_items').select('id, label, order_index').eq('stage_id', stage.id).order('order_index'),
         supabase.from('rank_submissions').select('id, ordering, sort_seed, member_id').eq('stage_id', stage.id).order('sort_seed'),
         supabase.from('participation').select('action_key, count').eq('stage_id', stage.id),
         supabase.from('members').select('id, display_name, is_host, avatar').order('display_name'),
+        supabase.rpc('answered_count', { p_kind: 'rank', p_id: stage.id }),
       ])
       if (cancelled) return
       const list = (i as Item[]) ?? []
       setItems(list)
       setSubs((s as Submission[]) ?? [])
       setMembers((mem as Member[]) ?? [])
+      setSubmittedCount((cnt as number) ?? 0)
       setMySubmitted(
         ((p as { action_key: string; count: number }[]) ?? []).some(
           (r) => r.action_key === 'ranking' && r.count > 0,
@@ -63,7 +69,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
       setOrder((prev) => (prev.length === list.length ? prev : list.map((x) => x.id)))
     }
     load()
-    const channel = liveChannel(`rank-${stage.id}`, ['rank_items', 'rank_submissions', 'participation'], load)
+    const channel = liveChannel(`rank-${stage.id}`, ['rank_items', 'rank_submissions', 'participation', 'stages'], load)
     return () => {
       cancelled = true
       supabase.removeChannel(channel)
@@ -231,7 +237,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
         </p>
       )}
 
-      {isHost && !presenter && !revealed && subs.length > 0 && (
+      {isHost && !presenter && !revealed && (
         <button
           className="btn-coral self-center"
           onClick={async () => {
@@ -239,7 +245,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
             if (e) setError('Açılamadı.')
           }}
         >
-          🐄 Sonuçları aç ve puanla ({subs.length} sıralama)
+          🐄 Sonuçları aç ve puanla ({submittedCount} sıralama)
         </button>
       )}
 

@@ -68,7 +68,7 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
       setDone(spent)
     }
     load()
-    const channel = liveChannel(`health-${stage.id}`, ['health_responses', 'participation'], load)
+    const channel = liveChannel(`health-${stage.id}`, ['health_responses', 'participation', 'stages'], load)
     return () => {
       cancelled = true
       supabase.removeChannel(channel)

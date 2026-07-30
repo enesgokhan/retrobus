@@ -92,13 +92,17 @@ export default function Yearbook() {
       const [aw, lb, cd, vt, ac, pl, hl, ms, fb, mem] = await Promise.all([
         supabase.rpc('awards', { p_meeting_id: meeting.id }),
         supabase.rpc('leaderboard', { p_meeting_id: meeting.id }),
-        supabase.from('cards').select('id, stage_id, column_key, body, hidden').in('stage_id', stageIds),
+        // sort_seed, always — printing anonymous cards in submission order tells
+        // the room who wrote what, which is the one thing the wall promises not to
+        supabase.from('cards').select('id, stage_id, column_key, body, hidden, sort_seed')
+          .in('stage_id', stageIds).order('sort_seed'),
         supabase.from('votes').select('card_id').in('stage_id', stageIds),
         supabase.from('actions').select('id, body, owner_member_id, done').eq('meeting_id', meeting.id),
         supabase.from('polls').select('id, stage_id, question, kind, options').in('stage_id', stageIds),
         supabase.from('health_responses').select('dimension_key, rating').in('stage_id', stageIds),
         supabase.from('missions').select('member_id, body, completed, revealed').eq('meeting_id', meeting.id),
-        supabase.from('feedback_items').select('target_member_id, kind, body, hidden').in('stage_id', stageIds),
+        supabase.from('feedback_items').select('target_member_id, kind, body, hidden, sort_seed')
+          .in('stage_id', stageIds).order('sort_seed'),
         supabase.from('members').select('id, display_name, is_host, avatar').order('display_name'),
       ])
       if (cancelled) return

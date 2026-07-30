@@ -53,7 +53,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
       }
     }
     load()
-    const channel = liveChannel(`poll-stage-${stage.id}`, ['polls', 'poll_responses'], load)
+    const channel = liveChannel(`poll-stage-${stage.id}`, ['polls', 'poll_responses', 'stages'], load)
 
     return () => {
       cancelled = true
