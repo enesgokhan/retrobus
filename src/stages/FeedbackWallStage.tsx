@@ -135,14 +135,22 @@ export default function FeedbackWallStage({
             <h3 className="font-extrabold">
               {kudosOnly ? 'Kime teşekkür etmek istersin?' : 'Kim hakkında yazıyorsun?'}
             </h3>
-            <select className="input-blob" value={target} onChange={(e) => setTarget(e.target.value)}>
-              <option value="">— kişi seç —</option>
+            {/* Was a native <select>: the one OS-drawn control in an app made
+                entirely of rounded blobs, on the most personal screen of the
+                night. For nine known names, chips are also simply faster. */}
+            <div className="flex flex-wrap gap-2">
               {others.map((m) => (
-                <option key={m.id} value={m.id}>
+                <button
+                  key={m.id}
+                  type="button"
+                  className={target === m.id ? 'chip-on' : 'chip'}
+                  onClick={() => setTarget(target === m.id ? '' : m.id)}
+                >
+                  <span aria-hidden>{m.avatar || '🙂'}</span>
                   {m.display_name}
-                </option>
+                </button>
               ))}
-            </select>
+            </div>
 
             {!kudosOnly && (
               <div className="flex gap-2">
@@ -207,7 +215,7 @@ export default function FeedbackWallStage({
             <button
               className={[
                 'rounded-full px-3 py-1.5 text-sm font-bold border-2',
-                focus === null ? 'bg-coral text-white border-coral-deep' : 'border-line',
+                focus === null ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line',
               ].join(' ')}
               onClick={() => setFocus(null)}
             >
@@ -220,7 +228,7 @@ export default function FeedbackWallStage({
                   key={m.id}
                   className={[
                     'rounded-full px-3 py-1.5 text-sm font-bold border-2',
-                    focus === m.id ? 'bg-coral text-white border-coral-deep' : 'border-line',
+                    focus === m.id ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line',
                     n === 0 ? 'opacity-40' : '',
                   ].join(' ')}
                   onClick={() => setFocus(m.id)}

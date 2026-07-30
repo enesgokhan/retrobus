@@ -92,13 +92,18 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
 
   // the break screen owns its whole surface — no title furniture above it
   const bare = stage.kind === 'break'
+  // screens whose whole job is to be looked at rather than worked in
+  const moment = stage.kind === 'leaderboard' || stage.kind === 'break'
 
   return (
     <div
       className={[
-        'stage-world flex-1 flex flex-col items-center gap-5 w-full px-3 py-7 sm:px-6',
-        // a shared screen should sit in the middle of the display, not hug the top
-        presenter ? 'justify-center' : '',
+        'stage-world flex-1 flex flex-col items-center gap-4 w-full px-3 pt-5 pb-8 sm:px-6',
+        // Centre only the screens that ARE a moment — a break, the finale, the
+        // shared screen. Centring a content page just moves the empty field from
+        // below the cards to above the title, and a board that fills up will
+        // top-align on its own anyway.
+        presenter || bare || moment ? 'justify-center' : '',
       ].join(' ')}
       style={themeVars(theme)}
       data-stage-kind={stage.kind}
@@ -107,21 +112,28 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
       {!bare && (
         <>
           {stage.config.prompt && (
-            <div className="accent-wash w-full max-w-4xl rounded-2xl border-2 px-5 py-3 text-center font-semibold">
+            <div className="accent-wash w-full max-w-6xl rounded-2xl border-2 px-5 py-3 text-center font-semibold">
               {stage.config.prompt}
             </div>
           )}
           <TimerStrip stage={stage} big={presenter} />
-          <div className={presenter ? 'text-8xl' : 'text-6xl'} aria-hidden>
-            {emoji}
-          </div>
           <div className="text-center">
             {/* several presets name the stage after its kind, so printing both
                 just repeats the same words twice */}
             {kindLabel.toLocaleLowerCase('tr') !== stage.title.trim().toLocaleLowerCase('tr') && (
               <div className="text-sm font-bold uppercase tracking-widest text-ink-soft">{kindLabel}</div>
             )}
-            <h2 className={presenter ? 'text-5xl font-extrabold' : 'stage-title font-extrabold'}>
+            {/* Emoji beside the title, not stacked above it: at 60px over a
+                centred column it cost ~130px of vertical space on every screen. */}
+            <h2
+              className={[
+                'font-extrabold flex items-center justify-center gap-3',
+                presenter ? 'text-6xl' : 'stage-title',
+              ].join(' ')}
+            >
+              <span className={presenter ? 'text-5xl' : 'text-4xl'} aria-hidden>
+                {emoji}
+              </span>
               {stage.title}
             </h2>
           </div>

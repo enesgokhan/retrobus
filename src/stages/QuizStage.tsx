@@ -312,7 +312,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
                 className={[
                   'rounded-full px-3 py-1.5 text-xs font-bold border-2',
                   q.state === 'open'
-                    ? 'bg-coral text-white border-coral-deep'
+                    ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]'
                     : q.state === 'draft'
                       ? 'border-line'
                       : 'border-teal text-teal',

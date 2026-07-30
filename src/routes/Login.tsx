@@ -93,7 +93,7 @@ export default function Login() {
           <h1 className="text-3xl font-extrabold">Hoş geldin{member ? `, ${member.display_name}` : ''}!</h1>
           <p className="text-ink-soft font-semibold mt-1">Kendine bir avatar seç.</p>
         </div>
-        <div className="grid grid-cols-6 gap-2 max-w-sm w-full">
+        <div className="grid grid-cols-6 gap-3 max-w-lg w-full">
           {AVATARS.map((a, i) => (
             <button
               key={`${a}-${i}`}
@@ -121,13 +121,15 @@ export default function Login() {
   // ---------- credentials step ----------
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center px-6 py-10">
-      <div className="text-7xl mb-3" aria-hidden>
+      {/* This is the surprise. It was a 380px phone form on a 1600px canvas
+          with nothing focused and nothing moving. */}
+      <div className="text-8xl mb-3 animate-bus-in" aria-hidden>
         🚌
       </div>
-      <h1 className="text-4xl font-extrabold tracking-tight">{S.appName}</h1>
-      <p className="text-ink-soft mt-1 mb-8 text-center max-w-xs">{S.tagline}</p>
+      <h1 className="text-6xl font-extrabold tracking-tight animate-rise-1">{S.appName}</h1>
+      <p className="text-ink-soft mt-2 mb-8 text-center max-w-sm text-lg animate-rise-2">{S.tagline}</p>
 
-      <form onSubmit={onSubmitForm} className="card w-full max-w-sm flex flex-col gap-5">
+      <form onSubmit={onSubmitForm} className="card w-full max-w-md flex flex-col gap-5 animate-rise-3">
         <h2 className="text-xl font-bold">{S.loginTitle}</h2>
 
         <label className="flex flex-col gap-1.5">
@@ -138,6 +140,8 @@ export default function Login() {
             onChange={(e) => setName(e.target.value)}
             placeholder={S.loginNamePlaceholder}
             autoComplete="username"
+            // nobody should have to hunt for the first field of a surprise
+            autoFocus={!name}
             required
             maxLength={40}
           />
@@ -150,6 +154,7 @@ export default function Login() {
             onChange={setCode}
             onComplete={(full) => void submit(full)}
             disabled={busy}
+            autoFocus={!!name}
           />
         </div>
 

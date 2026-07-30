@@ -322,17 +322,17 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
         waiting: false,
       }
     }
-    if (iGiveClue) {
+    if (iGiveClue && !presenter) {
       return { phase: 'Senin sıran · spymaster', instruction: 'Tek kelime ipucu ve sayı ver.', waiting: false }
     }
-    if (myTurn) {
+    if (myTurn && !presenter) {
       return {
         phase: 'Senin sıran · operatör',
         instruction: `“${game.clue_word}” ${unlimited ? '(sınırsız)' : game.clue_count} — bir kelimeye bas.`,
         waiting: false,
       }
     }
-    if (amSpymaster && me?.team === game.turn) {
+    if (amSpymaster && me?.team === game.turn && !presenter) {
       return { phase: 'Takımın tahmin ediyor', instruction: 'Sessiz kal — ipucu verdin.', waiting: true }
     }
     if (!game.clue_word) {
@@ -403,8 +403,30 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
         ))}
       </section>
 
+      {/* The clue, given its own plaque. Everyone needs to read it constantly
+          while they argue about the board; it used to be a fragment of a
+          sentence smaller than the page title. */}
+      {game.phase === 'playing' && game.clue_word && (
+        <div className="accent-wash rounded-2xl border-2 px-6 py-3 flex items-center gap-4">
+          <span
+            className={['font-extrabold uppercase tracking-wide', presenter ? 'text-6xl' : 'text-4xl'].join(' ')}
+          >
+            {game.clue_word}
+          </span>
+          <span
+            className={[
+              'shrink-0 rounded-full grid place-items-center font-extrabold tabular-nums',
+              '[background:var(--stage-accent)] text-[var(--stage-accent-ink)]',
+              presenter ? 'size-16 text-3xl' : 'size-11 text-xl',
+            ].join(' ')}
+          >
+            {unlimited ? '∞' : game.clue_count}
+          </span>
+        </div>
+      )}
+
       {/* 5x5 tahta */}
-      <div className="grid grid-cols-5 gap-2 sm:gap-3 w-full max-w-4xl">
+      <div className={['grid grid-cols-5 gap-2 sm:gap-3 w-full', presenter ? 'max-w-6xl' : 'max-w-5xl'].join(' ')}>
         {cards.map((c) => {
           const role = keyOf(c.id)
           const showRole = c.revealed || (seeingKey && role)
@@ -416,20 +438,24 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
               className={[
                 'relative aspect-4/3 rounded-xl border-2 font-bold uppercase tracking-tight transition',
                 'flex items-center justify-center text-center px-1',
-                presenter ? 'text-2xl' : 'text-[11px] sm:text-base lg:text-lg',
-                showRole && meta ? meta.cls : 'bg-card border-line',
-                c.revealed ? 'opacity-80' : '',
-                canGuess ? 'hover:scale-105 hover:shadow-md cursor-pointer' : 'cursor-default',
+                presenter ? 'text-4xl' : 'text-lg sm:text-xl lg:text-2xl',
+                // an unrevealed card is a physical object, not a blank rectangle
+                showRole && meta
+                  ? meta.cls
+                  : 'bg-[#FFF6E8] border-[#E8D9BE] shadow-[0_4px_0_0_#E0CDAA]',
+                // revealed cards SINK — the whole job is scanning what is left
+                c.revealed ? 'opacity-45 saturate-50 shadow-none' : '',
+                canGuess ? 'hover:-translate-y-0.5 cursor-pointer' : 'cursor-default',
               ].join(' ')}
               onClick={() => canGuess && guessCard(c.id)}
               disabled={!canGuess}
               title={showRole && meta ? `${c.word} — ${meta.label}` : c.word}
             >
-              <span className="leading-tight break-all">{c.word}</span>
+              <span className="leading-tight break-normal hyphens-none">{c.word}</span>
               {/* renk körlüğü için: rol ayrıca simgeyle işaretli */}
               {showRole && meta && (
                 <span
-                  className="absolute top-0.5 right-1 text-[10px] leading-none opacity-90"
+                  className="absolute top-1 right-1.5 text-sm leading-none opacity-95"
                   aria-label={meta.label}
                 >
                   {meta.mark}
@@ -446,7 +472,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       </div>
 
       {/* eylemler */}
-      {game.phase === 'playing' && !presenter && (
+      {game.phase === 'playing' && !presenter && (iGiveClue || myTurn) && (
         <section className="card flex flex-col gap-3">
           {iGiveClue ? (
             <div className="flex flex-col gap-2">

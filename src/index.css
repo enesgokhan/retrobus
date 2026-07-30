@@ -12,7 +12,7 @@
   --color-card: #ffffff;
   --color-ink: #26324b; /* deep blue-gray text */
   --color-ink-soft: #64748b;
-  --color-line: #e8e0d6; /* warm hairline */
+  --color-line: #ded2c0; /* warm hairline */
 
   --color-coral: #ff5d5d; /* primary — the bus is coral */
   --color-coral-deep: #e64545;
@@ -36,7 +36,7 @@ body {
 /* Chunky tactile building blocks used across the app */
 @utility btn {
   @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-bold transition
-    active:translate-y-0.5 disabled:opacity-40 disabled:pointer-events-none select-none;
+    active:translate-y-0.5 disabled:pointer-events-none select-none;
 }
 @utility btn-coral {
   @apply btn;
@@ -50,6 +50,15 @@ body {
   &:active {
     box-shadow: 0 1px 0 0 var(--stage-accent-deep, var(--color-coral-deep));
   }
+  /* Not a faded fill — an outline. A filled pill at 40% still reads as a
+     button you may press, and it was the loudest thing on the arrival screen
+     before anyone had typed a character. */
+  &:disabled {
+    background: transparent;
+    color: var(--color-ink-soft);
+    border: 2px solid var(--stage-line, var(--color-line));
+    box-shadow: none;
+  }
 }
 @utility btn-ghost {
   @apply btn bg-card text-ink border-2 border-line hover:border-ink-soft;
@@ -58,6 +67,25 @@ body {
   @apply rounded-3xl border-2 p-5;
   background: var(--stage-surface, var(--color-card));
   border-color: var(--stage-line, var(--color-line));
+  box-shadow: 0 3px 0 0 var(--stage-line, var(--color-line));
+}
+/* A selectable pill: the shape this app reaches for constantly and had to
+   hand-roll every time. */
+@utility chip {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-2.5
+    font-bold transition select-none cursor-pointer;
+  background: var(--stage-surface, var(--color-card));
+  border-color: var(--stage-line, var(--color-line));
+  &:hover {
+    border-color: var(--stage-accent, var(--color-coral));
+  }
+}
+@utility chip-on {
+  @apply chip;
+  background: var(--stage-accent, var(--color-coral));
+  color: var(--stage-accent-ink, #fff);
+  border-color: var(--stage-accent-deep, var(--color-coral-deep));
+  box-shadow: 0 3px 0 0 var(--stage-accent-deep, var(--color-coral-deep));
 }
 @utility input-blob {
   @apply w-full rounded-2xl border-2 px-4 py-3 text-ink outline-none
@@ -100,14 +128,35 @@ body {
   /* the accent is also available to ad-hoc utilities inside the stage */
   --color-accent: var(--stage-accent);
 }
-.stage-world .stage-title {
-  font-size: calc(1.5rem * var(--stage-scale, 1));
+.stage-title {
+  font-size: calc(2.25rem * var(--stage-scale, 1));
   line-height: 1.15;
 }
-.stage-world .accent-wash {
+.accent-wash {
   background: var(--stage-wash);
   border-color: var(--stage-accent);
 }
-.stage-world .accent-text {
+.accent-text {
   color: var(--stage-accent-deep);
+}
+
+
+/* The arrival, animated once. Ten lines of CSS is the difference between a form
+   and an event — and this screen is the moment the surprise lands. */
+@keyframes bus-in {
+  0% { opacity: 0; transform: translateX(-40px) }
+  70% { opacity: 1; transform: translateX(6px) }
+  100% { transform: translateX(0) }
+}
+@keyframes rise {
+  0% { opacity: 0; transform: translateY(12px) }
+  100% { opacity: 1; transform: translateY(0) }
+}
+.animate-bus-in { animation: bus-in 620ms cubic-bezier(.2,.8,.3,1) both }
+.animate-rise-1 { animation: rise 420ms ease-out 120ms both }
+.animate-rise-2 { animation: rise 420ms ease-out 200ms both }
+.animate-rise-3 { animation: rise 420ms ease-out 300ms both }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-bus-in, .animate-rise-1, .animate-rise-2, .animate-rise-3 { animation: none }
 }

@@ -98,7 +98,7 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
   const allDone = dims.every((d) => done.has(d.key))
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-4">
+    <div className="w-full max-w-4xl flex flex-col gap-2">
       <StageHeader
         phase={showResults ? 'Sonuçlar' : 'Takım nabzı'}
         instruction={
@@ -126,37 +126,40 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
         const answered = done.has(d.key)
 
         return (
-          <section key={d.key} className="card flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className={presenter ? 'text-2xl font-extrabold' : 'font-extrabold'}>{d.label}</h3>
-              {showResults && <span className="text-xs font-semibold text-ink-soft">{total} oy</span>}
-            </div>
+          <section key={d.key} className="card flex items-center gap-4 flex-wrap !py-3">
+            <h3 className={['flex-1 min-w-40', presenter ? 'text-2xl font-extrabold' : 'font-extrabold'].join(' ')}>
+              {d.label}
+            </h3>
+            {showResults && <span className="text-xs font-semibold text-ink-soft">{total} oy</span>}
 
             {isOpen && !presenter && (
-              <div className="flex gap-2">
-                {RATINGS.map((r) => (
-                  <button
-                    key={r.value}
-                    className={[
-                      'flex-1 rounded-2xl border-2 py-3 font-bold transition',
-                      mine[d.key] === r.value || (answered && mine[d.key] === r.value)
-                        ? `${r.bg} ${r.ring}`
-                        : 'border-line hover:border-ink-soft',
-                      answered ? 'opacity-50 pointer-events-none' : '',
-                    ].join(' ')}
-                    onClick={() => rate(d.key, r.value)}
-                  >
-                    <span aria-hidden className="mr-1.5 text-lg">
-                      {r.shape}
-                    </span>
-                    {r.label}
-                  </button>
-                ))}
+              <div className="flex gap-2 shrink-0">
+                {RATINGS.map((r) => {
+                  const chosen = mine[d.key] === r.value
+                  return (
+                    <button
+                      key={r.value}
+                      className={[
+                        'w-28 rounded-2xl border-2 py-2.5 font-bold transition',
+                        chosen ? `${r.bg} ${r.ring} shadow-[0_3px_0_0_var(--stage-line)]` : 'border-line hover:border-ink-soft',
+                        // fade the roads not taken, never your own answer —
+                        // the whole row used to dim once you had chosen, making
+                        // your choice the faintest thing on it
+                        answered && !chosen ? 'opacity-35 pointer-events-none' : '',
+                        answered && chosen ? 'pointer-events-none' : '',
+                      ].join(' ')}
+                      onClick={() => rate(d.key, r.value)}
+                    >
+                      <span aria-hidden className="mr-1.5 text-lg">
+                        {r.shape}
+                      </span>
+                      {r.label}
+                    </button>
+                  )
+                })}
               </div>
             )}
-            {isOpen && answered && (
-              <p className="text-xs font-semibold text-teal">✅ Oyun kaydedildi (anonim).</p>
-            )}
+
 
             {showResults && total > 0 && (
               <div className="flex h-8 overflow-hidden rounded-full border-2 border-line">
@@ -185,9 +188,6 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
             )}
             {showResults && total === 0 && (
               <p className="text-sm text-ink-soft">Oy yok.</p>
-            )}
-            {isOpen && !presenter && (
-              <p className="text-xs text-ink-soft">🔒 Sonuçlar kapanışta toplu açılır.</p>
             )}
           </section>
         )

@@ -52,7 +52,7 @@ export default function HostNav() {
               // 44px minimum touch target in both axes
               'min-h-11 min-w-11 px-2.5 rounded-2xl inline-flex items-center justify-center gap-1.5',
               'text-sm font-bold transition',
-              active ? 'bg-coral text-white' : 'text-ink-soft hover:bg-line/60',
+              active ? 'text-[var(--stage-accent-ink,#fff)] [background:var(--stage-accent,var(--color-coral))]' : 'text-ink-soft hover:bg-line/60',
             ].join(' ')}
           >
             <span aria-hidden className="text-base leading-none">

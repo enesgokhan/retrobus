@@ -14,8 +14,8 @@ const DEFAULT_COLUMNS = [{ key: 'all', label: 'Kartlar' }]
 // Static map: Tailwind only emits classes it can see as literals in the source,
 // so a concatenated `lg:grid-cols-${n}` would silently produce no CSS.
 const GRID_BY_COLUMNS: Record<number, string> = {
-  1: 'grid gap-3 sm:grid-cols-2',
-  2: 'grid gap-3 sm:grid-cols-2',
+  1: 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3',
+  2: 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3',
   3: 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3',
   4: 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4',
 }
@@ -100,11 +100,22 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
     return [...inCol].sort((a, b) => (dots[b.id] ?? 0) - (dots[a.id] ?? 0) || a.sort_seed - b.sort_seed)
   }
 
-  const tile = (c: (typeof visible)[number]) => (
+  /** 0 = the room's pick, 1 = also up there, 2 = the rest. The board is already
+   *  sorted by votes once voting opens; nothing on screen said so. */
+  function rankOf(colKey: string, cardId: string): 0 | 1 | 2 {
+    if (!votingPhase) return 2
+    const ordered = cardsFor(colKey)
+    const i = ordered.findIndex((c) => c.id === cardId)
+    if (i < 0 || (dots[cardId] ?? 0) === 0) return 2
+    return i === 0 ? 0 : i < 3 ? 1 : 2
+  }
+
+  const tile = (c: (typeof visible)[number], colKey = 'all') => (
     <CardTile
       key={c.id}
       body={c.body}
       hidden={c.hidden}
+      rank={rankOf(colKey, c.id)}
       votes={dots[c.id] ?? 0}
       showVotes={votingPhase}
       canVote={votingPhase && !presenter && myDots < dotBudget}
@@ -197,13 +208,13 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
         <div className={GRID_BY_COLUMNS[Math.min(columns.length, 4)] ?? GRID_BY_COLUMNS[4]}>
           {columns.map((col) => {
             const inCol = cardsFor(col.key)
-            if (columns.length === 1) return inCol.map(tile)
+            if (columns.length === 1) return inCol.map((c) => tile(c, col.key))
             return (
               <div key={col.key} className="flex flex-col gap-2">
                 <h3 className="font-extrabold text-sm uppercase tracking-wide text-ink-soft px-1">
                   {col.label} <span className="text-ink-soft/60">({inCol.length})</span>
                 </h3>
-                {inCol.map(tile)}
+                {inCol.map((c) => tile(c, col.key))}
               </div>
             )
           })}
@@ -228,10 +239,12 @@ function CardTile({
   onVote,
   onToggleHidden,
   onPromote,
+  rank = 2,
 }: {
   body: string
   hidden: boolean
   votes: number
+  rank: 0 | 1 | 2
   showVotes: boolean
   canVote: boolean
   isHost: boolean
@@ -244,27 +257,24 @@ function CardTile({
   return (
     <div
       className={[
-        'rounded-2xl border-2 bg-card p-4 flex flex-col gap-2',
-        hidden ? 'border-dashed border-ink-soft/40 opacity-50' : 'border-line',
+        // A card should look like something a person wrote, and the room's
+        // pick should be visibly the room's pick. Rank comes from the sort
+        // that already happens; before this nothing on screen encoded it.
+        'rounded-2xl border-2 p-4 flex items-start gap-3 transition',
+        hidden
+          ? 'border-dashed border-ink-soft/40 opacity-50 bg-card'
+          : rank === 0
+            ? '[border-color:var(--stage-accent)] [background:var(--stage-wash)] shadow-[0_3px_0_0_var(--stage-accent)]'
+            : rank === 1
+              ? '[border-color:var(--stage-accent)] bg-card shadow-[0_3px_0_0_var(--stage-line)]'
+              : 'border-line bg-card shadow-[0_3px_0_0_var(--stage-line)]',
       ].join(' ')}
     >
-      <p className="whitespace-pre-wrap break-words">{body}</p>
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        {showVotes ? (
-          <button
-            className={[
-              'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold',
-              canVote ? 'bg-amber-soft hover:bg-amber/40' : 'bg-bg text-ink-soft',
-            ].join(' ')}
-            onClick={onVote}
-            disabled={!canVote}
-          >
-            <span aria-hidden>🔵</span> {votes}
-          </button>
-        ) : (
-          <span />
-        )}
-        <div className="flex items-center gap-3">
+      <div className="flex-1 min-w-0 flex flex-col gap-2">
+        <p className={['whitespace-pre-wrap break-words', rank === 0 ? 'text-lg font-semibold' : ''].join(' ')}>
+          {body}
+        </p>
+        <div className="flex items-center justify-end gap-3 flex-wrap">
           {canPromote &&
             (promoted ? (
               <span className="text-xs font-bold text-teal">✅ karara eklendi</span>
@@ -280,6 +290,29 @@ function CardTile({
           )}
         </div>
       </div>
+
+      {/* The vote is the single most-used control of the discussion hour and it
+          was a 54x26px pale blob in the corner — under 3% of the card, styled
+          like metadata. It is now the second-loudest thing on screen after the
+          words themselves. Note it stays at full strength once your dots run
+          out: the moment the room sees which cards won is the payoff, and it
+          used to be the weakest styling in the app. */}
+      {showVotes && (
+        <button
+          className={[
+            'shrink-0 w-16 min-h-[3.75rem] rounded-2xl border-2 flex flex-col items-center justify-center leading-none transition',
+            canVote
+              ? '[border-color:var(--stage-accent)] [background:var(--stage-wash)] shadow-[0_3px_0_0_var(--stage-accent)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none cursor-pointer'
+              : '[border-color:var(--stage-line)] bg-card',
+          ].join(' ')}
+          onClick={onVote}
+          disabled={!canVote}
+          aria-label={canVote ? 'Bu karta oy ver' : 'Oy hakkın kalmadı'}
+        >
+          <span className="text-xl" aria-hidden>🔵</span>
+          <span className="text-xl font-extrabold tabular-nums mt-0.5">{votes}</span>
+        </button>
+      )}
     </div>
   )
 }

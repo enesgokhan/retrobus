@@ -62,6 +62,10 @@ interface FeedbackRow {
 export default function Yearbook() {
   const { member } = useAuth()
   const { meeting, stages } = useMeeting()
+  // A keepsake with no date on it is minutes. Long-form Turkish, computed once.
+  const meetingDate = new Date().toLocaleDateString('tr-TR', {
+    day: 'numeric', month: 'long', year: 'numeric',
+  })
   const [awards, setAwards] = useState<Award[]>([])
   const [board, setBoard] = useState<LeaderRow[]>([])
   const [cards, setCards] = useState<CardRow[]>([])
@@ -268,14 +272,18 @@ export default function Yearbook() {
 
   return (
     <main className="min-h-dvh max-w-3xl mx-auto px-5 py-8 flex flex-col gap-7">
-      <header className="flex items-start justify-between gap-3 print:hidden">
+      <header className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-extrabold flex items-center gap-2">
             <span aria-hidden>📖</span> Retro Yıllığı
           </h1>
           <p className="text-ink-soft font-semibold">{meeting.title}</p>
+          <p className="text-ink-soft text-sm font-semibold">{meetingDate}</p>
         </div>
-        <Link to={isHost ? '/host' : '/oda'} className="text-coral font-semibold text-sm shrink-0">
+        <Link
+          to={isHost ? '/host' : '/oda'}
+          className="text-coral font-semibold text-sm shrink-0 print:hidden"
+        >
           ← Geri
         </Link>
       </header>
@@ -305,6 +313,23 @@ export default function Yearbook() {
           Geri bildirim duvarı yıllığa dahil edilmedi. Anonim yazılmış bir şeyi kalıcı bir belgeye
           koymak ayrı bir karar — istersen yukarıdan aç.
         </p>
+      )}
+
+      {/* who was on the bus — the class photo */}
+      {members.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl font-extrabold">🚌 Bu otobüsteydik</h2>
+          <div className="flex flex-wrap gap-4">
+            {members.map((m) => (
+              <div key={m.id} className="flex flex-col items-center gap-1 w-20">
+                <span className="text-5xl leading-none" aria-hidden>
+                  {m.avatar || '🙂'}
+                </span>
+                <span className="text-sm font-bold text-center leading-tight">{m.display_name}</span>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* ödüller */}

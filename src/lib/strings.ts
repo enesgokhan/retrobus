@@ -9,8 +9,8 @@ export const S = {
   loginTitle: 'Otobüse binin',
   loginName: 'Adınız',
   loginNamePlaceholder: 'örn. Enes',
-  loginCode: '6 haneli kodunuz',
-  loginButton: 'Giriş',
+  loginCode: 'Bilet kodun',
+  loginButton: 'Hadi bin',
   loginWrong: 'Ad veya kod hatalı.',
   loginNoCode: 'Size henüz kod atanmamış — şoföre söyleyin.',
   loginLocked: (sec: number) =>
@@ -30,7 +30,7 @@ export const S = {
   ok: 'Tamam',
 
   // Yolcu görünümü
-  waitingTitle: 'Mola…',
+  waitingTitle: 'Otobüs kalkmak üzere',
   waitingBody: 'Şoför rotayı ayarlıyor. Birazdan hareket ediyoruz.',
   nextStop: 'Sonraki durak',
   currentStop: 'Şu anki durak',

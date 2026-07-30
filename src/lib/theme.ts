@@ -25,26 +25,26 @@ const T = {
   /** Tartışma: sakin, kağıt gibi. Konuşmak için, oynamak için değil. */
   discussion: {
     mood: 'calm / papery',
-    bg: '#FBF9F5',
+    bg: '#F1F7F5',
     surface: '#FFFFFF',
     accent: '#0F9D8F',
     accentDeep: '#0B7A6F',
     accentInk: '#FFFFFF',
-    wash: '#E4F5F2',
+    wash: '#D3EFEA',
     line: '#E4DED2',
     scale: 1,
   },
   /** Buz kırıcı: sıcak, samimi, düşük risk. */
   icebreaker: {
     mood: 'warm / friendly',
-    bg: '#FFFAF0',
+    bg: '#FFF6E4',
     surface: '#FFFFFF',
     accent: '#E8890C',
     accentDeep: '#C06F00',
     accentInk: '#FFFFFF',
-    wash: '#FFF0D4',
+    wash: '#FFE9BC',
     line: '#F0E3CB',
-    scale: 1.05,
+    scale: 1.1,
   },
   /** Oyun: canlı, yüksek kontrast, büyük tip. Vites değişimi burada hissedilir. */
   game: {
@@ -54,33 +54,33 @@ const T = {
     accent: '#7C3AED',
     accentDeep: '#5B21B6',
     accentInk: '#FFFFFF',
-    wash: '#EBE3FF',
+    wash: '#E1D6FF',
     line: '#DDD2F5',
-    scale: 1.15,
+    scale: 1.35,
   },
   /** Geri bildirim: bilinçli olarak sakin. Burası parti değil. */
   feedback: {
     mood: 'soft / deliberately not party',
-    bg: '#FDF7F7',
+    bg: '#FDF1F2',
     surface: '#FFFFFF',
     accent: '#D14D5E',
     accentDeep: '#AE3444',
     accentInk: '#FFFFFF',
-    wash: '#FBE7E9',
+    wash: '#F9DCE0',
     line: '#F0DCDE',
     scale: 1,
   },
   /** Final: kutlama. En büyük tip, altın. */
   finale: {
     mood: 'gold / celebration',
-    bg: '#FFFBEB',
+    bg: '#FFF6DC',
     surface: '#FFFFFF',
     accent: '#C2820B',
     accentDeep: '#996507',
     accentInk: '#FFFFFF',
     wash: '#FFF3C4',
     line: '#F0E0AE',
-    scale: 1.3,
+    scale: 1.9,
   },
   /** Mola: sessiz, neredeyse boş. */
   pause: {
@@ -131,8 +131,10 @@ const BY_KIND: Record<StageKind, StageTheme> = {
  * sardığı bir div'e basılır ve `card` / `btn-coral` / `input-blob` gibi mevcut
  * yardımcılar bunları okur. Hiçbir bileşenin yeniden yazılması gerekmiyor.
  */
-export function stageTheme(kind: StageKind): StageTheme {
-  return BY_KIND[kind] ?? T.discussion
+export function stageTheme(kind: StageKind | undefined): StageTheme {
+  // undefined = no stage yet (the room before the host starts); the calm
+  // papery world is the right default to wait in
+  return (kind && BY_KIND[kind]) || T.discussion
 }
 
 /** The custom properties to spread onto a wrapper element's style. */

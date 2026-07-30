@@ -256,7 +256,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
               key={r.id}
               className={[
                 'rounded-full px-2.5 py-1 text-xs font-bold border-2',
-                r.id === round?.id ? 'bg-coral text-white border-coral-deep' : 'border-line',
+                r.id === round?.id ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line',
                 r.phase === 'revealed' ? 'opacity-50' : '',
               ].join(' ')}
               onClick={() =>

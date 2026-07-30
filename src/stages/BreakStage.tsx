@@ -27,6 +27,7 @@ export default function BreakStage({ stage, presenter = false }: { stage: Stage;
   }, [stage.timer_ends_at, stage.timer_remaining_s])
 
   const over = left === 0
+  const planned = typeof stage.config.minutes === 'number' ? stage.config.minutes : null
   const m = left == null ? null : Math.floor(left / 60)
   const s = left == null ? null : left % 60
 
@@ -46,12 +47,26 @@ export default function BreakStage({ stage, presenter = false }: { stage: Stage;
         >
           {m}:{String(s).padStart(2, '0')}
         </div>
-      ) : (
-        <div className={presenter ? 'text-6xl font-extrabold' : 'text-4xl font-extrabold'}>Mola</div>
-      )}
+      ) : planned ? (
+        // The stage knows how long the break is meant to be, so show it rather
+        // than the word "Mola" — which the title above already says. Muted,
+        // because it has not started counting yet.
+        <div
+          className={[
+            'font-extrabold tabular-nums leading-none text-ink-soft/50',
+            presenter ? 'text-[10rem]' : 'text-7xl',
+          ].join(' ')}
+        >
+          {planned}:00
+        </div>
+      ) : null}
 
       <p className={presenter ? 'text-3xl text-ink-soft font-semibold' : 'text-lg text-ink-soft font-semibold'}>
-        {over ? 'Süre doldu — geri dönüyoruz.' : 'Kahve al, biraz ayağa kalk.'}
+        {over
+          ? 'Süre doldu — geri dönüyoruz.'
+          : left == null && planned
+            ? 'Şoför sayacı başlatınca geri sayım burada işleyecek.'
+            : 'Kahve al, biraz ayağa kalk.'}
       </p>
     </div>
   )

@@ -505,7 +505,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
                   key={side}
                   className={[
                     'flex-1 rounded-2xl border-2 py-4 font-extrabold text-lg transition',
-                    myBet?.side === side ? 'bg-coral text-white border-coral-deep' : 'border-line hover:border-coral',
+                    myBet?.side === side ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line hover:border-coral',
                   ].join(' ')}
                   onClick={() => sendBet(side)}
                 >

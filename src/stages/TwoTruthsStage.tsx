@@ -143,7 +143,7 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
               onClick={() => setForm((f) => ({ ...f, lie: n }))}
               className={[
                 'shrink-0 size-9 rounded-full border-2 font-bold text-sm transition',
-                form.lie === n ? 'bg-coral text-white border-coral-deep' : 'border-line text-ink-soft',
+                form.lie === n ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line text-ink-soft',
               ].join(' ')}
               title="Yalan bu"
               aria-label={`${n}. cümle yalan`}
@@ -242,7 +242,7 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
                 key={e.id}
                 className={[
                   'rounded-full px-3 py-1.5 text-sm font-bold border-2',
-                  e.id === currentId ? 'bg-coral text-white border-coral-deep' : 'border-line',
+                  e.id === currentId ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line',
                   e.revealed ? 'opacity-50' : '',
                 ].join(' ')}
                 onClick={() => setCurrent(e.id)}

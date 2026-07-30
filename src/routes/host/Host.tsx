@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useMeeting } from '../../lib/useMeeting'
 import { S } from '../../lib/strings'
+import { stageTheme } from '../../lib/theme'
 import type { Stage, StageKind } from '../../lib/types'
 import { AGENDA_MINUTES, DEFAULT_AGENDA, STAGE_PRESETS } from '../../lib/presets'
 import StageControls from './StageControls'
@@ -41,6 +42,7 @@ export default function Host() {
   const setupRef = useRef<HTMLDivElement>(null)
   // bumping this forces StageControls open, even if the host had collapsed it
   const [forceSetup, setForceSetup] = useState(0)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   function fixSetup() {
     setForceSetup((n) => n + 1)
@@ -290,13 +292,20 @@ export default function Host() {
               .sort((a, b) => a.order_index - b.order_index)
               .map((stage, i, arr) => {
                 const isActive = stage.id === meeting.active_stage_id
+                const done = stage.state === 'closed'
+                const accent = stageTheme(stage.kind).accent
                 return (
                   <div
                     key={stage.id}
                     className={[
-                      'flex items-center gap-2 rounded-2xl border-2 px-3 py-2 bg-card',
-                      isActive ? 'border-coral bg-rose-soft/40' : 'border-line',
+                      'flex items-center gap-2 rounded-2xl border-2 px-3 py-2 bg-card border-l-[6px] transition',
+                      isActive
+                        ? 'border-coral bg-rose-soft shadow-[0_3px_0_0_var(--color-coral)]'
+                        : done
+                          ? 'border-line opacity-55'
+                          : 'border-line',
                     ].join(' ')}
+                    style={isActive ? undefined : { borderLeftColor: accent }}
                   >
                     <div className="flex flex-col gap-0.5">
                       <button
@@ -332,26 +341,38 @@ export default function Host() {
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap justify-end">
                       {!isActive && (
-                        <button className="btn-coral text-xs px-3 py-1.5" onClick={() => activate(stage)}>
+                        <button className="btn-ghost text-xs px-3 py-1.5" onClick={() => activate(stage)}>
                           {S.makeActive}
                         </button>
                       )}
                       {isActive && stage.state === 'open' && (
-                        <button className="btn-ghost text-xs px-3 py-1.5" onClick={() => setState(stage, 'revealed')}>
+                        <button className="btn-coral text-xs px-3 py-1.5" onClick={() => setState(stage, 'revealed')}>
                           {S.revealStage}
                         </button>
                       )}
                       {isActive && stage.state === 'revealed' && (
-                        <button className="btn-ghost text-xs px-3 py-1.5" onClick={() => setState(stage, 'closed')}>
+                        <button className="btn-coral text-xs px-3 py-1.5" onClick={() => setState(stage, 'closed')}>
                           {S.closeStage}
                         </button>
                       )}
                       {!isActive && stage.state === 'pending' && (
                         <button
-                          className="text-ink-soft text-xs underline"
-                          onClick={() => removeStage(stage)}
+                          className={[
+                            'text-xs px-2 py-1 rounded-full font-bold transition',
+                            confirmDelete === stage.id
+                              ? 'bg-coral text-white'
+                              : 'text-ink-soft underline hover:text-coral',
+                          ].join(' ')}
+                          onClick={() => {
+                            // it sat 8px from the biggest target on the row and
+                            // destroyed an agenda stop on a single click
+                            if (confirmDelete !== stage.id) { setConfirmDelete(stage.id); return }
+                            setConfirmDelete(null)
+                            void removeStage(stage)
+                          }}
+                          onBlur={() => setConfirmDelete((c) => (c === stage.id ? null : c))}
                         >
-                          {S.delete}
+                          {confirmDelete === stage.id ? 'Emin misin?' : S.delete}
                         </button>
                       )}
                     </div>

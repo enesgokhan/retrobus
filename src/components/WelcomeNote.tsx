@@ -41,20 +41,17 @@ export default function WelcomeNote({ meetingId, note }: { meetingId: string; no
       role="dialog"
       aria-modal="true"
       aria-label="Karşılama"
-      onClick={dismiss}
     >
       <div
         className="bg-card rounded-3xl border-2 border-coral max-w-md w-full p-6 flex flex-col gap-4 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="text-center">
-          <div className="text-5xl mb-2" aria-hidden>
-            🚌
-          </div>
-          <h2 className="text-2xl font-extrabold">Hoş geldin!</h2>
+        <div className="text-center text-3xl" aria-hidden>
+          🚌
         </div>
-        {/* the host's own words, preserved exactly as typed */}
-        <p className="whitespace-pre-wrap text-center leading-relaxed">{note}</p>
+        {/* the host's own words, preserved exactly as typed, and given the floor */}
+        <p className="whitespace-pre-wrap text-center text-lg leading-relaxed">{note}</p>
+        <p className="text-center text-sm font-bold text-ink-soft">— Enes</p>
         <button className="btn-coral text-lg" onClick={dismiss}>
           Hadi başlayalım
         </button>

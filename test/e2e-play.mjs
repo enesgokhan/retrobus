@@ -283,10 +283,14 @@ console.log('\n-- her durak --')
     await room(p1)
     const shown = (await p1.locator('.stage-title, h2').first().textContent().catch(() => '')) ?? ''
     const world = await p1.locator('[data-stage-kind]').first().getAttribute('data-stage-kind').catch(() => null)
-    // break renders bare (no title furniture) by design
-    const titleOk = kind === 'break' ? true : shown.trim().startsWith(title)
+    // break renders bare (no title furniture) by design.
+    // The stage emoji now sits INSIDE the heading rather than stacked above it
+    // (it cost ~130px of every screen), so the text reads "📌Pano" — strip any
+    // leading non-letters before comparing.
+    const cleaned = shown.trim().replace(/^[^\p{L}\p{N}]+/u, '')
+    const titleOk = kind === 'break' ? true : cleaned.startsWith(title)
     if (world !== kind) mismatched.push(`${kind}: world=${world}`)
-    else if (!titleOk) mismatched.push(`${kind}: showed "${shown.trim().slice(0, 20)}"`)
+    else if (!titleOk) mismatched.push(`${kind}: showed "${cleaned.slice(0, 20)}"`)
     else walked++
   }
   if (mismatched.length) fail(`stages rendered wrong: ${mismatched.join(' | ')}`)

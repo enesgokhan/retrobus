@@ -17,21 +17,36 @@ export default function LeaderboardStage({ stage, presenter = false }: { stage: 
   const [shown, setShown] = useState(0)
 
   useEffect(() => {
-    if (!revealed) {
+    // Guard on rows too: a presenter tab opened AFTER the host revealed mounts
+    // with an empty board, fires confetti into a blank gold page, and then
+    // replays the whole reveal when the rows arrive.
+    if (!revealed || !rows.length) {
       setShown(0)
       return
     }
-    // reveal one place at a time, slowest at the top
+    // An accelerando, not a metronome: the last three places get progressively
+    // more room, and first place gets a hold before it lands.
+    const delayFor = (placesLeft: number) =>
+      placesLeft === 1 ? 2600 : placesLeft === 2 ? 1600 : placesLeft === 3 ? 1100 : 550
+
     let n = 0
-    const timer = setInterval(() => {
+    let timer: ReturnType<typeof setTimeout>
+    let burst: ReturnType<typeof setTimeout>
+    const step = () => {
       n += 1
       setShown(n)
       if (n >= rows.length) {
-        clearInterval(timer)
-        fireConfetti()
+        // let the room read the name before the screen fills with paper
+        burst = setTimeout(fireConfetti, 500)
+        return
       }
-    }, 900)
-    return () => clearInterval(timer)
+      timer = setTimeout(step, delayFor(rows.length - n))
+    }
+    timer = setTimeout(step, delayFor(rows.length))
+    return () => {
+      clearTimeout(timer)
+      clearTimeout(burst)
+    }
   }, [revealed, rows.length])
 
   if (!revealed) {
@@ -51,33 +66,58 @@ export default function LeaderboardStage({ stage, presenter = false }: { stage: 
   // build bottom-up so the winner lands last
   const ordered = [...rows]
   const visibleFromIndex = Math.max(0, ordered.length - shown)
+  const champion = ordered[0]
+  const championIn = shown >= ordered.length
 
   return (
-    <div className={['w-full flex flex-col gap-2', presenter ? 'max-w-4xl gap-3' : 'max-w-2xl'].join(' ')}>
-      {ordered.map((r, i) => {
+    <div className={['w-full flex flex-col gap-3', presenter ? 'max-w-5xl' : 'max-w-4xl'].join(' ')}>
+      {/* First place is not fourth place with a 5% scale on it. */}
+      {champion && (
+        <div
+          className={[
+            'rounded-3xl border-2 flex flex-col items-center gap-1 transition-all duration-700',
+            'bg-amber-soft border-amber shadow-[0_5px_0_0_var(--color-amber)]',
+            presenter ? 'py-10' : 'py-7',
+            championIn ? 'opacity-100 scale-100' : 'opacity-0 scale-90',
+          ].join(' ')}
+        >
+          <div className={presenter ? 'text-[9rem] leading-none' : 'text-8xl leading-none'} aria-hidden>
+            {champion.avatar || '🙂'}
+          </div>
+          <div className={['font-extrabold', presenter ? 'text-8xl' : 'text-5xl'].join(' ')}>
+            {champion.display_name}
+          </div>
+          <div className={['font-extrabold tabular-nums', presenter ? 'text-9xl' : 'text-6xl'].join(' ')}>
+            {champion.points}
+          </div>
+          <div className="text-sm font-bold uppercase tracking-widest text-ink-soft">🥇 Şampiyon</div>
+        </div>
+      )}
+
+      {ordered.slice(1).map((r, idx) => {
+        const i = idx + 1
         const place = i + 1
         const visible = i >= visibleFromIndex
-        const isWinner = place === 1 && shown >= ordered.length
         return (
           <div
             key={r.member_id}
             className={[
               'flex items-center gap-3 rounded-2xl border-2 px-4 transition-all duration-500',
-              presenter ? 'py-7' : 'py-3',
+              presenter ? 'py-6' : 'py-5',
               visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3',
-              isWinner ? 'bg-amber-soft border-amber scale-105' : 'bg-card border-line',
+              'bg-card border-line shadow-[0_3px_0_0_var(--color-line)]',
             ].join(' ')}
           >
-            <span className={presenter ? 'text-6xl w-20' : 'text-2xl w-10'} aria-hidden>
+            <span className={presenter ? 'text-5xl w-20' : 'text-3xl w-12'} aria-hidden>
               {PODIUM[i] ?? place}
             </span>
-            <span className={presenter ? 'text-6xl' : 'text-2xl'} aria-hidden>
+            <span className={presenter ? 'text-5xl' : 'text-4xl'} aria-hidden>
               {r.avatar || '🙂'}
             </span>
-            <span className={['flex-1 font-extrabold truncate', presenter ? 'text-5xl' : 'text-lg'].join(' ')}>
+            <span className={['flex-1 font-extrabold truncate', presenter ? 'text-4xl' : 'text-3xl'].join(' ')}>
               {r.display_name}
             </span>
-            <span className={['font-extrabold tabular-nums', presenter ? 'text-6xl' : 'text-xl'].join(' ')}>
+            <span className={['font-extrabold tabular-nums', presenter ? 'text-5xl' : 'text-4xl'].join(' ')}>
               {r.points}
             </span>
           </div>
