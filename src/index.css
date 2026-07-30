@@ -1,0 +1,57 @@
+@import '@fontsource-variable/baloo-2';
+@import 'tailwindcss';
+
+/*
+ * Retrobüs — playful light theme.
+ * Bright, warm, candy accents; rounded everything; big friendly type.
+ */
+@theme {
+  --font-sans: 'Baloo 2 Variable', 'Baloo 2', ui-rounded, system-ui, sans-serif;
+
+  --color-bg: #fdf8f3; /* warm paper */
+  --color-card: #ffffff;
+  --color-ink: #26324b; /* deep blue-gray text */
+  --color-ink-soft: #64748b;
+  --color-line: #e8e0d6; /* warm hairline */
+
+  --color-coral: #ff5d5d; /* primary — the bus is coral */
+  --color-coral-deep: #e64545;
+  --color-teal: #14b8a6; /* success / go */
+  --color-amber: #ffb020; /* highlights, dots, stars */
+  --color-grape: #8b5cf6; /* games */
+  --color-sky: #38bdf8; /* info */
+  --color-rose-soft: #ffe9e9;
+  --color-teal-soft: #dcf7f3;
+  --color-amber-soft: #fff3d6;
+  --color-grape-soft: #f0e9ff;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Chunky tactile building blocks used across the app */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-bold transition
+    active:translate-y-0.5 disabled:opacity-40 disabled:pointer-events-none select-none;
+}
+@utility btn-coral {
+  @apply btn bg-coral text-white hover:bg-coral-deep;
+  box-shadow: 0 4px 0 0 var(--color-coral-deep);
+  &:active {
+    box-shadow: 0 1px 0 0 var(--color-coral-deep);
+  }
+}
+@utility btn-ghost {
+  @apply btn bg-card text-ink border-2 border-line hover:border-ink-soft;
+}
+@utility card {
+  @apply bg-card rounded-3xl border-2 border-line p-5;
+}
+@utility input-blob {
+  @apply w-full rounded-2xl border-2 border-line bg-card px-4 py-3 text-ink outline-none
+    focus:border-coral placeholder:text-ink-soft/60;
+}
