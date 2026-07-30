@@ -39,21 +39,34 @@ body {
     active:translate-y-0.5 disabled:opacity-40 disabled:pointer-events-none select-none;
 }
 @utility btn-coral {
-  @apply btn bg-coral text-white hover:bg-coral-deep;
-  box-shadow: 0 4px 0 0 var(--color-coral-deep);
+  @apply btn;
+  /* per-stage accent when inside a themed stage, base coral elsewhere */
+  background: var(--stage-accent, var(--color-coral));
+  color: var(--stage-accent-ink, #fff);
+  box-shadow: 0 4px 0 0 var(--stage-accent-deep, var(--color-coral-deep));
+  &:hover {
+    background: var(--stage-accent-deep, var(--color-coral-deep));
+  }
   &:active {
-    box-shadow: 0 1px 0 0 var(--color-coral-deep);
+    box-shadow: 0 1px 0 0 var(--stage-accent-deep, var(--color-coral-deep));
   }
 }
 @utility btn-ghost {
   @apply btn bg-card text-ink border-2 border-line hover:border-ink-soft;
 }
 @utility card {
-  @apply bg-card rounded-3xl border-2 border-line p-5;
+  @apply rounded-3xl border-2 p-5;
+  background: var(--stage-surface, var(--color-card));
+  border-color: var(--stage-line, var(--color-line));
 }
 @utility input-blob {
-  @apply w-full rounded-2xl border-2 border-line bg-card px-4 py-3 text-ink outline-none
-    focus:border-coral placeholder:text-ink-soft/60;
+  @apply w-full rounded-2xl border-2 px-4 py-3 text-ink outline-none
+    placeholder:text-ink-soft/60;
+  background: var(--stage-surface, var(--color-card));
+  border-color: var(--stage-line, var(--color-line));
+  &:focus {
+    border-color: var(--stage-accent, var(--color-coral));
+  }
 }
 
 /* Yıllık yazdırma: renkleri koru, kontrolleri gizle, sayfa kırılmalarını düzelt */
@@ -75,4 +88,26 @@ body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+}
+
+/*
+ * Durak dünyası: StageView bu sınıfı saran bir div'e --stage-* değişkenlerini
+ * basar. Amaç, tartışmadan oyuna geçildiğinde odanın vites değiştirdiğinin
+ * GÖRÜLMESİ; hepsi aynı krem/beyaz kartsa üç saat tek düzlük gibi geçiyor.
+ */
+.stage-world {
+  background: var(--stage-bg);
+  /* the accent is also available to ad-hoc utilities inside the stage */
+  --color-accent: var(--stage-accent);
+}
+.stage-world .stage-title {
+  font-size: calc(1.5rem * var(--stage-scale, 1));
+  line-height: 1.15;
+}
+.stage-world .accent-wash {
+  background: var(--stage-wash);
+  border-color: var(--stage-accent);
+}
+.stage-world .accent-text {
+  color: var(--stage-accent-deep);
 }

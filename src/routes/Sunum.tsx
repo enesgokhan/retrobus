@@ -8,20 +8,26 @@ export default function Sunum() {
   const { meeting, activeStage, loading } = useMeeting()
 
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center px-10 py-12">
+    <main className="min-h-dvh flex flex-col">
       {loading ? (
-        <p className="text-ink-soft text-2xl">{S.loading}</p>
+        <div className="flex-1 grid place-items-center">
+          <p className="text-ink-soft text-2xl">{S.loading}</p>
+        </div>
       ) : meeting?.frozen ? (
-        <FrozenScreen note={meeting.frozen_note} big />
+        <div className="flex-1 grid place-items-center px-10">
+          <FrozenScreen note={meeting.frozen_note} big />
+        </div>
       ) : activeStage ? (
         <StageView stage={activeStage} presenter />
       ) : (
-        <div className="text-center">
-          <div className="text-9xl mb-6" aria-hidden>
-            🚌
+        <div className="flex-1 grid place-items-center text-center px-10">
+          <div>
+            <div className="text-9xl mb-6" aria-hidden>
+              🚌
+            </div>
+            <h1 className="text-6xl font-extrabold">{S.appName}</h1>
+            <p className="text-2xl text-ink-soft mt-3">{S.waitingTitle}</p>
           </div>
-          <h1 className="text-6xl font-extrabold">{S.appName}</h1>
-          <p className="text-2xl text-ink-soft mt-3">{S.waitingTitle}</p>
         </div>
       )}
     </main>

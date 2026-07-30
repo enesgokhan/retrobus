@@ -1,5 +1,7 @@
+import type { ReactNode } from 'react'
 import type { Stage } from '../lib/types'
 import { S } from '../lib/strings'
+import { stageTheme, themeVars } from '../lib/theme'
 import TimerStrip from './TimerStrip'
 import BoardStage from '../stages/BoardStage'
 import PollStage from '../stages/PollStage'
@@ -14,6 +16,7 @@ import RankStage from '../stages/RankStage'
 import CodenamesStage from '../stages/CodenamesStage'
 import WavelengthStage from '../stages/WavelengthStage'
 import MissionStage from '../stages/MissionStage'
+import BreakStage from '../stages/BreakStage'
 
 const KIND_EMOJI: Record<string, string> = {
   wordcloud: '☁️',
@@ -41,14 +44,18 @@ const KIND_EMOJI: Record<string, string> = {
 const BOARD_KINDS = new Set(['board', 'lean_coffee', 'suggestions'])
 
 /**
- * Renders the active stage. Kinds land here phase by phase; anything not yet
- * built shows its status card so the run of show still works end to end.
+ * Renders the active stage inside its own colour world (see lib/theme.ts).
+ *
+ * The theme is applied as CSS custom properties on the wrapper, so the shared
+ * utilities (`card`, `btn-coral`, `input-blob`) pick up the stage accent without
+ * any stage component needing to know theming exists.
  */
 export default function StageView({ stage, presenter = false }: { stage: Stage; presenter?: boolean }) {
   const emoji = KIND_EMOJI[stage.kind] ?? '🚏'
   const kindLabel = S.kind[stage.kind] ?? stage.kind
+  const theme = stageTheme(stage.kind)
 
-  let body: React.ReactNode = (
+  let body: ReactNode = (
     <div className="card w-full max-w-2xl text-center text-ink-soft">
       {stage.state === 'open' ? S.stageOpen : stage.state === 'revealed' ? S.stageRevealed : S.stageClosed}
     </div>
@@ -79,23 +86,39 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
     body = <WavelengthStage stage={stage} presenter={presenter} />
   } else if (stage.kind === 'secret_mission') {
     body = <MissionStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'break') {
+    body = <BreakStage stage={stage} presenter={presenter} />
   }
 
+  // the break screen owns its whole surface — no title furniture above it
+  const bare = stage.kind === 'break'
+
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
-      {stage.config.prompt && (
-        <div className="w-full max-w-2xl rounded-2xl bg-amber-soft border-2 border-amber/40 px-5 py-3 text-center font-semibold">
-          {stage.config.prompt}
-        </div>
+    <div
+      className="stage-world flex-1 flex flex-col items-center gap-4 w-full px-3 py-6 sm:px-5"
+      style={themeVars(theme)}
+      data-stage-kind={stage.kind}
+      data-stage-mood={theme.mood}
+    >
+      {!bare && (
+        <>
+          {stage.config.prompt && (
+            <div className="accent-wash w-full max-w-2xl rounded-2xl border-2 px-5 py-3 text-center font-semibold">
+              {stage.config.prompt}
+            </div>
+          )}
+          <TimerStrip stage={stage} big={presenter} />
+          <div className={presenter ? 'text-8xl' : 'text-6xl'} aria-hidden>
+            {emoji}
+          </div>
+          <div className="text-center">
+            <div className="text-sm font-bold uppercase tracking-widest text-ink-soft">{kindLabel}</div>
+            <h2 className={presenter ? 'text-5xl font-extrabold' : 'stage-title font-extrabold'}>
+              {stage.title}
+            </h2>
+          </div>
+        </>
       )}
-      <TimerStrip stage={stage} big={presenter} />
-      <div className={presenter ? 'text-8xl' : 'text-6xl'} aria-hidden>
-        {emoji}
-      </div>
-      <div className="text-center">
-        <div className="text-sm font-bold uppercase tracking-widest text-ink-soft">{kindLabel}</div>
-        <h2 className={presenter ? 'text-5xl font-extrabold' : 'text-2xl font-extrabold'}>{stage.title}</h2>
-      </div>
       {body}
     </div>
   )

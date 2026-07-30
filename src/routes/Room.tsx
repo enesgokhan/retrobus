@@ -30,15 +30,19 @@ export default function Room() {
         <HostNav />
       </header>
 
-      <section className="flex-1 flex flex-col items-center justify-center px-5 py-8">
+      <section className="flex-1 flex flex-col">
         {loading ? (
-          <p className="text-ink-soft">{S.loading}</p>
+          <div className="flex-1 grid place-items-center">
+            <p className="text-ink-soft">{S.loading}</p>
+          </div>
         ) : meeting?.frozen ? (
-          <FrozenScreen note={meeting.frozen_note} />
+          <div className="flex-1 grid place-items-center px-5">
+            <FrozenScreen note={meeting.frozen_note} />
+          </div>
         ) : activeStage ? (
           <StageView stage={activeStage} />
         ) : (
-          <div className="text-center max-w-sm">
+          <div className="flex-1 grid place-items-center px-5 text-center max-w-sm mx-auto">
             <div className="text-7xl mb-4" aria-hidden>
               🚏
             </div>
