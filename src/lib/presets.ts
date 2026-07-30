@@ -180,6 +180,25 @@ export const STAGE_PRESETS: StagePreset[] = [
     },
   },
   {
+    key: 'quiz',
+    label: 'Bilgi Yarışması',
+    kind: 'quiz',
+    title: 'Bilgi Yarışması',
+    config: {
+      timer_s: 25,
+      prompt: 'Hızlı ol — erken doğru cevap daha çok puan getirir.',
+    },
+  },
+  {
+    key: 'leaderboard',
+    label: 'Şampiyonluk Tablosu (final)',
+    kind: 'leaderboard',
+    title: 'Şampiyonluk Tablosu',
+    config: {
+      prompt: 'Sıralama toplantı boyunca gizliydi. Şimdi açıyoruz.',
+    },
+  },
+  {
     key: 'kudos_wall',
     label: 'Teşekkür Duvarı',
     kind: 'feedback_wall',

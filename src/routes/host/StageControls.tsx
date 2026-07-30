@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../../lib/auth'
 import { supabase } from '../../lib/supabase'
 import { liveChannel } from '../../lib/realtime'
+import QuizAdmin from './QuizAdmin'
 import type { Poll } from '../../lib/anon'
 import type { Stage, StageConfig } from '../../lib/types'
 
@@ -97,6 +98,7 @@ export default function StageControls({ stage }: { stage: Stage }) {
           )}
 
           {stage.kind === 'poll' && <PollComposer stage={stage} />}
+          {stage.kind === 'quiz' && <QuizAdmin stage={stage} />}
         </div>
       )}
     </section>

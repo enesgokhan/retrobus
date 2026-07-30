@@ -7,6 +7,8 @@ import WordCloudStage from '../stages/WordCloudStage'
 import HealthCheckStage from '../stages/HealthCheckStage'
 import TwoTruthsStage from '../stages/TwoTruthsStage'
 import FeedbackWallStage from '../stages/FeedbackWallStage'
+import QuizStage from '../stages/QuizStage'
+import LeaderboardStage from '../stages/LeaderboardStage'
 
 const KIND_EMOJI: Record<string, string> = {
   wordcloud: '☁️',
@@ -55,6 +57,10 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
     body = <TwoTruthsStage stage={stage} presenter={presenter} />
   } else if (stage.kind === 'feedback_wall') {
     body = <FeedbackWallStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'quiz') {
+    body = <QuizStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'leaderboard') {
+    body = <LeaderboardStage stage={stage} presenter={presenter} />
   }
 
   return (
