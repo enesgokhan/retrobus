@@ -16,6 +16,7 @@ export const S = {
   loginLocked: (sec: number) =>
     `Çok fazla deneme. ${Math.ceil(sec / 60)} dakika sonra tekrar deneyin.`,
   loginError: 'Bir şeyler ters gitti, tekrar deneyin.',
+  loginUnconfigured: 'Uygulama henüz sunucuya bağlanmadı (Supabase ayarları eksik).',
 
   // Ortak
   loading: 'Yükleniyor…',

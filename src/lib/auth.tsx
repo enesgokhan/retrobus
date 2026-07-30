@@ -1,12 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Session } from './types'
-import { FUNCTIONS_URL, resetSupabase } from './supabase'
+import { FUNCTIONS_URL, IS_CONFIGURED, resetSupabase } from './supabase'
 
 const STORAGE_KEY = 'retrobus.session'
 
 export type LoginResult =
   | { ok: true }
-  | { ok: false; reason: 'wrong' | 'no_code' | 'error'; retryAfterS?: never }
+  | { ok: false; reason: 'wrong' | 'no_code' | 'error' | 'unconfigured'; retryAfterS?: never }
   | { ok: false; reason: 'locked'; retryAfterS: number }
 
 interface AuthCtx {
@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session])
 
   const login = useCallback(async (name: string, code: string): Promise<LoginResult> => {
+    if (!IS_CONFIGURED) return { ok: false, reason: 'unconfigured' }
     try {
       const res = await fetch(`${FUNCTIONS_URL}/login`, {
         method: 'POST',

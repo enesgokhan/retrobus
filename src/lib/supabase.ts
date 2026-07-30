@@ -7,6 +7,9 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 export const SUPABASE_URL = url
 export const FUNCTIONS_URL = url ? `${url}/functions/v1` : ''
 
+/** False until VITE_SUPABASE_* are wired up (fresh deploy, missing .env.local). */
+export const IS_CONFIGURED = Boolean(url && anonKey)
+
 let client: SupabaseClient | null = null
 let currentToken: string | null = null
 

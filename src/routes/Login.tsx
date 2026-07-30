@@ -41,6 +41,9 @@ export default function Login() {
       case 'locked':
         setError(S.loginLocked(result.retryAfterS))
         break
+      case 'unconfigured':
+        setError(S.loginUnconfigured)
+        break
       default:
         setError(S.loginError)
     }

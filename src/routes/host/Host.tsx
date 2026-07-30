@@ -5,7 +5,9 @@ import { getSupabase } from '../../lib/supabase'
 import { useMeeting } from '../../lib/useMeeting'
 import { S } from '../../lib/strings'
 import type { Stage, StageKind } from '../../lib/types'
+import { STAGE_PRESETS } from '../../lib/presets'
 import TimerStrip from '../../components/TimerStrip'
+import StageControls from './StageControls'
 
 const ADDABLE_KINDS: StageKind[] = [
   'wordcloud',
@@ -37,14 +39,31 @@ export default function Host() {
     setNewTitle('')
   }
 
+  function nextOrder() {
+    return stages.length ? Math.max(...stages.map((s) => s.order_index)) + 1 : 1
+  }
+
   async function addStage(kind: StageKind) {
     if (!meeting) return
-    const order = stages.length ? Math.max(...stages.map((s) => s.order_index)) + 1 : 1
     await sb.from('stages').insert({
       meeting_id: meeting.id,
       kind,
       title: S.kind[kind] ?? kind,
-      order_index: order,
+      order_index: nextOrder(),
+    })
+    setAdding(false)
+  }
+
+  async function addPreset(presetKey: string) {
+    if (!meeting) return
+    const preset = STAGE_PRESETS.find((p) => p.key === presetKey)
+    if (!preset) return
+    await sb.from('stages').insert({
+      meeting_id: meeting.id,
+      kind: preset.kind,
+      title: preset.title,
+      order_index: nextOrder(),
+      config: preset.config,
     })
     setAdding(false)
   }
@@ -174,6 +193,8 @@ export default function Host() {
             )}
           </section>
 
+          {activeStage && <StageControls stage={activeStage} />}
+
           <section className="flex flex-col gap-2">
             {[...stages]
               .sort((a, b) => a.order_index - b.order_index)
@@ -244,7 +265,26 @@ export default function Host() {
 
             {adding ? (
               <div className="card">
-                <div className="font-bold mb-3">{S.addStop}</div>
+                <div className="font-bold mb-1">Hazır duraklar</div>
+                <p className="text-xs text-ink-soft font-semibold mb-3">
+                  Ayarları (kimlik, oy hakkı, süre, yönlendirme metni) önceden dolu gelir.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
+                  {STAGE_PRESETS.map((p) => (
+                    <button
+                      key={p.key}
+                      className="btn-ghost text-sm justify-start"
+                      onClick={() => addPreset(p.key)}
+                    >
+                      {p.label}
+                      {p.config.identity === 'anon' && (
+                        <span className="text-xs text-ink-soft ml-1">(anonim)</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="font-bold mb-3">Boş durak</div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {ADDABLE_KINDS.map((k) => (
                     <button key={k} className="btn-ghost text-sm justify-start" onClick={() => addStage(k)}>
