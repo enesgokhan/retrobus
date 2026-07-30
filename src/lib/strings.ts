@@ -16,6 +16,7 @@ export const S = {
   loginLocked: (sec: number) =>
     `Çok fazla deneme. ${Math.ceil(sec / 60)} dakika sonra tekrar deneyin.`,
   loginError: 'Bir şeyler ters gitti, tekrar deneyin.',
+  loginRateLimited: 'Sunucu çok fazla yeni giriş gördü. 1-2 dakika sonra tekrar dene.',
   loginUnconfigured: 'Uygulama henüz sunucuya bağlanmadı (Supabase ayarları eksik).',
 
   // Ortak
@@ -59,6 +60,12 @@ export const S = {
   codeSaved: 'Kod kaydedildi.',
   codeInvalid: 'Kod tam 6 rakam olmalı.',
   isHost: 'şoför',
+
+  // Dondurma (panik butonu)
+  frozenTitle: 'Kısa bir ara',
+  frozenBody: 'Şoför bir saniye durdurdu. Ekranına bakmayı bırakabilirsin.',
+  freeze: 'Ekranları dondur',
+  unfreeze: 'Devam et',
 
   // Zamanlayıcı
   timerStart: 'Başlat',

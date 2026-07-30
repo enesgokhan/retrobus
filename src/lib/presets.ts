@@ -230,6 +230,15 @@ export const STAGE_PRESETS: StagePreset[] = [
     },
   },
   {
+    key: 'secret_mission',
+    label: 'Gizli Görev (finalde aç)',
+    kind: 'secret_mission',
+    title: 'Gizli Görevler',
+    config: {
+      prompt: 'Görevleri toplantının başında dağıt, bu durağı sona koy.',
+    },
+  },
+  {
     key: 'leaderboard',
     label: 'Şampiyonluk Tablosu (final)',
     kind: 'leaderboard',

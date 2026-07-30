@@ -8,6 +8,7 @@ import type { Stage, StageKind } from '../../lib/types'
 import { STAGE_PRESETS } from '../../lib/presets'
 import TimerStrip from '../../components/TimerStrip'
 import StageControls from './StageControls'
+import { setSoundEnabled, soundEnabled } from '../../lib/celebrate'
 
 const ADDABLE_KINDS: StageKind[] = [
   'wordcloud',
@@ -24,6 +25,7 @@ const ADDABLE_KINDS: StageKind[] = [
   'leaderboard',
   'fibbage',
   'rank',
+  'secret_mission',
   'break',
 ]
 
@@ -33,7 +35,17 @@ export default function Host() {
   const { meeting, stages, activeStage, loading } = useMeeting()
   const [newTitle, setNewTitle] = useState('')
   const [adding, setAdding] = useState(false)
+  const [sound, setSound] = useState(soundEnabled)
+  const [freezeNote, setFreezeNote] = useState('')
   const sb = supabase
+
+  async function toggleFreeze() {
+    if (!meeting) return
+    await sb
+      .from('meetings')
+      .update({ frozen: !meeting.frozen, frozen_note: freezeNote.trim() || null })
+      .eq('id', meeting.id)
+  }
 
   async function createMeeting() {
     if (!newTitle.trim()) return
@@ -144,6 +156,9 @@ export default function Host() {
           <Link to="/sunum" className="text-ink-soft">
             Sunum
           </Link>
+          <Link to="/yillik" className="text-ink-soft">
+            Yıllık
+          </Link>
           <button onClick={logout} className="text-ink-soft underline">
             {S.logout}
           </button>
@@ -196,6 +211,46 @@ export default function Host() {
                 </button>
               </div>
             )}
+          </section>
+
+          <section
+            className={[
+              'card flex items-center gap-3 flex-wrap py-3',
+              meeting.frozen ? 'border-coral bg-rose-soft' : '',
+            ].join(' ')}
+          >
+            <button
+              className={meeting.frozen ? 'btn-coral' : 'btn-ghost'}
+              onClick={toggleFreeze}
+            >
+              {meeting.frozen ? `▶ ${S.unfreeze}` : `⏸ ${S.freeze}`}
+            </button>
+            {!meeting.frozen && (
+              <input
+                className="input-blob flex-1 min-w-40 py-2 text-sm"
+                value={freezeNote}
+                onChange={(e) => setFreezeNote(e.target.value)}
+                placeholder="Dondurunca gösterilecek not (isteğe bağlı)"
+                maxLength={200}
+              />
+            )}
+            {meeting.frozen && (
+              <span className="text-sm font-bold text-coral-deep">
+                Tüm ekranlar donduruldu.
+              </span>
+            )}
+            <label className="flex items-center gap-2 text-sm font-semibold text-ink-soft ml-auto">
+              <input
+                type="checkbox"
+                className="size-4 accent-teal"
+                checked={sound}
+                onChange={(e) => {
+                  setSoundEnabled(e.target.checked)
+                  setSound(e.target.checked)
+                }}
+              />
+              🔊 ses
+            </label>
           </section>
 
           {activeStage && <StageControls stage={activeStage} />}

@@ -4,7 +4,11 @@ import { IS_CONFIGURED, supabase } from './supabase'
 
 export type LoginResult =
   | { ok: true }
-  | { ok: false; reason: 'wrong' | 'no_code' | 'error' | 'unconfigured'; retryAfterS?: never }
+  | {
+      ok: false
+      reason: 'wrong' | 'no_code' | 'error' | 'unconfigured' | 'rate_limited'
+      retryAfterS?: never
+    }
   | { ok: false; reason: 'locked'; retryAfterS: number }
 
 interface AuthCtx {
@@ -72,7 +76,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session) {
         const { error } = await supabase.auth.signInAnonymously()
-        if (error) return { ok: false, reason: 'error' }
+        if (error) {
+          // Supabase rate-limits anonymous sign-ins per IP (30/hour by default).
+          // Worth its own message: the cause is not the user's code, and the fix
+          // is to wait or raise the limit, not to retype anything.
+          if (error.status === 429) return { ok: false, reason: 'rate_limited' }
+          return { ok: false, reason: 'error' }
+        }
       }
 
       const { data, error } = await supabase.rpc('claim_member', {

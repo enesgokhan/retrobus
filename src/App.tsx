@@ -8,6 +8,7 @@ import Sunum from './routes/Sunum'
 import Host from './routes/host/Host'
 import Members from './routes/host/Members'
 import Profil from './routes/Profil'
+import Yearbook from './routes/Yearbook'
 
 function Splash() {
   return (
@@ -54,6 +55,14 @@ export default function App() {
         element={
           <RequireMember>
             <Profil />
+          </RequireMember>
+        }
+      />
+      <Route
+        path="/yillik"
+        element={
+          <RequireMember>
+            <Yearbook />
           </RequireMember>
         }
       />

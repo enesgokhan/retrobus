@@ -55,3 +55,24 @@ body {
   @apply w-full rounded-2xl border-2 border-line bg-card px-4 py-3 text-ink outline-none
     focus:border-coral placeholder:text-ink-soft/60;
 }
+
+/* Yıllık yazdırma: renkleri koru, kontrolleri gizle, sayfa kırılmalarını düzelt */
+@media print {
+  html,
+  body {
+    background: #fff;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  section {
+    break-inside: avoid;
+  }
+  h2 {
+    break-after: avoid;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

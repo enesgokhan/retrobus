@@ -13,6 +13,7 @@ import FibbageStage from '../stages/FibbageStage'
 import RankStage from '../stages/RankStage'
 import CodenamesStage from '../stages/CodenamesStage'
 import WavelengthStage from '../stages/WavelengthStage'
+import MissionStage from '../stages/MissionStage'
 
 const KIND_EMOJI: Record<string, string> = {
   wordcloud: '☁️',
@@ -76,6 +77,8 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
     body = <CodenamesStage stage={stage} presenter={presenter} />
   } else if (stage.kind === 'wavelength') {
     body = <WavelengthStage stage={stage} presenter={presenter} />
+  } else if (stage.kind === 'secret_mission') {
+    body = <MissionStage stage={stage} presenter={presenter} />
   }
 
   return (

@@ -34,6 +34,9 @@ export interface Meeting {
   status: MeetingStatus
   active_stage_id: string | null
   created_at: string
+  /** host panic control: blanks every screen at once */
+  frozen: boolean
+  frozen_note: string | null
 }
 
 /** Per-stage knobs. Only the keys a given kind cares about are set. */

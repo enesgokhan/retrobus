@@ -3,11 +3,12 @@ import { useAuth } from '../lib/auth'
 import { useMeeting } from '../lib/useMeeting'
 import { S } from '../lib/strings'
 import StageView from '../components/StageView'
+import FrozenScreen from '../components/FrozenScreen'
 
 /** Yolcu görünümü — şoför nereye sürerse ekran oraya gider. */
 export default function Room() {
   const { member, logout } = useAuth()
-  const { activeStage, loading } = useMeeting()
+  const { meeting, activeStage, loading } = useMeeting()
 
   return (
     <main className="min-h-dvh flex flex-col">
@@ -34,6 +35,8 @@ export default function Room() {
       <section className="flex-1 flex flex-col items-center justify-center px-5 py-8">
         {loading ? (
           <p className="text-ink-soft">{S.loading}</p>
+        ) : meeting?.frozen ? (
+          <FrozenScreen note={meeting.frozen_note} />
         ) : activeStage ? (
           <StageView stage={activeStage} />
         ) : (

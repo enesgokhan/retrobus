@@ -44,6 +44,9 @@ export default function Login() {
       case 'unconfigured':
         setError(S.loginUnconfigured)
         break
+      case 'rate_limited':
+        setError(S.loginRateLimited)
+        break
       default:
         setError(S.loginError)
     }

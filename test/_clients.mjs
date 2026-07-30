@@ -1,0 +1,122 @@
+// Shared test client factory.
+//
+// Supabase rate-limits anonymous sign-ins per IP (30/hour by default), and a
+// suite that signs in fresh every run exhausts that in minutes — which is how
+// this file came to exist. Sessions are cached on disk and reused; a new
+// anonymous user is only created when there is no usable cached session.
+import { createClient } from '@supabase/supabase-js'
+import { readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+
+export const URL = 'https://mxskxexxyazddcdusnvz.supabase.co'
+export const KEY = 'sb_publishable_EdAjymtekBQR6Hg6vtjpPg_1Gd6E4Ge'
+export const HOST_CODE = process.env.RETROBUS_HOST_CODE ?? '424242'
+
+const CACHE = join(dirname(fileURLToPath(import.meta.url)), '.sessions.json')
+
+function loadCache() {
+  if (!existsSync(CACHE)) return {}
+  try {
+    return JSON.parse(readFileSync(CACHE, 'utf8'))
+  } catch {
+    return {}
+  }
+}
+
+function saveCache(cache) {
+  writeFileSync(CACHE, JSON.stringify(cache, null, 2))
+}
+
+/**
+ * A signed-in anonymous client under a stable `slot` name, reusing the cached
+ * session when possible. Call `claim` afterwards to bind it to a member.
+ */
+export async function client(slot) {
+  const cache = loadCache()
+  const sb = createClient(URL, KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+
+  const saved = cache[slot]
+  if (saved?.refresh_token) {
+    const { data, error } = await sb.auth.setSession({
+      access_token: saved.access_token,
+      refresh_token: saved.refresh_token,
+    })
+    if (!error && data.session) {
+      cache[slot] = {
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      }
+      saveCache(cache)
+      return sb
+    }
+  }
+
+  const { data, error } = await sb.auth.signInAnonymously()
+  if (error) {
+    if (error.status === 429) {
+      console.error(
+        '\nAnonymous sign-in is rate limited (429). Wait ~an hour, or raise the\n' +
+          'limit in Supabase: Authentication -> Rate Limits -> anonymous sign-ins.\n' +
+          'Cached sessions in test/.sessions.json normally avoid this.',
+      )
+    }
+    throw new Error(`signInAnonymously failed: ${error.message}`)
+  }
+  cache[slot] = {
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+  }
+  saveCache(cache)
+  return sb
+}
+
+/** Binds a client to a member via claim_member, throwing on failure. */
+export async function claim(sb, name, code) {
+  const { data, error } = await sb.rpc('claim_member', { p_name: name, p_code: code })
+  if (error) throw new Error(`claim_member(${name}) errored: ${error.message}`)
+  if (!data?.ok) throw new Error(`claim_member(${name}) refused: ${JSON.stringify(data)}`)
+  return data
+}
+
+/** Host client, bound to Enes. */
+export async function hostClient() {
+  const sb = await client('host')
+  await claim(sb, 'Enes', HOST_CODE)
+  return sb
+}
+
+/**
+ * Creates (or reuses) N test members with codes and returns bound clients.
+ * Members are named Test1..TestN so they never collide with real people.
+ */
+export async function testMembers(host, count) {
+  const names = Array.from({ length: count }, (_, i) => `Test${i + 1}`)
+  const codes = names.map((_, i) => String(100000 + i * 111111).slice(0, 6))
+
+  for (const n of names) {
+    await host.from('members').insert({ display_name: n })
+  }
+  const { data: roster } = await host.from('members').select('id, display_name')
+  const idOf = (n) => roster.find((r) => r.display_name === n)?.id
+  for (let i = 0; i < names.length; i++) {
+    await host.rpc('set_member_code', { p_member_id: idOf(names[i]), p_code: codes[i] })
+  }
+
+  const clients = {}
+  for (let i = 0; i < names.length; i++) {
+    const sb = await client(`member${i + 1}`)
+    await claim(sb, names[i], codes[i])
+    clients[names[i]] = sb
+  }
+  return { names, clients, idOf, roster }
+}
+
+/** Removes test members and every meeting created by a test. */
+export async function cleanup(host, names) {
+  for (const n of names) {
+    await host.from('members').delete().eq('display_name', n)
+  }
+}
