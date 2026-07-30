@@ -45,12 +45,32 @@ export async function client(slot) {
       refresh_token: saved.refresh_token,
     })
     if (!error && data.session) {
-      cache[slot] = {
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+      // Access tokens last an hour. A cached one is usually stale, and an
+      // expired JWT makes Realtime reject the socket outright (status=CLOSED,
+      // no events) — which cost real debugging time to work out. Refresh when
+      // it is expired or close to it, and push the new token to Realtime.
+      const expSoon = (data.session.expires_at ?? 0) * 1000 < Date.now() + 5 * 60_000
+      let session = data.session
+      if (expSoon) {
+        const refreshed = await sb.auth.refreshSession()
+        if (refreshed.error || !refreshed.data.session) {
+          // fall through to a fresh anonymous sign-in below
+          delete cache[slot]
+          saveCache(cache)
+          session = null
+        } else {
+          session = refreshed.data.session
+        }
       }
-      saveCache(cache)
-      return sb
+      if (session) {
+        sb.realtime.setAuth(session.access_token)
+        cache[slot] = {
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        }
+        saveCache(cache)
+        return sb
+      }
     }
   }
 
@@ -65,6 +85,7 @@ export async function client(slot) {
     }
     throw new Error(`signInAnonymously failed: ${error.message}`)
   }
+  sb.realtime.setAuth(data.session.access_token)
   cache[slot] = {
     access_token: data.session.access_token,
     refresh_token: data.session.refresh_token,
