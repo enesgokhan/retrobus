@@ -100,7 +100,7 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
   return (
     <div className="w-full max-w-4xl flex flex-col gap-2">
       <StageHeader
-        phase={showResults ? 'Sonuçlar' : 'Takım nabzı'}
+        phase={showResults ? 'Sonuçlar' : 'Nabız zamanı'}
         instruction={
           showResults ? 'Her boyut için odanın dağılımı.'
           : allDone ? 'Hepsini oyladın — diğerlerini bekliyoruz.'

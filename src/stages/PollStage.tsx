@@ -79,7 +79,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
   return (
     <div className="w-full max-w-4xl flex flex-col gap-4">
       <StageHeader
-        phase={openPolls.length ? 'Anket' : 'Sonuçlar'}
+        phase={openPolls.length ? 'Oylama' : 'Sonuçlar'}
         instruction={
           !openPolls.length ? 'Sonuçlara bak.'
           : allAnswered ? 'Cevapladın — diğerlerini bekliyoruz.'

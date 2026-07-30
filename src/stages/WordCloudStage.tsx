@@ -54,7 +54,7 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
   return (
     <div className="w-full max-w-5xl flex flex-col items-center gap-5">
       <StageHeader
-        phase={isOpen ? 'Kelime bulutu' : 'Kapandı'}
+        phase={isOpen ? 'Yazma zamanı' : 'Kapandı'}
         instruction={
           !isOpen ? 'Bu durak tamamlandı.'
           : canSubmit ? 'Tek kelime yaz. Aynı kelimeler büyür.'

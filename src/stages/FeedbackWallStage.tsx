@@ -121,7 +121,7 @@ export default function FeedbackWallStage({
     return (
       <div className="w-full max-w-2xl flex flex-col gap-4">
         <StageHeader
-          phase={kudosOnly ? 'Teşekkür duvarı' : 'Geri bildirim duvarı'}
+          phase="Yazma zamanı"
           instruction={
             kudosOnly
               ? 'Kime teşekkür etmek istersin? Anonim, hepsi birden açılacak.'
@@ -171,7 +171,7 @@ export default function FeedbackWallStage({
 
             <textarea
               className="input-blob resize-none"
-              rows={3}
+              rows={5}
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder={kudosOnly ? 'Teşekkürün…' : 'Yazacağın şey…'}
@@ -181,10 +181,10 @@ export default function FeedbackWallStage({
             <button className="btn-coral self-start" onClick={send} disabled={!target || !body.trim() || busy}>
               Gönder
             </button>
-            <p className="text-xs font-semibold text-ink-soft">
-              🔒 Anonim. Hepsi aynı anda, karışık sırayla açılacak — kimin ne zaman yazdığı
-              görünmez. {sent > 0 && `${sent} tane gönderdin.`}
-            </p>
+            {/* the band above already promises anonymity; only the count is new */}
+            {sent > 0 && (
+              <p className="text-xs font-semibold text-ink-soft">✅ {sent} tane gönderdin.</p>
+            )}
           </div>
         )}
         {presenter && (

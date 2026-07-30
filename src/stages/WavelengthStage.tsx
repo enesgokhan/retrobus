@@ -393,16 +393,21 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
       )}
 
       <section className="card flex flex-col gap-4">
-        <div className="flex items-center justify-between text-sm font-extrabold">
-          <span className="text-coral">← {round.left_label}</span>
+        <div className="flex items-center justify-between font-extrabold">
+          <span className={presenter ? 'text-4xl text-coral' : 'text-2xl text-coral'}>← {round.left_label}</span>
           <span className="text-xs text-ink-soft font-semibold">
             {teamLabel(round.active_team)} · medyum {nameOf(round.psychic_member_id)}
           </span>
-          <span className="text-sky">{round.right_label} →</span>
+          <span className={presenter ? 'text-4xl text-sky' : 'text-2xl text-sky'}>{round.right_label} →</span>
         </div>
 
         {/* spektrum */}
-        <div className="relative h-16 rounded-2xl overflow-hidden border-2 border-line bg-gradient-to-r from-coral via-amber to-sky">
+        <div
+          className={[
+            'relative rounded-2xl overflow-hidden border-2 border-line bg-gradient-to-r from-coral via-amber to-sky',
+            presenter ? 'h-36' : 'h-28',
+          ].join(' ')}
+        >
           {/* Target bands: the psychic sees them, and so does everyone after the
               reveal — but NEVER on the shared screen, which would hand the answer
               to the guessing team. */}
@@ -411,7 +416,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
               {[...BANDS].reverse().map((b) => (
                 <div
                   key={b.within}
-                  className="absolute inset-y-0 bg-white/25 border-x border-white/40"
+                  className="absolute inset-y-0 bg-white/30 border-x-2 border-white/70"
                   style={{
                     left: `${Math.max(0, target - b.within)}%`,
                     width: `${Math.min(100, target + b.within) - Math.max(0, target - b.within)}%`,
@@ -420,8 +425,8 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
                 />
               ))}
               <div
-                className="absolute inset-y-0 w-1 bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.4)]"
-                style={{ left: `calc(${target}% - 2px)` }}
+                className="absolute inset-y-0 w-1.5 bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.45)]"
+                style={{ left: `calc(${target}% - 3px)` }}
                 title={`Hedef: ${target}`}
               />
             </>
@@ -429,10 +434,12 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
           {/* takım kadranı */}
           {round.team_dial != null && (
             <div
-              className="absolute inset-y-0 w-1.5 bg-ink"
-              style={{ left: `calc(${round.team_dial}% - 3px)` }}
+              className="absolute inset-y-0 w-1 bg-ink shadow-[0_0_0_3px_rgba(255,255,255,0.85)]"
+              style={{ left: `calc(${round.team_dial}% - 2px)` }}
               title={`Takım kadranı: ${round.team_dial}`}
-            />
+            >
+              <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 size-4 rounded-full bg-ink border-2 border-white" />
+            </div>
           )}
           {/* açılışta bireysel kadranlar */}
           {revealed &&

@@ -199,14 +199,14 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
         </p>
       ) : isOpen && !presenter ? (
         <section className="card flex flex-col gap-2">
-          <h3 className="font-extrabold mb-1">En iyiden en kötüye sırala</h3>
           {order.map((id, i) => (
-            <div key={id} className="flex items-center gap-2 rounded-2xl border-2 border-line px-3 py-2">
-              <span className="w-5 text-right font-bold text-ink-soft">{i + 1}</span>
-              <span className="flex-1 font-bold truncate">{labelOf(id)}</span>
-              <div className="flex flex-col">
+            <div key={id} className="flex items-center gap-3 rounded-2xl border-2 border-line px-3 py-2.5">
+              <span className="w-6 text-right font-extrabold text-ink-soft tabular-nums">{i + 1}</span>
+              <span className="flex-1 font-bold truncate text-lg">{labelOf(id)}</span>
+              <div className="flex items-center gap-1.5">
                 <button
-                  className="text-ink-soft disabled:opacity-20 leading-none"
+                  className="size-9 rounded-full border-2 border-line grid place-items-center font-bold
+                    transition hover:[border-color:var(--stage-accent)] disabled:opacity-25 disabled:hover:border-line"
                   disabled={i === 0}
                   onClick={() => move(i, -1)}
                   aria-label="Yukarı"
@@ -214,7 +214,8 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
                   ▲
                 </button>
                 <button
-                  className="text-ink-soft disabled:opacity-20 leading-none"
+                  className="size-9 rounded-full border-2 border-line grid place-items-center font-bold
+                    transition hover:[border-color:var(--stage-accent)] disabled:opacity-25 disabled:hover:border-line"
                   disabled={i === order.length - 1}
                   onClick={() => move(i, 1)}
                   aria-label="Aşağı"
@@ -227,9 +228,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
           <button className="btn-coral self-start mt-2" onClick={submit}>
             Sıralamamı gönder
           </button>
-          <p className="text-xs font-semibold text-ink-soft">
-            🔒 Gönderdiklerin açılışa kadar gizli. Sürüyle uyum puan getirir.
-          </p>
+
         </section>
       ) : (
         <p className="text-center text-ink-soft">

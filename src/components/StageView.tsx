@@ -120,7 +120,14 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
           <div className="text-center">
             {/* several presets name the stage after its kind, so printing both
                 just repeats the same words twice */}
-            {kindLabel.toLocaleLowerCase('tr') !== stage.title.trim().toLocaleLowerCase('tr') && (
+            {/* Hide the kicker when it merely restates the title — including
+                the "Fibbage — İnandırıcı Yalan" over "İnandırıcı Yalan" case,
+                where one contains the other. */}
+            {(() => {
+              const k = kindLabel.toLocaleLowerCase('tr')
+              const t = stage.title.trim().toLocaleLowerCase('tr')
+              return !k.includes(t) && !t.includes(k)
+            })() && (
               <div className="text-sm font-bold uppercase tracking-widest text-ink-soft">{kindLabel}</div>
             )}
             {/* Emoji beside the title, not stacked above it: at 60px over a

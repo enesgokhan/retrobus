@@ -330,7 +330,12 @@ export default function Host() {
                         {i + 1}. {stage.title}
                       </div>
                       <div className="text-xs text-ink-soft font-semibold">
-                        {S.kind[stage.kind]} · {stage.state === 'pending' ? S.stagePending : stage.state === 'open' ? S.stageOpen : stage.state === 'revealed' ? S.stageRevealed : S.stageClosed}
+                        {/* several presets name a stop after its kind, so the row
+                            printed the same words twice: "Lean Coffee" then
+                            "Lean Coffee · Hazırlanıyor" */}
+                        {S.kind[stage.kind].toLocaleLowerCase('tr') !==
+                          stage.title.trim().toLocaleLowerCase('tr') && `${S.kind[stage.kind]} · `}
+                        {stage.state === 'pending' ? S.stagePending : stage.state === 'open' ? S.stageOpen : stage.state === 'revealed' ? S.stageRevealed : S.stageClosed}
                       </div>
                       {readiness[stage.id]?.todo && (
                         <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-soft border border-amber/50 px-2.5 py-0.5 text-xs font-bold">

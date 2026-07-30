@@ -318,7 +318,9 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
 
       <section className="card flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
-          <h3 className={presenter ? 'text-4xl font-extrabold' : 'text-2xl font-extrabold'}>{round.prompt}</h3>
+          <h3 className={presenter ? 'text-6xl font-extrabold leading-tight' : 'text-4xl font-extrabold leading-tight'}>
+            {round.prompt}
+          </h3>
           {round.multiplier > 1 && (
             <span className="shrink-0 rounded-full bg-grape text-white px-3 py-1 text-sm font-extrabold">
               ×{round.multiplier}
@@ -349,9 +351,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                 </div>
               )
             )}
-            <p className="text-xs font-semibold text-ink-soft">
-              Amaç: gerçek cevap sanılacak bir yalan. Kandırdığın her kişi +500.
-            </p>
+
           </>
         )}
 
