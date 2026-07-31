@@ -28,6 +28,17 @@ const STALE_MS = 20000
  */
 export default function ConnStatus() {
   const [shown, setShown] = useState<Shown>('none')
+  /**
+   * How long the current message has been up.
+   *
+   * "Canlı bağlantı yok" is true and worth saying once — but on a network that
+   * blocks WebSockets outright (the author's own office) it is true for the
+   * whole three hours, and a banner that never leaves stops being information
+   * and becomes furniture. After a while it shrinks to a dot you can press to
+   * read it again. The alarming states never shrink: those need acting on.
+   */
+  const [age, setAge] = useState(0)
+  const [reopened, setReopened] = useState(0)
 
   useEffect(() => {
     let candidate: Shown = 'none'
@@ -47,6 +58,7 @@ export default function ConnStatus() {
         candidate = 'none'
         since = 0
         setShown('none')
+        setAge(0)
         return
       }
       if (want !== candidate) {
@@ -54,7 +66,10 @@ export default function ConnStatus() {
         since = now
         return
       }
-      if (now - since >= SETTLE_MS) setShown(want)
+      if (now - since >= SETTLE_MS) {
+        setShown(want)
+        setAge(Math.round((now - since - SETTLE_MS) / 1000))
+      }
     }
 
     evaluate()
@@ -73,6 +88,22 @@ export default function ConnStatus() {
   if (shown === 'none') return null
 
   const alarming = shown === 'stale' || shown === 'offline'
+  // shrink only the calm, permanent one, and only once it has been read
+  const collapsed = !alarming && age > 12 && Date.now() - reopened > 12000
+
+  if (collapsed) {
+    return (
+      <button
+        aria-label="Canlı bağlantı yok — birkaç saniyede bir yenileniyor"
+        title="Canlı bağlantı yok — birkaç saniyede bir yenileniyor."
+        onClick={() => setReopened(Date.now())}
+        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 size-8 rounded-full
+          bg-card border-2 border-line shadow grid place-items-center text-xs"
+      >
+        <span aria-hidden>🔄</span>
+      </button>
+    )
+  }
 
   return (
     <div

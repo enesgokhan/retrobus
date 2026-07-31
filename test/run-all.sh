@@ -6,7 +6,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 fails=0
-suites="publication grants flow phase3 phase4 phase5 phase6 reconnect agenda iteration rules reveal-live presenter-secrets rehearsal"
+suites="publication grants flow phase3 phase4 phase5 phase6 reconnect agenda iteration rules reveal-live presenter-secrets rehearsal messy-night blocked-network"
 for t in $suites; do
   echo "################ $t ################"
   node "test/$t-test.mjs" || fails=$((fails + 1))
