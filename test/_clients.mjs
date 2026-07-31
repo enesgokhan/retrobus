@@ -74,13 +74,23 @@ export async function client(slot) {
     }
   }
 
-  const { data, error } = await sb.auth.signInAnonymously()
+  // Retry a rate-limited sign-in rather than failing the whole suite: several
+  // clients starting together is normal here, just as ten people arriving
+  // together is normal on the night.
+  let data, error
+  for (let attempt = 0; attempt < 5; attempt++) {
+    ;({ data, error } = await sb.auth.signInAnonymously())
+    if (!error || error.status !== 429) break
+    await new Promise((r) => setTimeout(r, 1500 * (attempt + 1) + Math.random() * 500))
+  }
   if (error) {
     if (error.status === 429) {
       console.error(
-        '\nAnonymous sign-in is rate limited (429). Wait ~an hour, or raise the\n' +
-          'limit in Supabase: Authentication -> Rate Limits -> anonymous sign-ins.\n' +
-          'Cached sessions in test/.sessions.json normally avoid this.',
+        '\nAnonymous sign-in is rate limited (429). Cached sessions in\n' +
+          'test/.sessions.json normally avoid this — if you have just deleted\n' +
+          'anonymous auth users, you invalidated those caches and every suite\n' +
+          'now has to sign up again. Wait for the window to roll over, or raise\n' +
+          'the limit in Supabase: Authentication -> Rate Limits.\n',
       )
     }
     throw new Error(`signInAnonymously failed: ${error.message}`)

@@ -11,6 +11,7 @@
 import { chromium } from '@playwright/test'
 import { preview } from 'vite'
 import { hostClient } from './_clients.mjs'
+import { personaContext, rememberSession } from './_browser.mjs'
 
 const PORT = 4266
 const APP = `http://localhost:${PORT}/retrobus/`
@@ -63,6 +64,8 @@ async function open(label) {
   })
   await page.goto(APP, { waitUntil: 'domcontentloaded' })
   await settle(page)
+  page.__ctx = ctx
+  page.__persona = label
   return page
 }
 async function settle(pg, ms = 900) {
@@ -95,8 +98,10 @@ const t0 = Date.now()
 const people = []
 for (const c of CAST) {
   const pg = await open(c.name)
-  if (await login(pg, c.name, c.code)) people.push({ pg, ...c })
-  else bad('giriş', `${c.name} could not sign in`)
+  if (await login(pg, c.name, c.code)) {
+    people.push({ pg, ...c })
+    await rememberSession(pg.__ctx, pg.__persona)
+  } else bad('giriş', `${c.name} could not sign in`)
 }
 ok(`${people.length + 1} people signed in (${Math.round((Date.now() - t0) / 1000)}s)`)
 const rateLimited = jsErrors.filter((e) => e.includes('over_request_rate_limit')).length

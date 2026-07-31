@@ -16,6 +16,7 @@
 import { chromium } from '@playwright/test'
 import { preview } from 'vite'
 import { hostClient } from './_clients.mjs'
+import { personaContext, rememberSession } from './_browser.mjs'
 
 const PORT = 4260
 const APP = `http://localhost:${PORT}/retrobus/`
@@ -60,6 +61,8 @@ async function open(label) {
   })
   await page.goto(APP, { waitUntil: 'domcontentloaded' })
   await settle(page)
+  page.__ctx = ctx
+  page.__persona = label
   return page
 }
 async function settle(pg, ms = 1200) {
@@ -203,7 +206,10 @@ console.log('\n════ 4. YOLCULAR BİNİYOR ════')
 const players = []
 for (const c of CAST) {
   const pg = await open(c.name)
-  if (await login(pg, c.name, c.code)) players.push({ pg, ...c })
+  if (await login(pg, c.name, c.code)) {
+    players.push({ pg, ...c })
+    await rememberSession(pg.__ctx, pg.__persona)
+  }
 }
 if (players.length !== CAST.length) bad('giriş', `${players.length}/${CAST.length} passengers got in`)
 else ok('everyone is on the bus')
