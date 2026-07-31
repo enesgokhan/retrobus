@@ -85,6 +85,27 @@ console.log('\n-- tahmin aşaması: bir yolcu gerçeği bulabilir mi --')
   const ids = new Set((lies ?? []).map((l) => l.id))
   const overlap = (opts ?? []).filter((o) => ids.has(o.opt_id)).length
   if (overlap) fail(`${overlap} option ids are real lie primary keys`)
+
+  // position must not be the answer either: `union all` appended the truth last
+  // every time, so the raw response ended with it
+  const truthIdx = (opts ?? []).findIndex((o) => o.body === TRUTH)
+  if (truthIdx === (opts ?? []).length - 1) {
+    // one round could be coincidence; check a few fresh rounds
+    let lastCount = 0
+    for (let i = 0; i < 5; i++) {
+      const { data: rid } = await api.rpc('create_fibbage_round', {
+        p_stage_id: stage.id, p_prompt: `soru ${i}`, p_truth: `gerçek ${i}`, p_multiplier: 1,
+      })
+      await pax[0].rpc('submit_fib_lie', { p_round_id: rid, p_body: `yalan a${i}` })
+      await pax[1].rpc('submit_fib_lie', { p_round_id: rid, p_body: `yalan b${i}` })
+      await api.from('fibbage_rounds').update({ phase: 'guess' }).eq('id', rid)
+      const { data: o2 } = await pax[2].rpc('fib_options', { p_round_id: rid })
+      const idx = (o2 ?? []).findIndex((x) => x.body === `gerçek ${i}`)
+      if (idx === (o2 ?? []).length - 1) lastCount++
+    }
+    if (lastCount >= 5) fail('the truth is always the last option — position gives it away')
+    else ok('the truth does not sit in a fixed position')
+  } else ok('the truth is not in a fixed position')
 }
 
 // ---------------------------------------------------------------- attack 2

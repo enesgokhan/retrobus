@@ -44,6 +44,12 @@ export default function Host() {
   const [forceSetup, setForceSetup] = useState(0)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [confirmEnd, setConfirmEnd] = useState<string | null>(null)
+  /**
+   * When the confirm was armed. A two-press confirm does not survive a
+   * double-click: both presses land, and ending the night is not undoable from
+   * anywhere in the app. The second press has to be a decision, not a bounce.
+   */
+  const [armedAt, setArmedAt] = useState(0)
 
   function fixSetup() {
     setForceSetup((n) => n + 1)
@@ -83,7 +89,12 @@ export default function Host() {
    */
   async function endMeeting() {
     if (!meeting) return
-    if (confirmEnd !== meeting.id) { setConfirmEnd(meeting.id); return }
+    if (confirmEnd !== meeting.id) {
+      setConfirmEnd(meeting.id)
+      setArmedAt(Date.now())
+      return
+    }
+    if (Date.now() - armedAt < 700) return // a double-click, not an answer
     setConfirmEnd(null)
     await sb.from('meetings').update({ status: 'done', active_stage_id: null }).eq('id', meeting.id)
   }
@@ -209,7 +220,9 @@ export default function Host() {
         <HostNav />
       </header>
 
-      {!meeting ? (
+      {loading ? (
+        <p className="text-ink-soft">{S.loading}</p>
+      ) : !meeting ? (
         <section className="card flex flex-col gap-3">
           <h2 className="font-bold text-lg">{S.newMeeting}</h2>
           <input
@@ -424,7 +437,12 @@ export default function Host() {
                           onClick={() => {
                             // it sat 8px from the biggest target on the row and
                             // destroyed an agenda stop on a single click
-                            if (confirmDelete !== stage.id) { setConfirmDelete(stage.id); return }
+                            if (confirmDelete !== stage.id) {
+                              setConfirmDelete(stage.id)
+                              setArmedAt(Date.now())
+                              return
+                            }
+                            if (Date.now() - armedAt < 700) return
                             setConfirmDelete(null)
                             void removeStage(stage)
                           }}

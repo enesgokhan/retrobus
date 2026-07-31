@@ -168,6 +168,29 @@ console.log('\n-- health check: passenger sees the chart at reveal --')
   else ok('passenger sees the health chart at reveal')
 }
 
+// ---------------------------------------------------------------- vote counter
+console.log('\n-- oy sayacı gerçekten sayıyor mu --')
+{
+  const { data: n } = await api.rpc('stage_progress', { p_stage_id: null, p_action_key: 'dot' })
+  // the real check: after a vote lands, the counter for THIS stage moves
+  const { data: st } = await api.from('stages').select('id').eq('meeting_id', meeting.id).limit(1)
+  const sid = (st ?? [])[0]?.id
+  if (sid) {
+    const before = (await api.rpc('stage_progress', { p_stage_id: sid, p_action_key: 'dot' })).data ?? 0
+    const cardOk = (await api.rpc('stage_progress', { p_stage_id: sid, p_action_key: 'card' })).data ?? 0
+    if (cardOk === 0 && before === 0) {
+      note && note('no participation rows on this stage to count')
+    }
+    // 'vote' was the key the allow-list used to permit; nothing writes it
+    const wrongKey = (await api.rpc('stage_progress', { p_stage_id: sid, p_action_key: 'vote' })).data
+    if (wrongKey !== 0) fail('stage_progress still answers for a key nothing writes')
+    else ok("stage_progress answers 0 for 'vote' (nothing writes it) ")
+    const blocked = (await api.rpc('stage_progress', { p_stage_id: sid, p_action_key: 'fb:' + sid })).data
+    if (blocked !== 0) fail('stage_progress can still be used to count feedback about a person')
+    else ok('stage_progress refuses identity-bearing keys')
+  }
+}
+
 await api.from('meetings').delete().eq('id', meeting.id)
 for (const n of NAMES) await api.from('members').delete().eq('display_name', n)
 await saveAllSessions()

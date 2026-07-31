@@ -40,13 +40,23 @@ export function useMeeting(meetingId?: string, opts?: { includeArchived?: boolea
       // passengers should not be dropped back into it. The yearbook is the
       // exception: it is the keepsake, and it has to survive the meeting ending.
       const scoped = opts?.includeArchived ? q : q.eq('status', 'live')
-      const { data: m } = meetingId
+      const { data: m, error: mErr } = meetingId
         ? await q.eq('id', meetingId).maybeSingle()
         : await scoped
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle()
       if (cancelled) return
+
+      // A failed READ is not the same as "there is no meeting". Four seconds of
+      // bad connectivity used to empty the room: the stage unmounted, whatever
+      // someone was typing was destroyed, and they were dropped onto the
+      // "waiting for the driver" screen mid-sentence. Keep what we had and try
+      // again on the next tick; the polling fallback guarantees there is one.
+      if (mErr) {
+        if (!cancelled) setLoading(false)
+        return
+      }
       setMeeting((m as Meeting) ?? null)
       if (!m && !meetingId) {
         // nothing live: has this room already had its evening?
@@ -59,12 +69,14 @@ export function useMeeting(meetingId?: string, opts?: { includeArchived?: boolea
         if (!cancelled) setEnded((last as { status?: string } | null)?.status === 'done')
       } else if (!cancelled) setEnded(false)
       if (m) {
-        const { data: st } = await supabase
+        const { data: st, error: sErr } = await supabase
           .from('stages')
           .select('*')
           .eq('meeting_id', (m as Meeting).id)
           .order('order_index')
-        if (!cancelled) setStages((st as Stage[]) ?? [])
+        // same rule: a failed read must not wipe the route out from under the
+        // host mid-evening
+        if (!cancelled && !sErr) setStages((st as Stage[]) ?? [])
       } else {
         setStages([])
       }

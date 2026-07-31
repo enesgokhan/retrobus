@@ -16,6 +16,7 @@ export default function Members() {
   const [newName, setNewName] = useState('')
   const [codeFor, setCodeFor] = useState<string | null>(null)
   const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [armedAt, setArmedAt] = useState(0)
   const [code, setCode] = useState('')
   const [note, setNote] = useState<string | null>(null)
   const [isError, setIsError] = useState(false)
@@ -54,7 +55,14 @@ export default function Members() {
   // used to be permanent: there was no delete policy and no button. Their cards
   // and actions survive the removal, they simply stop being attributed.
   async function removeMember(m: MemberRow) {
-    if (confirmId !== m.id) { setConfirmId(m.id); setNote(null); return }
+    if (confirmId !== m.id) {
+      setConfirmId(m.id)
+      setArmedAt(Date.now())
+      setNote(null)
+      return
+    }
+    // a double-click must not answer its own question
+    if (Date.now() - armedAt < 700) return
     const { error } = await supabase.from('members').delete().eq('id', m.id)
     setConfirmId(null)
     if (error) { setNote(`${m.display_name} silinemedi.`); return }

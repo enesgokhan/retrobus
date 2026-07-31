@@ -50,7 +50,13 @@ export default function ConnStatus() {
 
       let want: Shown = 'none'
       if (!navigator.onLine) want = 'offline'
-      else if (channels.length && staleMs > STALE_MS) want = 'stale'
+      // Staleness only means something while we are POLLING. With a healthy
+      // socket, lastOk advances only when a row actually changes — so a quiet
+      // room (a spymaster thinking, the host talking over the leaderboard)
+      // aged the clock and raised "Ekran güncellenemiyor" on a perfectly good
+      // connection. That is the false alarm this component was rebuilt to kill,
+      // reintroduced from the other end.
+      else if (mode === 'polling' && channels.length && staleMs > STALE_MS) want = 'stale'
       else if (mode === 'polling') want = 'polling'
 
       // Recovery is instant; degradation has to settle first.

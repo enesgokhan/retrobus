@@ -69,23 +69,35 @@ const HIDDEN_POLL_MS = 15000
  *   - Realtime does respect column-level grants: payloads omit columns the
  *     subscriber cannot SELECT. Still never publish a table whose secret matters.
  */
-export function liveChannel(name: string, tables: string[], onChange: () => void): RealtimeChannel {
+export function liveChannel(
+  name: string,
+  tables: string[],
+  onChange: () => void | Promise<void>,
+): RealtimeChannel {
   let disposed = false
   let pollTimer: ReturnType<typeof setInterval> | null = null
   let graceTimer: ReturnType<typeof setTimeout> | null = null
 
   registry.set(name, { mode: 'live', lastOk: Date.now() })
 
-  /** Run onChange and record that we successfully refreshed. */
-  const refresh = () => {
+  /**
+   * Run onChange and record that we actually refreshed.
+   *
+   * This used to stamp lastOk immediately after CALLING onChange. Every stage's
+   * load() is async, so the stamp recorded "we tried", not "we succeeded", and a
+   * refetch that failed every time still looked perfectly healthy — which made
+   * the one honest alarm ("Ekran güncellenemiyor") unreachable.
+   */
+  const refresh = async () => {
     if (disposed) return
     try {
-      onChange()
+      await onChange()
+      if (disposed) return
       const e = registry.get(name)
       if (e) e.lastOk = Date.now()
       notify()
     } catch {
-      /* a failed refetch is reported through staleness, not thrown */
+      /* leave lastOk alone: staleness is exactly how a failed refetch surfaces */
     }
   }
 
@@ -103,7 +115,7 @@ export function liveChannel(name: string, tables: string[], onChange: () => void
       // back off in a hidden tab so eight backgrounded windows do not all poll
       // at full rate; the tab refreshes as soon as it is looked at again
       if (document.hidden) return
-      refresh()
+      void refresh()
     }
     tick()
     pollTimer = setInterval(tick, POLL_MS)
@@ -120,13 +132,13 @@ export function liveChannel(name: string, tables: string[], onChange: () => void
   // A hidden tab that becomes visible should catch up immediately rather than
   // waiting out the interval.
   const onVisible = () => {
-    if (!document.hidden && pollTimer) refresh()
+    if (!document.hidden && pollTimer) void refresh()
   }
   document.addEventListener('visibilitychange', onVisible)
 
   let channel = supabase.channel(name)
   for (const table of tables) {
-    channel = channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => refresh())
+    channel = channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => void refresh())
   }
 
   channel.subscribe((status) => {
@@ -141,7 +153,7 @@ export function liveChannel(name: string, tables: string[], onChange: () => void
         graceTimer = null
       }
       stopPolling()
-      refresh()
+      void refresh()
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
       startPolling()
     }
