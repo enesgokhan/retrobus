@@ -10,6 +10,7 @@
 // Run: node test/smoke-play.mjs
 import { chromium } from '@playwright/test'
 import { preview } from 'vite'
+import { personaContext, saveAllSessions } from './_browser.mjs'
 import { hostClient, client, claim } from './_clients.mjs'
 
 const PORT = 4240
@@ -56,7 +57,7 @@ const browser = await chromium.launch()
 const jsErrors = []
 
 async function login(name, code) {
-  const ctx = await browser.newContext({ viewport: { width: 1500, height: 1000 }, locale: 'tr-TR' })
+  const ctx = await personaContext(browser, name, { viewport: { width: 1500, height: 1000 } })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => jsErrors.push(`${name}: ${e.message.slice(0, 120)}`))
   page.on('console', (m) => {
@@ -483,6 +484,7 @@ if (notes.length) {
 
 await api.from('meetings').delete().eq('id', meeting.id)
 for (const n of NAMES) await api.from('members').delete().eq('display_name', n)
+await saveAllSessions()
 await browser.close()
 await server.close()
 process.exit(problems.length ? 1 : 0)

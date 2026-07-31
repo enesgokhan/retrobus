@@ -21,15 +21,29 @@ const fileFor = (persona) => join(DIR, `${persona.replace(/[^a-z0-9_-]/gi, '_')}
  * A context for `persona`, restoring their stored session if we have one.
  * Pass the same persona name across runs to reuse the same anonymous user.
  */
+const live = new Map()
+
 export async function personaContext(browser, persona, opts = {}) {
   const path = fileFor(persona)
   const storageState = existsSync(path) ? path : undefined
-  return browser.newContext({
+  const ctx = await browser.newContext({
     viewport: { width: 1600, height: 1000 },
     locale: 'tr-TR',
     storageState,
     ...opts,
   })
+  live.set(ctx, persona)
+  return ctx
+}
+
+/**
+ * Save every context this run opened. Call once before closing the browser —
+ * that is late enough for the sign-ins to have happened and early enough that
+ * the contexts still exist.
+ */
+export async function saveAllSessions() {
+  for (const [ctx, persona] of live) await rememberSession(ctx, persona)
+  live.clear()
 }
 
 /** Save the session so the next run does not have to sign up again. */

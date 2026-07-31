@@ -11,7 +11,7 @@
 import { chromium } from '@playwright/test'
 import { preview } from 'vite'
 import { hostClient } from './_clients.mjs'
-import { personaContext, rememberSession } from './_browser.mjs'
+import { personaContext, saveAllSessions } from './_browser.mjs'
 
 const PORT = 4266
 const APP = `http://localhost:${PORT}/retrobus/`
@@ -98,10 +98,8 @@ const t0 = Date.now()
 const people = []
 for (const c of CAST) {
   const pg = await open(c.name)
-  if (await login(pg, c.name, c.code)) {
-    people.push({ pg, ...c })
-    await rememberSession(pg.__ctx, pg.__persona)
-  } else bad('giriş', `${c.name} could not sign in`)
+  if (await login(pg, c.name, c.code)) people.push({ pg, ...c })
+  else bad('giriş', `${c.name} could not sign in`)
 }
 ok(`${people.length + 1} people signed in (${Math.round((Date.now() - t0) / 1000)}s)`)
 const rateLimited = jsErrors.filter((e) => e.includes('over_request_rate_limit')).length
@@ -283,6 +281,7 @@ if (notes.length) { console.log(`\nnotes: ${notes.length}`); notes.forEach((n) =
 
 await api.from('meetings').delete().eq('id', meeting.id)
 for (const c of CAST) await api.from('members').delete().eq('display_name', c.name)
+await saveAllSessions()
 await browser.close()
 await server.close()
 process.exit(problems.length ? 1 : 0)

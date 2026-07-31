@@ -10,6 +10,7 @@
 // Run: node test/e2e-play.mjs   (needs RETROBUS_HOST_CODE if not 424242)
 import { chromium } from '@playwright/test'
 import { preview } from 'vite'
+import { personaContext, saveAllSessions } from './_browser.mjs'
 import { hostClient } from './_clients.mjs'
 
 const HOST_CODE = process.env.RETROBUS_HOST_CODE ?? '424242'
@@ -59,7 +60,7 @@ const browser = await chromium.launch()
 const errors = []
 
 async function login(name, code, w = 1280, h = 950) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, locale: 'tr-TR' })
+  const ctx = await personaContext(browser, name, { viewport: { width: w, height: h } })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => errors.push(`${name}: ${e.message.slice(0, 140)}`))
   page.on('console', (m) => {
@@ -323,6 +324,7 @@ if (errors.length) {
   ok('no page or console errors in any browser')
 }
 
+await saveAllSessions()
 await browser.close()
 await server.close()
 console.log(failed ? `\n${failed} CHECK(S) FAILED` : '\nALL CHECKS PASSED')

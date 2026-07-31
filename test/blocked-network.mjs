@@ -10,6 +10,7 @@
 // gets its own writes back.
 import { chromium } from '@playwright/test'
 import { preview } from 'vite'
+import { personaContext, saveAllSessions } from './_browser.mjs'
 import { hostClient } from './_clients.mjs'
 
 const PORT = 4264
@@ -50,7 +51,7 @@ const browser = await chromium.launch()
 // speed, not the 4s polling cadence) and reported a pass for a path it had
 // never actually exercised. Replacing window.WebSocket in the page is the
 // honest way to reproduce a proxy that refuses the upgrade.
-const ctx = await browser.newContext({ viewport: { width: 1500, height: 950 }, locale: 'tr-TR' })
+const ctx = await personaContext(browser, 'proxy', { viewport: { width: 1500, height: 950 } })
 await ctx.addInitScript(() => {
   class DeadSocket extends EventTarget {
     constructor() {
@@ -183,6 +184,7 @@ problems.forEach((p) => console.log('  ' + p))
 
 await api.from('meetings').delete().eq('id', meeting.id)
 await api.from('members').delete().eq('display_name', NAME)
+await saveAllSessions()
 await browser.close()
 await server.close()
 process.exit(problems.length ? 1 : 0)

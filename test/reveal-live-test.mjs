@@ -10,6 +10,7 @@
 // the channel MUST be bound to `stages`.
 import { chromium } from '@playwright/test'
 import { preview } from 'vite'
+import { personaContext, saveAllSessions } from './_browser.mjs'
 import { hostClient } from './_clients.mjs'
 
 const PORT = 4243
@@ -39,7 +40,7 @@ const { data: meeting } = await api.from('meetings')
 const server = await preview({ preview: { port: PORT }, base: '/retrobus/' })
 const browser = await chromium.launch()
 async function login(name, code) {
-  const ctx = await browser.newContext({ viewport: { width: 1400, height: 950 }, locale: 'tr-TR' })
+  const ctx = await personaContext(browser, name, { viewport: { width: 1400, height: 950 } })
   const page = await ctx.newPage()
   await page.goto(APP, { waitUntil: 'networkidle' })
   await page.getByPlaceholder('örn. Enes').fill(name)
@@ -166,6 +167,7 @@ console.log('\n-- health check: passenger sees the chart at reveal --')
 
 await api.from('meetings').delete().eq('id', meeting.id)
 for (const n of NAMES) await api.from('members').delete().eq('display_name', n)
+await saveAllSessions()
 await browser.close()
 await server.close()
 console.log(failed ? `\n${failed} CHECK(S) FAILED` : '\nALL CHECKS PASSED')

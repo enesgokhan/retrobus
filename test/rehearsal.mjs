@@ -16,7 +16,7 @@
 import { chromium } from '@playwright/test'
 import { preview } from 'vite'
 import { hostClient } from './_clients.mjs'
-import { personaContext, rememberSession } from './_browser.mjs'
+import { personaContext, saveAllSessions } from './_browser.mjs'
 
 const PORT = 4260
 const APP = `http://localhost:${PORT}/retrobus/`
@@ -208,7 +208,6 @@ for (const c of CAST) {
   const pg = await open(c.name)
   if (await login(pg, c.name, c.code)) {
     players.push({ pg, ...c })
-    await rememberSession(pg.__ctx, pg.__persona)
   }
 }
 if (players.length !== CAST.length) bad('giriş', `${players.length}/${CAST.length} passengers got in`)
@@ -576,6 +575,7 @@ if (notes.length) {
 
 if (meeting) await api.from('meetings').delete().eq('id', meeting.id)
 for (const c of CAST) await api.from('members').delete().eq('display_name', c.name)
+await saveAllSessions()
 await browser.close()
 await server.close()
 process.exit(problems.length ? 1 : 0)

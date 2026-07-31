@@ -10,6 +10,7 @@
 // is a defect.
 import { chromium } from '@playwright/test'
 import { preview } from 'vite'
+import { personaContext, saveAllSessions } from './_browser.mjs'
 import { hostClient } from './_clients.mjs'
 
 const PORT = 4262
@@ -52,7 +53,7 @@ const server = await preview({ preview: { port: PORT }, base: '/retrobus/' })
 const browser = await chromium.launch()
 const jsErrors = []
 async function open(label) {
-  const ctx = await browser.newContext({ viewport: { width: 1500, height: 950 }, locale: 'tr-TR' })
+  const ctx = await personaContext(browser, label, { viewport: { width: 1500, height: 950 } })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => jsErrors.push(`${label}: ${e.message.slice(0, 130)}`))
   page.on('response', async (r) => {
@@ -242,6 +243,7 @@ if (notes.length) { console.log(`\nnotes: ${notes.length}`); notes.forEach((n) =
 
 await api.from('meetings').delete().eq('id', meeting.id)
 for (const c of CAST) await api.from('members').delete().eq('display_name', c.name)
+await saveAllSessions()
 await browser.close()
 await server.close()
 process.exit(problems.length ? 1 : 0)
