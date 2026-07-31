@@ -27,6 +27,9 @@ export default function Login() {
   const [name, setName] = useState(() => localStorage.getItem(LAST_NAME_KEY) ?? '')
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
+  // when everyone opens the link at once the server queues us; after a few
+  // seconds say so, instead of showing a stuck-looking spinner
+  const [slow, setSlow] = useState(false)
   const [error, setError] = useState<string | null>(null)
   /** after a successful claim we ask for an avatar before entering the room */
   const [step, setStep] = useState<'credentials' | 'avatar'>('credentials')
@@ -49,7 +52,11 @@ export default function Login() {
       return
     }
     setBusy(true)
+    setSlow(false)
+    const slowTimer = setTimeout(() => setSlow(true), 3500)
     const result = await login(name, theCode)
+    clearTimeout(slowTimer)
+    setSlow(false)
     setBusy(false)
     if (result.ok) {
       localStorage.setItem(LAST_NAME_KEY, name.trim())
@@ -165,7 +172,7 @@ export default function Login() {
         )}
 
         <button type="submit" className="btn-coral text-lg" disabled={busy || !name.trim() || code.length !== 6}>
-          {busy ? S.loading : S.loginButton}
+          {busy ? (slow ? S.loginWaiting : S.loading) : S.loginButton}
         </button>
       </form>
     </main>

@@ -78,12 +78,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // claim_member is what turns it into a member identity.
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session) {
-        const { error } = await supabase.auth.signInAnonymously()
-        if (error) {
-          // Supabase rate-limits anonymous sign-ins per IP (30/hour by default).
-          // Worth its own message: the cause is not the user's code, and the fix
-          // is to wait or raise the limit, not to retype anything.
-          if (error.status === 429) return { ok: false, reason: 'rate_limited' }
+        // Supabase rate-limits anonymous sign-ups per IP. That matters here far
+        // more than it looks: the host sends ONE link and nine people open it in
+        // the same minute, so the burst is the normal case, not the edge case.
+        // Measured with ten browsers starting together, the last one was
+        // refused with 429 and simply could not get in.
+        //
+        // So: retry, with a widening and jittered wait, before giving up. The
+        // person sees a slightly slower login instead of a locked door.
+        const waits = [900, 2200, 4500, 8000]
+        let lastError: { status?: number } | null = null
+        for (let attempt = 0; attempt <= waits.length; attempt++) {
+          const { error } = await supabase.auth.signInAnonymously()
+          if (!error) { lastError = null; break }
+          lastError = error
+          if (error.status !== 429 || attempt === waits.length) break
+          const jitter = Math.floor(Math.random() * 600)
+          await new Promise((r) => setTimeout(r, waits[attempt] + jitter))
+        }
+        if (lastError) {
+          // The cause is not the code they typed, and retyping will not help.
+          if (lastError.status === 429) return { ok: false, reason: 'rate_limited' }
           return { ok: false, reason: 'error' }
         }
       }
