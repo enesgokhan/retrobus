@@ -270,12 +270,19 @@ async function hostSetup(stage) {
     const mk = host.getByRole('button', { name: /Yeni oyun kur/ })
     if (await mk.count()) { await mk.click(); await host.waitForTimeout(2200); await go(host, '/oda') }
     // four seats: two spymasters, two operatives — one of them the host
-    const seats = [
+    // both teams need a spymaster AND an operative; with fewer browsers than
+    // seats the deal is correctly refused, so say so rather than crashing
+    const seatPlan = [
       [host, 'Kırmızı', true],
-      [players[0].pg, 'Kırmızı', false],
-      [players[1].pg, 'Mavi', true],
-      [players[2].pg, 'Mavi', false],
+      [players[0]?.pg, 'Kırmızı', false],
+      [players[1]?.pg, 'Mavi', true],
+      [players[2]?.pg, 'Mavi', false],
     ]
+    const seats = seatPlan.filter(([pg]) => !!pg)
+    if (seats.length < 4) {
+      note(`codenames needs four seats and only ${seats.length} people are here — skipping`)
+      return
+    }
     for (const [pg, team, spy] of seats) {
       await go(pg, '/oda')
       const card = pg.locator('section.card', { hasText: team }).first()
@@ -345,6 +352,61 @@ async function produced(stage) {
   }
 }
 
+/** Take each game far enough that it actually awards points. */
+async function playToFinish(stage) {
+  const k = stage.kind
+  if (k === 'quiz') {
+    for (const pl of players) {
+      await go(pl.pg, '/oda')
+      const choice = pl.pg.locator('.stage-world button').filter({ hasText: /^[A-DÇĞİÖŞÜ]?[).]?\s*\S/ })
+      const opts = pl.pg.locator('section.card button:not([disabled])')
+      if (await opts.count()) { await opts.first().click(); await pl.pg.waitForTimeout(900) }
+    }
+    await go(host, '/oda')
+    const rev = host.getByRole('button', { name: /Cevabı aç|Aç ve puanla|Sonucu aç/ }).first()
+    if (await rev.count()) { await rev.click(); await host.waitForTimeout(1800) }
+    else note('quiz: no reveal button for the host')
+  }
+  if (k === 'fibbage') {
+    for (const pl of players) {
+      await go(pl.pg, '/oda')
+      const box = pl.pg.getByPlaceholder(/İnandırıcı bir yalan/)
+      if (await box.count()) {
+        await box.fill(`${pl.name} uydurdu`)
+        const g = pl.pg.getByRole('button', { name: /^Gönder$/ }).first()
+        if (await g.count()) { await g.click(); await pl.pg.waitForTimeout(1000) }
+      }
+    }
+    await go(host, '/oda')
+    const toGuess = host.getByRole('button', { name: /Tahmine geç/ })
+    if (await toGuess.count()) { await toGuess.click(); await host.waitForTimeout(1800) }
+    for (const pl of players) {
+      await go(pl.pg, '/oda')
+      const opts = pl.pg.locator('.stage-world button:not([disabled])')
+      const n = await opts.count()
+      for (let j = 0; j < n; j++) {
+        const label = ((await opts.nth(j).textContent()) ?? '').trim()
+        if (label && !/Gönder|Çıkış|Oda|Kurallar|Profil|Tanı/.test(label)) {
+          await opts.nth(j).click(); await pl.pg.waitForTimeout(900); break
+        }
+      }
+    }
+    await go(host, '/oda')
+    const revFib = host.getByRole('button', { name: /Gerçeği aç/ })
+    if (await revFib.count()) { await revFib.click(); await host.waitForTimeout(1800) }
+  }
+  if (k === 'rank') {
+    for (const pl of players) {
+      await go(pl.pg, '/oda')
+      const sub = pl.pg.getByRole('button', { name: 'Sıralamamı gönder' })
+      if (await sub.count()) { await sub.click(); await pl.pg.waitForTimeout(1000) }
+    }
+    await go(host, '/oda')
+    const revRank = host.getByRole('button', { name: /Sonuçları aç ve puanla/ })
+    if (await revRank.count()) { await revRank.click(); await host.waitForTimeout(1800) }
+  }
+}
+
 const played = []
 for (let i = 0; i < (builtStages ?? []).length; i++) {
   const stage = builtStages[i]
@@ -396,6 +458,17 @@ for (let i = 0; i < (builtStages ?? []).length; i++) {
     stage.kind === 'secret_mission' ||
     /bekliyor|düşünüyor|hazırlan|hazırlıyor|toplanıyor|Şoför|sıran değil|kurulmadı|yazılmamış|Mola/i.test(body)
 
+  // No raw identifiers on a Turkish screen. Snake-case stage kinds and the
+  // English dimension keys are internal names; seeing one means a label lookup
+  // is missing, which is exactly what made the yearbook print "teamwork".
+  const RAW = [
+    'wordcloud', 'two_truths', 'health_check', 'lean_coffee', 'feedback_wall',
+    'secret_mission', 'codenames', 'wavelength', 'leaderboard', 'suggestions',
+    'teamwork', 'learning', 'support', 'mission',
+  ]
+  const leaked = RAW.filter((r) => new RegExp(`(^|[^a-zçğıöşü])${r}([^a-zçğıöşü]|$)`, 'i').test(body))
+  if (leaked.length) bad(`sızıntı:${stage.kind}`, `raw identifiers on screen: ${leaked.join(', ')}`)
+
   played.push({ kind: stage.kind, state: st1?.state, inputs, buttons, told })
   if (inputs === 0 && buttons === 0 && !told) {
     bad(`durak:${stage.kind}`, `state=${st1?.state}: nothing to do and no explanation — "${body.slice(120, 260)}"`)
@@ -405,6 +478,9 @@ for (let i = 0; i < (builtStages ?? []).length; i++) {
   } else {
     ok(`${stage.kind}: ${inputs} field(s), ${buttons} button(s) for the room`)
   }
+
+  // 4a. games must be played to a finish, or the leaderboard is all zeros
+  await playToFinish(stage)
 
   // 4. everyone actually takes part, so the night produces real content
   for (const pl of players) {
@@ -460,16 +536,21 @@ await go(host, '/yillik')
 const yb = await text(host)
 if (!/Retro Yıllığı/.test(yb)) bad('yıllık', 'the yearbook did not render')
 else ok('yearbook renders')
+const YB_RAW = ['teamwork', 'learning', 'wordcloud', 'health_check', 'lean_coffee', 'feedback_wall']
+const ybLeak = YB_RAW.filter((r) => new RegExp(`(^|[^a-zçğıöşü])${r}([^a-zçğıöşü]|$)`, 'i').test(yb))
+if (ybLeak.length) bad('yıllık', `raw identifiers in the keepsake: ${ybLeak.join(', ')}`)
+else ok('no raw identifiers in the yearbook')
 if (!/Bu otobüsteydik/.test(yb)) bad('yıllık', 'the yearbook has nobody in it')
 else ok('everyone is in the yearbook')
 for (const c of CAST) {
   if (!yb.includes(c.name)) bad('yıllık', `${c.name} is missing from the yearbook`)
 }
 // the actual words people wrote must survive into the keepsake
-const sampleWords = ['güvenmemiz', 'dayanışma', 'odaklanalım']
-const carried = sampleWords.filter((wd) => yb.includes(wd))
-if (!carried.length) bad('yıllık', 'none of the written cards reached the yearbook')
-else ok(`${carried.length}/${sampleWords.length} kinds of written content reached the yearbook`)
+const sampleWords = ['güvenmemiz', 'dayanışma', 'toplantısız', 'Deploy']
+const missing = sampleWords.filter((wd) => !yb.includes(wd))
+if (missing.length) {
+  bad('yıllık', `content written during the meeting is missing from the keepsake: ${missing.join(', ')}`)
+} else ok('every kind of written content reached the yearbook')
 await shot(host, 'yearbook')
 
 // ---------------------------------------------------------------- report

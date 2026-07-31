@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useMeeting } from '../lib/useMeeting'
+import { DEFAULT_DIMENSIONS } from '../stages/HealthCheckStage'
 import type { Member } from '../lib/types'
 
 interface Award {
@@ -151,6 +152,29 @@ export default function Yearbook() {
     id ? (members.find((m) => m.id === id)?.display_name ?? '—') : 'sahibi yok'
 
   const boardStages = stages.filter((s) => ['board', 'lean_coffee', 'suggestions'].includes(s.kind))
+  /** dimension key → the Turkish label the room actually saw */
+  const dimLabel = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const d of DEFAULT_DIMENSIONS) map.set(d.key, d.label)
+    for (const st of stages) {
+      const custom = st.config?.dimensions as { key: string; label: string }[] | undefined
+      for (const d of custom ?? []) map.set(d.key, d.label)
+    }
+    return map
+  }, [stages])
+  const cloudStages = stages.filter((s) => s.kind === 'wordcloud')
+  /** the same word from several people counts once, and counts loudly */
+  const cloudWords = useMemo(() => {
+    const ids = new Set(cloudStages.map((s) => s.id))
+    const tally = new Map<string, number>()
+    for (const c of cards) {
+      if (!ids.has(c.stage_id) || c.hidden) continue
+      const w = c.body.trim()
+      if (!w) continue
+      tally.set(w, (tally.get(w) ?? 0) + 1)
+    }
+    return [...tally.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'tr'))
+  }, [cards, cloudStages])
 
   function markdown(): string {
     const L: string[] = []
@@ -165,6 +189,10 @@ export default function Yearbook() {
       L.push('## 🥇 Şampiyonluk Tablosu', '')
       board.forEach((r, i) => L.push(`${i + 1}. ${r.display_name} — ${r.points} puan`))
       L.push('')
+    }
+    if (cloudWords.length) {
+      L.push('## ☁️ Tek kelimeyle', '')
+      L.push(cloudWords.map(([w, n]) => (n > 1 ? `**${w}** (${n})` : w)).join(' · '), '')
     }
     for (const st of boardStages) {
       const mine = cards.filter((c) => c.stage_id === st.id && !c.hidden)
@@ -218,7 +246,7 @@ export default function Yearbook() {
         const g = rows.filter((r) => r.rating === 3).length
         const y = rows.filter((r) => r.rating === 2).length
         const r = rows.filter((x) => x.rating === 1).length
-        L.push(`- ${d}: 🟢 ${g} · 🟡 ${y} · 🔴 ${r}`)
+        L.push(`- ${dimLabel.get(d) ?? d}: 🟢 ${g} · 🟡 ${y} · 🔴 ${r}`)
       }
       L.push('')
     }
@@ -314,6 +342,25 @@ export default function Yearbook() {
           Geri bildirim duvarı yıllığa dahil edilmedi. Anonim yazılmış bir şeyi kalıcı bir belgeye
           koymak ayrı bir karar — istersen yukarıdan aç.
         </p>
+      )}
+
+      {/* the year in single words */}
+      {cloudWords.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-xl font-extrabold">☁️ Tek kelimeyle</h2>
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+            {cloudWords.map(([word, n]) => (
+              <span
+                key={word}
+                className="font-extrabold"
+                style={{ fontSize: `${Math.min(2.4, 1 + n * 0.35)}rem`, lineHeight: 1.15 }}
+                title={n > 1 ? `${n} kişi yazdı` : undefined}
+              >
+                {word}
+              </span>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* who was on the bus — the class photo */}
@@ -442,7 +489,7 @@ export default function Yearbook() {
             const r = rows.filter((x) => x.rating === 1).length
             return (
               <div key={d} className="flex items-center gap-3">
-                <span className="w-32 font-bold text-sm truncate">{d}</span>
+                <span className="w-32 font-bold text-sm truncate">{dimLabel.get(d) ?? d}</span>
                 <div className="flex-1 flex h-5 rounded-full overflow-hidden border border-line">
                   {r > 0 && <div className="bg-coral" style={{ width: `${(r / t) * 100}%` }} />}
                   {y > 0 && <div className="bg-amber" style={{ width: `${(y / t) * 100}%` }} />}
