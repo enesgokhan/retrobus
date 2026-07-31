@@ -43,10 +43,13 @@ type Teams = Record<string, 'a' | 'b'>
  *      bahse girer. Bu adım oyunun yarısı: onsuz odanın yarısı boş oturuyor.
  *   4. Açılış: kadran hedefin hangi bandına düştüyse 4/3/2 puan, doğru bahis +1.
  */
+// The labels used to read 4/3/2 — the physical board game's scoring — while the
+// app awards 1000/750/500, so the screen announced one number and the
+// leaderboard showed another.
 const BANDS = [
-  { within: 5, points: 1000, label: '4 puan' },
-  { within: 12, points: 750, label: '3 puan' },
-  { within: 20, points: 500, label: '2 puan' },
+  { within: 5, points: 1000, label: '1000 puan' },
+  { within: 12, points: 750, label: '750 puan' },
+  { within: 20, points: 500, label: '500 puan' },
 ]
 
 export default function WavelengthStage({ stage, presenter = false }: { stage: Stage; presenter?: boolean }) {
@@ -380,8 +383,8 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
         {...header}
         presenter={presenter}
         progress={
-          round.phase === 'guess' ? `${roundGuesses.length}/${activeTeamSize}`
-          : round.phase === 'bet' ? `${roundBets.length}/${otherTeamSize}`
+          round.phase === 'guess' ? `${dialCount}/${activeTeamSize}`
+          : round.phase === 'bet' ? `${betCount}/${otherTeamSize}`
           : null
         }
       />

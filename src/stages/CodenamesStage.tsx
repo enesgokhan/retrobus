@@ -63,6 +63,8 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
   const [members, setMembers] = useState<Member[]>([])
   const [clue, setClue] = useState({ word: '', count: 1 })
   const [error, setError] = useState<string | null>(null)
+  const [restartArmed, setRestartArmed] = useState(false)
+  const [restartAt, setRestartAt] = useState(0)
   const [celebrated, setCelebrated] = useState<string | null>(null)
   /** spymasters can flip to what their team sees — the real app does this */
   const [asOperative, setAsOperative] = useState(false)
@@ -166,7 +168,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       setError(
         e.message.includes('on the board') ? 'Bu kelime tahtada duruyor — kural gereği ipucu olamaz.'
         : e.message.includes('single word') ? 'İpucu tek kelime olmalı.'
-        : e.message.includes('turn') ? 'Sıra sizde değil.'
+        : e.message.includes('turn') ? 'Sıra sende değil.'
         : 'İpucu verilemedi.',
       )
     } else {
@@ -178,7 +180,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
     const { error: e } = await supabase.rpc('cn_guess', { p_card_id: cardId })
     if (e) {
       setError(
-        e.message.includes('turn') ? 'Sıra sizde değil.'
+        e.message.includes('turn') ? 'Sıra sende değil.'
         : e.message.includes('clue') ? 'İpucu bekleniyor.'
         : e.message.includes('spymaster') ? 'Spymaster tahmin etmez.'
         : 'Seçilemedi.',
@@ -534,8 +536,19 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
           <button className="btn-ghost text-sm" onClick={forcePass}>
             ⏭ Sırayı diğer takıma ver
           </button>
-          <button className="btn-ghost text-sm" onClick={newGame}>
-            ↺ Oyunu baştan kur
+          <button
+            className="btn-ghost text-sm"
+            onClick={() => {
+              // a live board, both key cards and everyone's seats, one click
+              // away from the pass button the host actually reaches for
+              if (!restartArmed) { setRestartArmed(true); setRestartAt(Date.now()); return }
+              if (Date.now() - restartAt < 700) return
+              setRestartArmed(false)
+              void newGame()
+            }}
+            onBlur={() => setRestartArmed(false)}
+          >
+            {restartArmed ? 'Tahta ve roller sıfırlanacak — bas' : '↺ Oyunu baştan kur'}
           </button>
         </div>
       )}

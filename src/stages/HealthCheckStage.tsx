@@ -41,7 +41,29 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
   const { member } = useAuth()
   const dims = (stage.config.dimensions as Dimension[] | undefined) ?? DEFAULT_DIMENSIONS
   const [rows, setRows] = useState<Row[]>([])
-  const [mine, setMine] = useState<Record<string, number>>({})
+  /**
+   * Your own answers, kept on your own device.
+   *
+   * health_responses is deliberately anonymous — there is no member column — so
+   * the server cannot tell you what you chose, and after a reload every button
+   * in a rated row faded equally and your own answer became invisible. This is
+   * the one place it can live without a server-side record of who said what.
+   */
+  const mineKey = `retrobus.health.${stage.id}`
+  const [mine, setMine] = useState<Record<string, number>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(mineKey) ?? '{}') as Record<string, number>
+    } catch {
+      return {}
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem(mineKey, JSON.stringify(mine))
+    } catch {
+      /* a full or blocked store just means the highlight is lost on reload */
+    }
+  }, [mine, mineKey])
   const [done, setDone] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
 

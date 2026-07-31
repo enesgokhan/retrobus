@@ -161,7 +161,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
               : 'Listeyi en iyiden en kötüye diz. Çoğunlukla aynı düşünmek puan getirir.'
         }
         waiting={mySubmitted && !revealed}
-        progress={`${subs.length} sıralama`}
+        progress={`${revealed ? subs.length : submittedCount} sıralama`}
         presenter={presenter}
       />
 

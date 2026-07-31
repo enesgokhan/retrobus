@@ -64,8 +64,10 @@ export default function Yearbook() {
   const { member } = useAuth()
   // the keepsake outlives the meeting it describes
   const { meeting, stages } = useMeeting(undefined, { includeArchived: true })
-  // A keepsake with no date on it is minutes. Long-form Turkish, computed once.
-  const meetingDate = new Date().toLocaleDateString('tr-TR', {
+  // A keepsake with no date on it is minutes. It must be the date of the
+  // MEETING, not of the day it happens to be opened — this page is explicitly
+  // built to outlive its meeting, so "today" would be wrong every time after.
+  const meetingDate = new Date(meeting?.created_at ?? Date.now()).toLocaleDateString('tr-TR', {
     day: 'numeric', month: 'long', year: 'numeric',
   })
   const [awards, setAwards] = useState<Award[]>([])

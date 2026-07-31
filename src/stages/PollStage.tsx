@@ -97,7 +97,13 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
       )}
       {polls.map((poll) => {
         const tally = responses[poll.id] ?? []
-        const showResults = poll.state === 'revealed' || poll.state === 'closed' || poll.reveal === 'live'
+        // The console's big "Sonuçları aç" sets the STAGE to revealed; each poll
+        // also has its own state, and only that was consulted — so the host
+        // pressed the most obvious button in the app and the room's screen still
+        // read "🔒 Sonuçlar kapanışta açılacak".
+        const stageRevealed = stage.state === 'revealed' || stage.state === 'closed'
+        const showResults =
+          poll.state === 'revealed' || poll.state === 'closed' || poll.reveal === 'live' || stageRevealed
         const scaleMax = poll.kind === 'scale5' ? 5 : poll.kind === 'scale10' ? 10 : 0
         const labels = scaleMax
           ? Array.from({ length: scaleMax }, (_, i) => String(i + 1))

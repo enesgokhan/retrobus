@@ -27,6 +27,8 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
   const [missions, setMissions] = useState<Mission[]>([])
   const [members, setMembers] = useState<Member[]>([])
   const [note, setNote] = useState<string | null>(null)
+  const [armed, setArmed] = useState(false)
+  const [armedAt, setArmedAt] = useState(0)
   const [didCelebrate, setDidCelebrate] = useState(false)
 
   const anyRevealed = missions.some((m) => m.revealed)
@@ -124,8 +126,24 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
                 sen de göremezsin — bilseydin farkında olmadan yönlendirirdin.
               </p>
               <div className="flex gap-2 flex-wrap">
-                <button className="btn-coral text-sm" onClick={assign}>
-                  🎲 Görevleri dağıt ({missions.length || 0} atanmış)
+                <button
+                  className={armed ? 'btn-coral text-sm' : 'btn-ghost text-sm'}
+                  onClick={() => {
+                    // assign_missions deletes every unrevealed mission first, so
+                    // pressing this at the finale silently re-rolls three hours
+                    // of secret missions and loses the host's marks
+                    if (!armed) { setArmed(true); setArmedAt(Date.now()); return }
+                    if (Date.now() - armedAt < 700) return
+                    setArmed(false)
+                    void assign()
+                  }}
+                  onBlur={() => setArmed(false)}
+                >
+                  {armed
+                    ? missions.length
+                      ? 'Mevcut görevler silinip yeniden dağıtılacak — bas'
+                      : 'Dağıtmak için tekrar bas'
+                    : `🎲 Görevleri dağıt (${missions.length || 0} atanmış)`}
                 </button>
                 {missions.length > 0 && (
                   <button className="btn-ghost text-sm" onClick={reveal}>

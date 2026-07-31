@@ -6,16 +6,16 @@ export const S = {
   tagline: 'Takım retrosu, oyunlar ve daha fazlası — hep birlikte tek rotada.',
 
   // Giriş
-  loginTitle: 'Otobüse binin',
-  loginName: 'Adınız',
+  loginTitle: 'Otobüse bin',
+  loginName: 'Adın',
   loginNamePlaceholder: 'örn. Enes',
   loginCode: 'Bilet kodun',
   loginButton: 'Hadi bin',
   loginWrong: 'Ad veya kod hatalı.',
-  loginNoCode: 'Size henüz kod atanmamış — şoföre söyleyin.',
+  loginNoCode: 'Sana henüz kod atanmamış — şoföre söyle.',
   loginLocked: (sec: number) =>
-    `Çok fazla deneme. ${Math.ceil(sec / 60)} dakika sonra tekrar deneyin.`,
-  loginError: 'Bir şeyler ters gitti, tekrar deneyin.',
+    `Çok fazla deneme. ${Math.ceil(sec / 60)} dakika sonra tekrar dene.`,
+  loginError: 'Bir şeyler ters gitti, tekrar dene.',
   loginWaiting: 'Sıraya girdik — sunucu yoğun, birkaç saniye…',
   loginRateLimited:
     'Aynı anda çok kişi giriş yaptı — sunucu bir süre yeni giriş almıyor. ' +

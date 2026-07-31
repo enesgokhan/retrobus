@@ -146,7 +146,12 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
           </div>
         </>
       )}
-      {body}
+      {/* Keyed by stage: two consecutive stops of the same kind (three boards in
+          a row, two feedback walls) otherwise reconcile as one component and
+          carry the previous stop's drafts and selections across. */}
+      <div key={stage.id} className="contents">
+        {body}
+      </div>
     </div>
   )
 }

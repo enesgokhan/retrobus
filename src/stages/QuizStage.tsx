@@ -157,7 +157,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
   }
 
   const header = (() => {
-    if (!active) return { phase: 'Bilgi Yarışması', instruction: 'Şoför bir soru açmayı bekliyoruz.', waiting: true }
+    if (!active) return { phase: 'Bilgi Yarışması', instruction: 'Şoförün soru açmasını bekliyoruz.', waiting: true }
     if (revealed) return { phase: 'Cevap açıldı', instruction: 'Puanlar düştü — sıralamaya bak.', waiting: false }
     if (myAnswer) return { phase: 'Cevabın kayıtlı', instruction: 'Hız da sayılıyor. Diğerlerini bekliyoruz.', waiting: true }
     return {

@@ -50,6 +50,8 @@ export default function Host() {
    * anywhere in the app. The second press has to be a decision, not a bounce.
    */
   const [armedAt, setArmedAt] = useState(0)
+  /** the console's own voice — writes that fail must say so */
+  const [hostError, setHostError] = useState<string | null>(null)
 
   function fixSetup() {
     setForceSetup((n) => n + 1)
@@ -59,12 +61,19 @@ export default function Host() {
   const [freezeNote, setFreezeNote] = useState('')
   const sb = supabase
 
+  /**
+   * Freezing is the panic button: it is pressed because something needs to stop
+   * right now. A silent failure here is the worst case in the console — the
+   * host cannot tell a failed write from a slow one, and keeps talking while
+   * nine screens carry on showing whatever they were showing.
+   */
   async function toggleFreeze() {
     if (!meeting) return
-    await sb
+    const { error } = await sb
       .from('meetings')
       .update({ frozen: !meeting.frozen, frozen_note: freezeNote.trim() || null })
       .eq('id', meeting.id)
+    setHostError(error ? 'Ekranlar dondurulamadı — tekrar dene.' : null)
   }
 
   async function createMeeting() {
@@ -168,6 +177,7 @@ export default function Host() {
   }
 
   async function setState(stage: Stage, state: Stage['state']) {
+    setHostError(null)
     // Rank These is scored by a function, not by the state column. Setting
     // state='revealed' directly opened the results with nobody scored — and
     // RankStage only renders its own scoring button while NOT revealed, so the
@@ -177,7 +187,8 @@ export default function Host() {
       const { error } = await sb.rpc('reveal_ranking', { p_stage_id: stage.id })
       if (!error) return
     }
-    await sb.from('stages').update({ state }).eq('id', stage.id)
+    const { error } = await sb.from('stages').update({ state }).eq('id', stage.id)
+    if (error) setHostError('Durak durumu değiştirilemedi — tekrar dene.')
   }
 
   async function removeStage(stage: Stage) {
@@ -219,6 +230,12 @@ export default function Host() {
         </div>
         <HostNav />
       </header>
+
+      {hostError && (
+        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 font-bold">
+          ⚠️ {hostError}
+        </p>
+      )}
 
       {loading ? (
         <p className="text-ink-soft">{S.loading}</p>

@@ -59,7 +59,7 @@ export const STAGE_PRESETS: StagePreset[] = [
       reveal: 'batch',
       dots: 5,
       timer_s: 480,
-      prompt: 'Neyi tıkıyoruz, ne zaman kaybediyoruz, ne sinir bozuyor? (anonim)',
+      prompt: 'Nerede tıkanıyoruz, nerede zaman kaybediyoruz, ne sinirimizi bozuyor? (anonim)',
       columns: [
         { key: 'blocked', label: 'Tıkanma' },
         { key: 'waste', label: 'Zaman kaybı' },
