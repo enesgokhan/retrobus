@@ -120,9 +120,14 @@ await c.Test2.rpc('submit_fib_lie', { p_round_id: round.id, p_body: 'başka yala
 await c.Test3.rpc('submit_fib_lie', { p_round_id: round.id, p_body: 'üçüncü yalan' })
 await host.from('fibbage_rounds').update({ phase: 'guess' }).eq('id', round.id)
 
-const t1Lie = (await c.Test1.rpc('fib_authorship', { p_round_id: round.id })).data[0].lie_id
-await c.Test2.rpc('pick_fib', { p_round_id: round.id, p_lie_id: null, p_truth: true })  // finds truth
-await c.Test3.rpc('pick_fib', { p_round_id: round.id, p_lie_id: t1Lie, p_truth: false }) // fooled by T1
+// Options now travel under per-round tokens, and picking goes back by token —
+// the client is never told which one is the truth (0018).
+const t1Opts = (await c.Test1.rpc('fib_options', { p_round_id: round.id })).data ?? []
+const t1Tok = t1Opts.find((o) => o.is_mine)?.opt_id
+const truthTok = (await host.from('fibbage_keys').select('truth_token')
+  .eq('round_id', round.id).single()).data.truth_token
+await c.Test2.rpc('pick_fib_option', { p_round_id: round.id, p_opt_id: truthTok })  // finds truth
+await c.Test3.rpc('pick_fib_option', { p_round_id: round.id, p_opt_id: t1Tok })     // fooled by T1
 
 const revFib = await host.rpc('reveal_fib', { p_round_id: round.id })
 if (revFib.error) fail(`reveal_fib: ${revFib.error.message}`)

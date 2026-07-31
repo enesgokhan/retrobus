@@ -12,32 +12,46 @@ interface Round {
   order_index: number
   multiplier: number
 }
-interface Lie {
-  id: string
-  round_id: string
+/** One option as the server chooses to describe it, given the phase. */
+interface FibOption {
+  opt_id: string
   body: string
-  sort_seed: number
+  /** null until the reveal — the client is never told early */
+  is_truth: boolean | null
+  /** your own lie, so the UI can stop you picking it */
+  is_mine: boolean
+  /** who wrote it; null until the reveal */
+  author: string | null
 }
-interface Pick {
-  round_id: string
-  picker_member_id: string
-  lie_id: string | null
-  picked_truth: boolean
+/** Everything else the screen may know, again decided by phase on the server. */
+interface FibState {
+  phase: 'lie' | 'guess' | 'revealed' | null
+  /** the token you picked — never whether it was right */
+  my_pick: string | null
+  picked_count: number
+  /** token → names, only once revealed */
+  takers: Record<string, string[]>
 }
 
 /**
  * Fibbage — gerçek cevabı bulmaya çalış, bu arada kendi yalanınla başkalarını kandır.
  *
- * Yazarlık bilgisi `fib_authorship` RPC'siyle gelir: tahmin aşamasında sadece
- * kendi yalanını görürsün, herkesinki ancak açılışta görünür. Sütun düzeyinde
- * yetki hiç verilmedi, çünkü satır politikası tek bir kolonu koruyamaz.
+ * İstemci fibbage_lies veya fibbage_picks tablolarını HİÇ okumaz. Yalanları
+ * okuyabilmek, seçenek listesinden çıkarma yaparak gerçeği adlandırmayı; kendi
+ * seçimini okuyabilmek ise doğru bilip bilmediğini öğrenmeyi mümkün kılıyordu.
+ * Ekranın bildiği her şey aşamaya göre cevap veren fonksiyonlardan gelir.
  */
 export default function FibbageStage({ stage, presenter = false }: { stage: Stage; presenter?: boolean }) {
   const { member } = useAuth()
   const isHost = member?.is_host ?? false
   const [rounds, setRounds] = useState<Round[]>([])
-  const [lies, setLies] = useState<Lie[]>([])
-  const [picks, setPicks] = useState<Pick[]>([])
+  // fibbage_lies and fibbage_picks are no longer readable by clients at all:
+  // reading the lies let you name the truth by subtracting them from the option
+  // list, and reading your own pick told you whether you had found it. Both now
+  // arrive through phase-gated functions.
+  const [state, setState] = useState<FibState>({ phase: null, my_pick: null, picked_count: 0, takers: {} })
+  const [lieCount, setLieCount] = useState(0)
+  const [myLieBody, setMyLieBody] = useState<string | null>(null)
   // Options come from fib_options: the lies AND the truth, in one list, with
   // opaque ids. Nothing in the payload says which is which until the reveal.
   //
@@ -46,8 +60,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
   // anyone with devtools open wins every round. And gating that key on the host
   // alone (what 0016 did) meant the truth was on NOBODY's list but the host's,
   // which made the game unwinnable for the room.
-  const [options, setOptions] = useState<{ opt_id: string; body: string; is_truth: boolean | null }[]>([])
-  const [authors, setAuthors] = useState<Record<string, string>>({})
+  const [options, setOptions] = useState<FibOption[]>([])
   const [members, setMembers] = useState<Member[]>([])
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -74,29 +87,32 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
       setRounds(roundList)
       setMembers((m as Member[]) ?? [])
 
-      const roundIds = roundList.map((x) => x.id)
-      if (!roundIds.length) {
-        setLies([])
-        setPicks([])
+      if (!roundList.length) {
         setOptions([])
+        setLieCount(0)
+        setMyLieBody(null)
         return
       }
-      const [{ data: l }, { data: p }] = await Promise.all([
-        supabase.from('fibbage_lies').select('id, round_id, body, sort_seed')
-          .in('round_id', roundIds).order('sort_seed'),
-        supabase.from('fibbage_picks').select('round_id, picker_member_id, lie_id, picked_truth')
-          .in('round_id', roundIds),
-      ])
-      if (cancelled) return
-      setLies((l as Lie[]) ?? [])
-      setPicks((p as Pick[]) ?? [])
-      // the option list only exists once writing has finished
       const cur = roundList.find((x) => x.id === ((stage.config.current_round_id as string) ?? '')) ??
         roundList.find((x) => x.phase !== 'revealed') ?? null
-      if (cur && cur.phase !== 'lie') {
-        const { data: o } = await supabase.rpc('fib_options', { p_round_id: cur.id })
-        if (!cancelled) setOptions((o as typeof options) ?? [])
-      } else if (!cancelled) setOptions([])
+      if (!cur) {
+        if (!cancelled) { setOptions([]); setLieCount(0); setMyLieBody(null) }
+        return
+      }
+      const [{ data: o }, { data: st }, { data: mine }] = await Promise.all([
+        cur.phase !== 'lie'
+          ? supabase.rpc('fib_options', { p_round_id: cur.id })
+          : Promise.resolve({ data: [] }),
+        supabase.rpc('fib_state', { p_round_id: cur.id }),
+        supabase.rpc('fib_my_lie', { p_round_id: cur.id }),
+      ])
+      if (cancelled) return
+      setOptions((o as FibOption[]) ?? [])
+      const blob = (st as FibState) ?? { phase: null, my_pick: null, picked_count: 0, takers: {} }
+      setState(blob)
+      const my = (mine as { body: string; written: number } | null) ?? null
+      setMyLieBody(my?.body ?? null)
+      setLieCount(my?.written ?? 0)
     }
     load()
     const channel = liveChannel(
@@ -110,31 +126,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
     }
   }, [member, stage.id])
 
-  // authorship comes from the gated RPC, never from a column
-  useEffect(() => {
-    if (!round) return
-    let cancelled = false
-    ;(async () => {
-      const { data } = await supabase.rpc('fib_authorship', { p_round_id: round.id })
-      if (cancelled) return
-      const map: Record<string, string> = {}
-      for (const row of (data as { lie_id: string; author_member_id: string }[]) ?? []) {
-        map[row.lie_id] = row.author_member_id
-      }
-      setAuthors(map)
-    })()
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only id/phase/pick-count
-    // matter; the whole `round` object changes identity on every refetch.
-  }, [round?.id, round?.phase, picks.length])
-
-  const nameOf = (id: string) => members.find((m) => m.id === id)?.display_name ?? '—'
-  const roundLies = round ? lies.filter((l) => l.round_id === round.id) : []
-  const roundPicks = round ? picks.filter((p) => p.round_id === round.id) : []
-  const myLie = roundLies.find((l) => authors[l.id] === member?.id)
-  const myPick = roundPicks.find((p) => p.picker_member_id === member?.id)
+  const myPick = state.my_pick
 
   async function submitLie() {
     if (!round || !draft.trim()) return
@@ -205,12 +197,12 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
         <div className="flex flex-wrap gap-2">
           {round.phase === 'lie' && (
             <button className="btn-coral text-sm" onClick={() => setPhase('guess')}>
-              Tahmine geç ({roundLies.length} yalan)
+              Tahmine geç ({lieCount} yalan)
             </button>
           )}
           {round.phase === 'guess' && (
             <button className="btn-coral text-sm" onClick={reveal}>
-              Gerçeği aç ve puanla ({roundPicks.length} seçim)
+              Gerçeği aç ve puanla ({state.picked_count} seçim)
             </button>
           )}
         </div>
@@ -286,7 +278,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
 
   const header = (() => {
     if (round.phase === 'lie') {
-      return myLie
+      return myLieBody
         ? { phase: 'Yalanın hazır', instruction: 'Diğerlerini bekliyoruz.', waiting: true }
         : { phase: 'Yalan yazma zamanı', instruction: 'Gerçek sanılacak bir yalan yaz. Kandırdığın her kişi puan.', waiting: false }
     }
@@ -304,8 +296,8 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
         {...header}
         presenter={presenter}
         progress={
-          round.phase === 'lie' ? `${roundLies.length}/${members.length} yalan`
-          : round.phase === 'guess' ? `${roundPicks.length}/${members.length} seçim`
+          round.phase === 'lie' ? `${lieCount}/${members.length} yalan`
+          : round.phase === 'guess' ? `${state.picked_count}/${members.length} seçim`
           : null
         }
       />
@@ -330,9 +322,9 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
 
         {round.phase === 'lie' && (
           <>
-            {myLie ? (
+            {myLieBody ? (
               <p className="font-bold text-teal">
-                ✅ Yalanın hazır: “{myLie.body}” — {roundLies.length}/{members.length} kişi yazdı
+                ✅ Yalanın hazır: “{myLieBody}” — {lieCount}/{members.length} kişi yazdı
               </p>
             ) : (
               !presenter && (
@@ -364,12 +356,11 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
               .map((opt) => {
                 const revealed = round.phase === 'revealed'
                 const isTruth = opt.is_truth === true
-                const author = authors[opt.opt_id] ?? null
-                const isMine = author === member?.id
-                const takers = roundPicks.filter((p) =>
-                  isTruth ? p.picked_truth : p.lie_id === opt.opt_id,
-                )
-                const picked = isTruth ? myPick?.picked_truth : myPick?.lie_id === opt.opt_id
+                const isMine = opt.is_mine
+                const takers = state.takers[opt.opt_id] ?? []
+                // compare tokens, so "which one did I choose" never implies
+                // "and was it the right one"
+                const picked = myPick === opt.opt_id
                 const canPick = round.phase === 'guess' && !myPick && !isMine && !presenter
 
                 return (
@@ -401,9 +392,9 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                     </div>
                     {revealed && (
                       <p className="text-xs font-semibold mt-1.5 opacity-80">
-                        {!isTruth && author && `${nameOf(author)} yazdı. `}
+                        {!isTruth && opt.author && `${opt.author} yazdı. `}
                         {takers.length > 0
-                          ? `Seçenler: ${takers.map((t) => nameOf(t.picker_member_id)).join(', ')}`
+                          ? `Seçenler: ${takers.join(', ')}`
                           : 'Kimse seçmedi.'}
                       </p>
                     )}

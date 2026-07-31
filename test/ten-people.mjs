@@ -82,6 +82,9 @@ const go = async (pg, path) => {
 const text = async (pg) => ((await pg.locator('body').textContent()) ?? '').replace(/\s+/g, ' ')
 const shot = async (pg, n) => { if (SHOTS) await pg.screenshot({ path: `${SHOTS}/t-${n}.png`, fullPage: true }) }
 async function login(pg, name, code) {
+  // a restored session means there is no login screen to fill in
+  const __nb = (arguments[0] ?? pg).getByPlaceholder('örn. Enes')
+  if (!(await __nb.count())) return true
   await pg.getByPlaceholder('örn. Enes').fill(name)
   const boxes = pg.locator('input[inputmode="numeric"]')
   for (let i = 0; i < 6; i++) await boxes.nth(i).fill(code[i])

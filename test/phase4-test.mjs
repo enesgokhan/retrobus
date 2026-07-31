@@ -143,31 +143,42 @@ if (!truthAsLie.error) fail('submitting the truth as a lie must be refused')
 else ok('cannot submit the truth as your lie')
 
 await host.from('fibbage_rounds').update({ phase: 'guess' }).eq('id', round.id)
-const { data: lies } = await pax[0].from('fibbage_lies').select('id, body').eq('round_id', round.id)
-if ((lies ?? []).length !== 3) fail(`expected 3 lies visible, got ${lies?.length}`)
-else ok('lies visible in guess phase')
+// The options come from fib_options now, under per-round tokens. Reading
+// fibbage_lies directly used to be allowed — and that read was the attack:
+// subtract the lie ids from the option list and the remainder is the truth.
+const { data: opts } = await pax[0].rpc('fib_options', { p_round_id: round.id })
+if ((opts ?? []).length !== 4) fail(`expected 3 lies + the truth, got ${opts?.length}`)
+else ok('every option is offered, the truth among them')
+if ((opts ?? []).some((o) => o.is_truth !== null)) fail('an option is marked true during the guess')
+else ok('no option is marked true during the guess')
 
-// authorship must NOT be visible yet — neither by column nor by RPC
-const colPeek = await pax[1].from('fibbage_lies').select('author_member_id').eq('round_id', round.id)
-if (!colPeek.error) fail(`authorship column readable during guessing: ${JSON.stringify(colPeek.data)}`)
-else ok('authorship column has no grant (42501)')
+const rawLies = await pax[0].from('fibbage_lies').select('id')
+if (!rawLies.error && (rawLies.data ?? []).length) fail('fibbage_lies is still readable — set subtraction works')
+else ok('fibbage_lies is not readable by players')
 
-const rpcPeek = await pax[1].rpc('fib_authorship', { p_round_id: round.id })
-const others = (rpcPeek.data ?? []).filter((r) => r.author_member_id !== idOf('Baris'))
-if (others.length) fail(`fib_authorship leaked ${others.length} other authors during guessing`)
-else if ((rpcPeek.data ?? []).length !== 1) fail('should see exactly your own authorship')
-else ok('fib_authorship returns only your own lie before reveal')
+const rawPicks = await pax[0].from('fibbage_picks').select('picked_truth')
+if (!rawPicks.error && (rawPicks.data ?? []).length) fail('fibbage_picks is readable — the pick answers the question')
+else ok('fibbage_picks is not readable by players')
 
 // cannot pick your own lie
-const ayseOwn = await pax[0].rpc('fib_authorship', { p_round_id: round.id })
-const ayseLie = { id: ayseOwn.data[0].lie_id }
-const ownPick = await pax[0].rpc('pick_fib', { p_round_id: round.id, p_lie_id: ayseLie.id, p_truth: false })
+const ayseOpts = (opts ?? []).filter((o) => o.is_mine)
+if (ayseOpts.length !== 1) fail(`expected exactly one own lie, got ${ayseOpts.length}`)
+const ownPick = await pax[0].rpc('pick_fib_option', { p_round_id: round.id, p_opt_id: ayseOpts[0]?.opt_id })
 if (!ownPick.error) fail('picking your own lie must be refused')
 else ok('cannot pick your own lie')
 
 // Baris finds the truth; Ceyda falls for Ayse's lie
-await pax[1].rpc('pick_fib', { p_round_id: round.id, p_lie_id: null, p_truth: true })
-await pax[2].rpc('pick_fib', { p_round_id: round.id, p_lie_id: ayseLie.id, p_truth: false })
+const { data: bOpts } = await pax[1].rpc('fib_options', { p_round_id: round.id })
+const truthTok = (await host.from('fibbage_keys').select('truth_token').eq('round_id', round.id).single()).data.truth_token
+await pax[1].rpc('pick_fib_option', { p_round_id: round.id, p_opt_id: truthTok })
+const { data: cOpts } = await pax[2].rpc('fib_options', { p_round_id: round.id })
+const ayseTok = ayseOpts[0]?.opt_id
+await pax[2].rpc('pick_fib_option', { p_round_id: round.id, p_opt_id: ayseTok })
+
+// and a second pick is refused
+const pickedTwice = await pax[2].rpc('pick_fib_option', { p_round_id: round.id, p_opt_id: truthTok })
+if (!pickedTwice.error) fail('a player can pick twice — that is a truth oracle')
+else ok('one pick per player per round')
 
 const rf = await host.rpc('reveal_fib', { p_round_id: round.id })
 if (rf.error) fail(`reveal_fib: ${rf.error.message}`)
@@ -182,8 +193,12 @@ if (fpts('Baris', 'fib_found_truth') !== 1000) fail(`Baris should get 1000 for t
 else if (fpts('Ayse', 'fib_fooled') !== 500) fail(`Ayse should get 500 for fooling 1, got ${fpts('Ayse', 'fib_fooled')}`)
 else ok('fibbage scoring: +1000 truth, +500 per person fooled')
 
-const allAuthors = await pax[1].rpc('fib_authorship', { p_round_id: round.id })
-if ((allAuthors.data ?? []).length !== 3) fail(`after reveal expected 3 authors, got ${allAuthors.data?.length}`)
+// fib_authorship is gone: it existed to hand out lie ids, which is what made
+// the subtraction attack possible. fib_options carries authorship instead, and
+// only once the round is revealed.
+const revealedOpts = await pax[1].rpc('fib_options', { p_round_id: round.id })
+const withAuthor = (revealedOpts.data ?? []).filter((o) => o.author && o.author !== 'GERÇEK')
+if (withAuthor.length !== 3) fail(`after reveal expected 3 authored lies, got ${withAuthor.length}`)
 else ok('all authorship revealed after reveal')
 
 // ============ RANK THESE ============

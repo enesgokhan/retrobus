@@ -74,10 +74,14 @@ async function login(name, code) {
     jsErrors.push(`${name}: ${res.status()} ${path} ${why}`)
   })
   await page.goto(APP, { waitUntil: 'networkidle' })
-  await page.getByPlaceholder('örn. Enes').fill(name)
-  const boxes = page.locator('input[inputmode="numeric"]')
-  for (let i = 0; i < 6; i++) await boxes.nth(i).fill(code[i])
-  await page.waitForTimeout(4000)
+  // a restored session means there is no login screen to fill in
+  const nameBox = page.getByPlaceholder('örn. Enes')
+  if (await nameBox.count()) {
+    await nameBox.fill(name)
+    const boxes = page.locator('input[inputmode="numeric"]')
+    for (let i = 0; i < 6; i++) await boxes.nth(i).fill(code[i])
+    await page.waitForTimeout(4000)
+  }
   const skip = page.getByRole('button', { name: 'Şimdilik geç' })
   if (await skip.count()) { await skip.click(); await page.waitForTimeout(1500) }
   const go = page.getByRole('button', { name: 'Hadi başlayalım' })
@@ -324,8 +328,10 @@ console.log('\n=== FIBBAGE: lie → guess → reveal ===')
       await pg.getByRole('button', { name: /Gönder/ }).first().click()
       await pg.waitForTimeout(1100)
     }
-    const lies = (await api.from('fibbage_lies').select('id').eq('round_id', round.id)).data
-    if ((lies ?? []).length !== 3) bad('fibbage', `expected 3 lies, got ${lies?.length}`)
+    // fibbage_lies is no longer client-readable; count through the host RPC
+    const { data: myLie } = await api.rpc('fib_my_lie', { p_round_id: round.id })
+    const lies = { length: myLie?.written ?? 0 }
+    if (lies.length !== 3) bad('fibbage', `expected 3 lies, got ${lies.length}`)
     else good('3 lies written')
 
     await room(host)

@@ -115,8 +115,9 @@ if (problems.length) {
 if (starSelects.length) {
   const risky = starSelects.filter((s) => {
     const table = s.split(' ')[0]
-    // members and fibbage_lies are the tables with column-level grants
-    return table === 'members' || table === 'fibbage_lies'
+    // members is the only table left with column-level grants; fibbage_lies
+    // lost its client grant entirely in 0018 (reading it named the truth)
+    return table === 'members'
   })
   if (risky.length) {
     fail(`select('*') on a table with column-level grants: ${risky.join(', ')}`)

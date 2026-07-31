@@ -67,10 +67,13 @@ async function login(name, code, w = 1280, h = 950) {
     if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(`${name} console: ${m.text().slice(0, 140)}`)
   })
   await page.goto(APP, { waitUntil: 'networkidle' })
-  await page.getByPlaceholder('örn. Enes').fill(name)
-  const boxes = page.locator('input[inputmode="numeric"]')
-  for (let i = 0; i < 6; i++) await boxes.nth(i).fill(code[i])
-  await page.waitForTimeout(4000)
+  // a restored session means there is no login screen to fill in
+  if (await page.getByPlaceholder('örn. Enes').count()) {
+    await page.getByPlaceholder('örn. Enes').fill(name)
+    const boxes = page.locator('input[inputmode="numeric"]')
+    for (let i = 0; i < 6; i++) await boxes.nth(i).fill(code[i])
+    await page.waitForTimeout(4000)
+  }
   // skip the avatar step
   const skip = page.getByRole('button', { name: 'Şimdilik geç' })
   if (await skip.count()) {
