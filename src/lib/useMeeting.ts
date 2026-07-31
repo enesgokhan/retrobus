@@ -16,7 +16,7 @@ export interface MeetingLive {
  * Every client — yolcu, şoför, sunum — runs on this hook; when the host changes
  * active_stage_id or a stage's state, everyone follows in realtime.
  */
-export function useMeeting(meetingId?: string): MeetingLive {
+export function useMeeting(meetingId?: string, opts?: { includeArchived?: boolean }): MeetingLive {
   const { member } = useAuth()
   const [meeting, setMeeting] = useState<Meeting | null>(null)
   const [stages, setStages] = useState<Stage[]>([])
@@ -28,10 +28,13 @@ export function useMeeting(meetingId?: string): MeetingLive {
 
     async function load() {
       const q = supabase.from('meetings').select('*')
+      // The room follows the LIVE meeting only — once the night is archived
+      // passengers should not be dropped back into it. The yearbook is the
+      // exception: it is the keepsake, and it has to survive the meeting ending.
+      const scoped = opts?.includeArchived ? q : q.eq('status', 'live')
       const { data: m } = meetingId
         ? await q.eq('id', meetingId).maybeSingle()
-        : await q
-            .eq('status', 'live')
+        : await scoped
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle()

@@ -178,9 +178,19 @@ export default function FeedbackWallStage({
               maxLength={500}
             />
             {error && <p className="text-sm font-semibold text-coral-deep">{error}</p>}
-            <button className="btn-coral self-start" onClick={send} disabled={!target || !body.trim() || busy}>
-              Gönder
-            </button>
+            <div className="flex items-center gap-3 flex-wrap">
+              <button className="btn-coral self-start" onClick={send} disabled={!target || !body.trim() || busy}>
+                Gönder
+              </button>
+              {/* A disabled primary with no stated reason is the most common way
+                  a screen wastes someone's time: they type, press, nothing
+                  happens, and they have to guess what is missing. */}
+              {(!target || !body.trim()) && (
+                <span className="text-xs font-semibold text-ink-soft">
+                  {!target ? 'Önce yukarıdan kime yazdığını seç.' : 'Bir şeyler yaz.'}
+                </span>
+              )}
+            </div>
             {/* the band above already promises anonymity; only the count is new */}
             {sent > 0 && (
               <p className="text-xs font-semibold text-ink-soft">✅ {sent} tane gönderdin.</p>

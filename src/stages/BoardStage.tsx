@@ -142,7 +142,10 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
     if (votingPhase) {
       return myDots >= dotBudget
         ? { phase: 'Oylama', instruction: 'Oy hakkın bitti. En çok oy alanları konuşacağız.', waiting: true }
-        : { phase: 'Oylama', instruction: `Konuşmak istediklerine oy ver (${dotBudget - myDots} hakkın var).`, waiting: false }
+        : visible.length === 0
+          // revealed with nothing on it — usually the host moved on early
+          ? { phase: 'Oylama', instruction: 'Bu panoya hiç kart yazılmamış.', waiting: true }
+          : { phase: 'Oylama', instruction: `Konuşmak istediklerine oy ver (${dotBudget - myDots} hakkın var).`, waiting: false }
     }
     return { phase: 'Kapandı', instruction: 'Bu durak tamamlandı.', waiting: true }
   })()
@@ -178,7 +181,7 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
                 disabled={!draft.trim() || busy}
                 onClick={() => send(col.key === 'all' ? null : col.key)}
               >
-                {columns.length > 1 ? `${col.label}'e ekle` : S.add}
+                {columns.length > 1 ? `＋ ${col.label}` : S.add}
               </button>
             ))}
           </div>

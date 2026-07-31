@@ -43,6 +43,7 @@ export default function Host() {
   // bumping this forces StageControls open, even if the host had collapsed it
   const [forceSetup, setForceSetup] = useState(0)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [confirmEnd, setConfirmEnd] = useState<string | null>(null)
 
   function fixSetup() {
     setForceSetup((n) => n + 1)
@@ -62,8 +63,29 @@ export default function Host() {
 
   async function createMeeting() {
     if (!newTitle.trim()) return
+    // Exactly one meeting is live at a time. Without this the app quietly
+    // accumulates live meetings, everyone follows whichever is newest, and
+    // archiving the current one drops the whole room back into an older night.
+    await sb.from('meetings').update({ status: 'done', active_stage_id: null }).eq('status', 'live')
     await sb.from('meetings').insert({ title: newTitle.trim(), status: 'live' })
     setNewTitle('')
+  }
+
+  /**
+   * End the night.
+   *
+   * There was no way to do this, and no way to start a second meeting: the
+   * create form only rendered when no live meeting existed, so after a dry run
+   * the host was locked inside the rehearsal — its test cards, its scores, its
+   * used-up stages — with no route back except editing the database by hand.
+   * Archiving keeps everything (the yearbook reads archived meetings) and frees
+   * the console to start a clean one.
+   */
+  async function endMeeting() {
+    if (!meeting) return
+    if (confirmEnd !== meeting.id) { setConfirmEnd(meeting.id); return }
+    setConfirmEnd(null)
+    await sb.from('meetings').update({ status: 'done', active_stage_id: null }).eq('id', meeting.id)
   }
 
   function nextOrder() {
@@ -274,6 +296,24 @@ export default function Host() {
             )}
           </section>
 
+          {/* End of the night. Without this the console could never leave a
+              meeting, so a dry run permanently became the real one. */}
+          <section className="card flex items-center justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <h3 className="font-bold text-sm">Toplantıyı bitir</h3>
+              <p className="text-xs text-ink-soft font-semibold">
+                Arşive kaldırır. Yıllık okunmaya devam eder, konsol yeni bir toplantıya hazır olur.
+              </p>
+            </div>
+            <button
+              className={confirmEnd === meeting.id ? 'btn-coral text-sm' : 'btn-ghost text-sm'}
+              onClick={endMeeting}
+              onBlur={() => setConfirmEnd(null)}
+            >
+              {confirmEnd === meeting.id ? 'Emin misin? Bas' : '🏁 Bitir ve arşivle'}
+            </button>
+          </section>
+
           {activeStage && (
             <div ref={setupRef}>
               <StageControls
@@ -358,6 +398,19 @@ export default function Host() {
                       {isActive && stage.state === 'revealed' && (
                         <button className="btn-coral text-xs px-3 py-1.5" onClick={() => setState(stage, 'closed')}>
                           {S.closeStage}
+                        </button>
+                      )}
+                      {/* One way back. Revealing a board closes writing for
+                          good, and on the night somebody is always still
+                          typing when the host presses it — without this there
+                          was no undo anywhere in the run of show. */}
+                      {isActive && (stage.state === 'revealed' || stage.state === 'closed') && (
+                        <button
+                          className="btn-ghost text-xs px-3 py-1.5"
+                          onClick={() => setState(stage, stage.state === 'closed' ? 'revealed' : 'open')}
+                          title="Bir adım geri al"
+                        >
+                          ↩︎ Geri
                         </button>
                       )}
                       {!isActive && stage.state === 'pending' && (

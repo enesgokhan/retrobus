@@ -61,7 +61,8 @@ interface FeedbackRow {
  */
 export default function Yearbook() {
   const { member } = useAuth()
-  const { meeting, stages } = useMeeting()
+  // the keepsake outlives the meeting it describes
+  const { meeting, stages } = useMeeting(undefined, { includeArchived: true })
   // A keepsake with no date on it is minutes. Long-form Turkish, computed once.
   const meetingDate = new Date().toLocaleDateString('tr-TR', {
     day: 'numeric', month: 'long', year: 'numeric',
