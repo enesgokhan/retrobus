@@ -33,6 +33,8 @@ export const S = {
   ok: 'Tamam',
 
   // Yolcu görünümü
+  endedTitle: 'Otobüs garaja döndü',
+  endedBody: 'Bu akşamlık bu kadar. İyi ki geldin — yıllık burada kalıyor.',
   waitingTitle: 'Otobüs kalkmak üzere',
   waitingBody: 'Şoför rotayı ayarlıyor. Birazdan hareket ediyoruz.',
   nextStop: 'Sonraki durak',

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useMeeting } from '../lib/useMeeting'
 import { usePresence } from '../lib/usePresence'
@@ -12,7 +13,7 @@ import { stageTheme, themeVars } from '../lib/theme'
 /** Yolcu görünümü — şoför nereye sürerse ekran oraya gider. */
 export default function Room() {
   const { member } = useAuth()
-  const { meeting, activeStage, loading } = useMeeting()
+  const { meeting, activeStage, loading, ended } = useMeeting()
   // tracking presence here is what makes the host's "kim odada" bar real
   const here = usePresence(meeting?.id ?? null)
 
@@ -54,6 +55,20 @@ export default function Room() {
           </div>
         ) : activeStage ? (
           <StageView stage={activeStage} />
+        ) : ended ? (
+          // the evening is over — say so, and hand them the keepsake
+          <div className="flex-1 grid place-items-center px-5 text-center max-w-md mx-auto">
+            <div>
+              <div className="text-8xl mb-4" aria-hidden>
+                🚌
+              </div>
+              <h2 className="text-3xl font-extrabold mb-2">{S.endedTitle}</h2>
+              <p className="text-ink-soft mb-5">{S.endedBody}</p>
+              <Link to="/yillik" className="btn-coral">
+                📖 Yıllığa bak
+              </Link>
+            </div>
+          </div>
         ) : (
           <div className="flex-1 grid place-items-center px-5 text-center max-w-sm mx-auto">
             <div className="text-7xl mb-4" aria-hidden>

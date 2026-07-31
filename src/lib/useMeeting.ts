@@ -9,6 +9,13 @@ export interface MeetingLive {
   stages: Stage[]
   activeStage: Stage | null
   loading: boolean
+  /**
+   * True when there is no live meeting but the most recent one was archived —
+   * i.e. the evening is over rather than not yet begun. Without this the room
+   * falls back to "the bus is about to leave" at the exact moment the host
+   * ends the night, which reads as the app losing its place.
+   */
+  ended: boolean
 }
 
 /**
@@ -19,6 +26,7 @@ export interface MeetingLive {
 export function useMeeting(meetingId?: string, opts?: { includeArchived?: boolean }): MeetingLive {
   const { member } = useAuth()
   const [meeting, setMeeting] = useState<Meeting | null>(null)
+  const [ended, setEnded] = useState(false)
   const [stages, setStages] = useState<Stage[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -40,6 +48,16 @@ export function useMeeting(meetingId?: string, opts?: { includeArchived?: boolea
             .maybeSingle()
       if (cancelled) return
       setMeeting((m as Meeting) ?? null)
+      if (!m && !meetingId) {
+        // nothing live: has this room already had its evening?
+        const { data: last } = await supabase
+          .from('meetings')
+          .select('status')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (!cancelled) setEnded((last as { status?: string } | null)?.status === 'done')
+      } else if (!cancelled) setEnded(false)
       if (m) {
         const { data: st } = await supabase
           .from('stages')
@@ -66,5 +84,5 @@ export function useMeeting(meetingId?: string, opts?: { includeArchived?: boolea
     ? (stages.find((s) => s.id === meeting.active_stage_id) ?? null)
     : null
 
-  return { meeting, stages, activeStage, loading }
+  return { meeting, stages, activeStage, loading, ended }
 }

@@ -232,6 +232,26 @@ console.log('\n-- 6. boş quiz açılırsa --')
   await shot(ayla, 'empty-quiz')
 }
 
+// =====================================================================
+console.log('\n-- 7. gece biterken odada oturanlar --')
+{
+  await go(ayla, '/oda')
+  await api.from('meetings').update({ status: 'done', active_stage_id: null }).eq('id', meeting.id)
+  let after = ''
+  for (let i = 0; i < 14; i++) {
+    await ayla.waitForTimeout(1200)
+    after = await text(ayla)
+    if (/garaja döndü/.test(after)) break
+  }
+  if (!/garaja döndü/.test(after)) {
+    bad('bitiş', `archiving the meeting left the room on "${after.slice(60, 150)}"`)
+  } else ok('the room is told the evening ended, and offered the yearbook')
+  // and it must not claim the evening is about to start
+  if (/kalkmak üzere/.test(after)) bad('bitiş', 'the room is told the bus is about to leave, after it ended')
+  // put it back so the cleanup below still finds it
+  await api.from('meetings').update({ status: 'live' }).eq('id', meeting.id)
+}
+
 // ---------------------------------------------------------------- report
 console.log('\n════════════ RAPOR ════════════')
 if (jsErrors.length) {
