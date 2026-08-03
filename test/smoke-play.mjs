@@ -452,8 +452,8 @@ console.log('\n=== EDGE CASES ===')
   // two people racing the same vote
   await api.from('stages').update({ state: 'revealed' }).eq('id', st.id)
   await room(p1); await room(p2)
-  const v1 = p1.locator('button', { hasText: '🔵' }).first()
-  const v2 = p2.locator('button', { hasText: '🔵' }).first()
+  const v1 = p1.locator('button[aria-label*="oy"]').first()
+  const v2 = p2.locator('button[aria-label*="oy"]').first()
   if ((await v1.count()) && (await v2.count())) {
     await Promise.all([v1.click(), v2.click()])
     await p1.waitForTimeout(2000)

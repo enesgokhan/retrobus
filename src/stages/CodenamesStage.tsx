@@ -46,11 +46,16 @@ interface Card {
  *   * renk körlüğüne dayanıklı işaretler: her rol ayrıca bir harf/simge taşır,
  *     yalnızca renkle ayrılmaz
  */
+/**
+ * Team colours are semantic, not decorative — they name the two sides — so they
+ * stay saturated. The neutral and assassin cards had to be rebuilt for the dark
+ * system: `bg-ink text-white` was white-on-white once ink became a light token.
+ */
 const ROLE_MARK: Record<string, { mark: string; label: string; cls: string }> = {
-  red: { mark: '🔴', label: 'Kırmızı', cls: 'bg-coral text-white border-coral-deep' },
-  blue: { mark: '🔵', label: 'Mavi', cls: 'bg-sky text-white border-sky' },
-  neutral: { mark: '⬜', label: 'Tarafsız', cls: 'bg-amber-soft text-ink border-amber' },
-  assassin: { mark: '💀', label: 'Suikastçı', cls: 'bg-ink text-white border-ink' },
+  red: { mark: '🔴', label: 'Kırmızı', cls: 'bg-coral text-[#1a0806] shadow-[inset_0_0_0_1px_var(--color-coral-deep)]' },
+  blue: { mark: '🔵', label: 'Mavi', cls: 'bg-sky text-[#04101f] shadow-[inset_0_0_0_1px_#3d7fd0]' },
+  neutral: { mark: '⬜', label: 'Tarafsız', cls: 'bg-[#2a2721] text-ink-soft shadow-[inset_0_0_0_1px_#3a352c]' },
+  assassin: { mark: '💀', label: 'Suikastçı', cls: 'bg-black text-[#ff8a7a] shadow-[inset_0_0_0_2px_#6b2a24]' },
 }
 
 export default function CodenamesStage({ stage, presenter = false }: { stage: Stage; presenter?: boolean }) {
@@ -442,11 +447,14 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
                 'flex items-center justify-center text-center px-1',
                 presenter ? 'text-4xl' : 'text-lg sm:text-xl lg:text-2xl',
                 // an unrevealed card is a physical object, not a blank rectangle
+                // An unrevealed card is a physical object you want to press.
+                // It used to be cream with a hard bottom edge, which on the
+                // dark system rendered near-white text on near-white card.
                 showRole && meta
                   ? meta.cls
-                  : 'bg-[#FFF6E8] border-[#E8D9BE] shadow-[0_4px_0_0_#E0CDAA]',
+                  : 'bg-[--color-raised] text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#22242a]',
                 // revealed cards SINK — the whole job is scanning what is left
-                c.revealed ? 'opacity-45 saturate-50 shadow-none' : '',
+                c.revealed ? 'opacity-35 saturate-[.4] shadow-none' : '',
                 canGuess ? 'hover:-translate-y-0.5 cursor-pointer' : 'cursor-default',
               ].join(' ')}
               onClick={() => canGuess && guessCard(c.id)}

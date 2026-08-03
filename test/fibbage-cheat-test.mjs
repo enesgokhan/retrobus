@@ -77,9 +77,11 @@ console.log('\n-- tahmin aşaması: bir yolcu gerçeği bulabilir mi --')
     fail(`a passenger can still read fibbage_lies (${lies.length} rows) — set subtraction names the truth`)
   } else ok('fibbage_lies is not readable by passengers')
 
-  const { data: keys } = await pax[0].from('fibbage_keys').select('truth')
-  if ((keys ?? []).length) fail('a passenger can read fibbage_keys outright')
-  else ok('fibbage_keys is not readable either')
+  // scoped to THIS round: keys of already-revealed rounds are readable by
+  // design, so an unscoped select fails for the right reason on a reused project
+  const { data: keys } = await pax[0].from('fibbage_keys').select('truth').eq('round_id', roundId)
+  if ((keys ?? []).length) fail('a passenger can read this round\'s key before the reveal')
+  else ok('fibbage_keys is not readable for a round in play')
 
   // and the tokens must not be the lie ids under another name
   const ids = new Set((lies ?? []).map((l) => l.id))

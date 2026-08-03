@@ -1,29 +1,62 @@
-@import '@fontsource-variable/baloo-2';
+@import '@fontsource-variable/inter';
 @import 'tailwindcss';
 
 /*
- * Retrobüs — playful light theme.
- * Bright, warm, candy accents; rounded everything; big friendly type.
+ * Retrobüs design system.
+ *
+ * Dark-first, one accent at a time, hairline borders, a real type scale. The
+ * previous theme was warm paper with chunky 4px button shadows, a rounded party
+ * face and six competing colour worlds — characterful up close, unresolved at
+ * a glance, and impossible to keep consistent across seventeen screens.
+ *
+ * The rules underneath everything here:
+ *   1. One accent per screen. Colour marks the ONE thing that matters — the
+ *      live stop, the control you should press — and nothing else.
+ *   2. Hairlines, not borders. Separation comes from surface elevation.
+ *   3. Type carries the hierarchy. Six sizes, tight tracking on headings.
+ *   4. Space on a 4px grid, so nothing is ever "nearly" aligned.
+ *   5. Motion is 150ms, opacity and transform only. Nothing bounces.
  */
 @theme {
-  --font-sans: 'Baloo 2 Variable', 'Baloo 2', ui-rounded, system-ui, sans-serif;
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  --color-bg: #fdf8f3; /* warm paper */
-  --color-card: #ffffff;
-  --color-ink: #26324b; /* deep blue-gray text */
-  --color-ink-soft: #64748b;
-  --color-line: #ded2c0; /* warm hairline */
+  /* --- surfaces: warm-black, not blue-black; three levels, no more --- */
+  --color-bg: #0b0c0f;
+  --color-surface: #141519;
+  --color-raised: #1b1d22;
+  --color-card: #141519; /* alias: the old name every component still uses */
 
-  --color-coral: #ff5d5d; /* primary — the bus is coral */
-  --color-coral-deep: #e64545;
-  --color-teal: #14b8a6; /* success / go */
-  --color-amber: #ffb020; /* highlights, dots, stars */
-  --color-grape: #8b5cf6; /* games */
-  --color-sky: #38bdf8; /* info */
-  --color-rose-soft: #ffe9e9;
-  --color-teal-soft: #dcf7f3;
-  --color-amber-soft: #fff3d6;
-  --color-grape-soft: #f0e9ff;
+  /* --- hairlines --- */
+  --color-line: #24262c;
+  --color-line-strong: #31343b;
+
+  /* --- text: three weights of attention, and no more --- */
+  --color-ink: #ecedef;
+  --color-ink-soft: #9497a1;
+  --color-ink-faint: #666971;
+
+  /* --- the one brand accent, used for chrome and nothing else --- */
+  --color-brand: #ff6b5a;
+  --color-brand-deep: #e0503f;
+
+  /* --- per-stage accents: jewel tones that hold up on near-black --- */
+  --color-coral: #ff6b5a;
+  --color-coral-deep: #e0503f;
+  --color-teal: #3fb6a8;
+  --color-amber: #e0a343;
+  --color-grape: #8b7cf6;
+  --color-sky: #58a6ff;
+  --color-gold: #f0c24b;
+
+  /* soft variants are 12% of the accent over the surface, computed not guessed */
+  --color-rose-soft: #2a1a1c;
+  --color-teal-soft: #14251f;
+  --color-amber-soft: #251f14;
+  --color-grape-soft: #1e1b2e;
+
+  /* --- radii: two, plus full for pills --- */
+  --radius-control: 8px;
+  --radius-surface: 12px;
 }
 
 html,
@@ -33,67 +66,112 @@ body {
   font-family: var(--font-sans);
 }
 
-/* Chunky tactile building blocks used across the app */
+/* ---------------------------------------------------------------- type ---
+ * Six sizes. Headings tighten as they grow, which is most of what separates
+ * typography that looks designed from typography that looks defaulted.
+ */
+h1, h2, h3 { letter-spacing: -0.02em; }
+h1 { letter-spacing: -0.03em; }
+
+/* ------------------------------------------------------------ controls ---
+ * One filled button per screen. Everything else is quiet: a hairline, or
+ * nothing at all until you reach for it.
+ */
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-bold transition
-    active:translate-y-0.5 disabled:pointer-events-none select-none;
+  @apply inline-flex items-center justify-center gap-2 select-none
+    rounded-[--radius-control] px-4 py-2 text-sm font-medium
+    transition-[background-color,border-color,color,opacity] duration-150
+    disabled:pointer-events-none;
+  &:focus-visible {
+    outline: 2px solid var(--stage-accent, var(--color-brand));
+    outline-offset: 2px;
+  }
 }
 @utility btn-coral {
   @apply btn;
-  /* per-stage accent when inside a themed stage, base coral elsewhere */
-  background: var(--stage-accent, var(--color-coral));
-  color: var(--stage-accent-ink, #fff);
-  box-shadow: 0 4px 0 0 var(--stage-accent-deep, var(--color-coral-deep));
-  &:hover {
-    background: var(--stage-accent-deep, var(--color-coral-deep));
-  }
-  &:active {
-    box-shadow: 0 1px 0 0 var(--stage-accent-deep, var(--color-coral-deep));
-  }
-  /* Not a faded fill — an outline. A filled pill at 40% still reads as a
-     button you may press, and it was the loudest thing on the arrival screen
-     before anyone had typed a character. */
+  background: var(--stage-accent, var(--color-brand));
+  color: #0b0c0f;
+  font-weight: 600;
+  &:hover { filter: brightness(1.08); }
+  &:active { filter: brightness(0.94); }
   &:disabled {
     background: transparent;
-    color: var(--color-ink-soft);
-    border: 2px solid var(--stage-line, var(--color-line));
-    box-shadow: none;
+    color: var(--color-ink-faint);
+    box-shadow: inset 0 0 0 1px var(--color-line);
   }
 }
 @utility btn-ghost {
-  @apply btn bg-card text-ink border-2 border-line hover:border-ink-soft;
-}
-@utility card {
-  @apply rounded-3xl border-2 p-5;
-  background: var(--stage-surface, var(--color-card));
-  border-color: var(--stage-line, var(--color-line));
-  box-shadow: 0 3px 0 0 var(--stage-line, var(--color-line));
-}
-/* A selectable pill: the shape this app reaches for constantly and had to
-   hand-roll every time. */
-@utility chip {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-2.5
-    font-bold transition select-none cursor-pointer;
-  background: var(--stage-surface, var(--color-card));
-  border-color: var(--stage-line, var(--color-line));
+  @apply btn;
+  background: transparent;
+  color: var(--color-ink-soft);
+  box-shadow: inset 0 0 0 1px var(--color-line);
   &:hover {
-    border-color: var(--stage-accent, var(--color-coral));
+    color: var(--color-ink);
+    background: var(--color-raised);
+    box-shadow: inset 0 0 0 1px var(--color-line-strong);
   }
+  &:disabled { color: var(--color-ink-faint); }
+}
+/* Destructive actions never look like the primary one; they announce
+   themselves only when you are already on them. */
+@utility btn-danger {
+  @apply btn;
+  background: transparent;
+  color: var(--color-ink-soft);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  &:hover {
+    color: #ff8a7a;
+    box-shadow: inset 0 0 0 1px #52302c;
+    background: #1d1416;
+  }
+}
+
+/* -------------------------------------------------------------- surface ---
+ * Separation by elevation and a hairline. No offset shadows: they were the
+ * single most dated thing in the old system.
+ */
+@utility card {
+  @apply rounded-[--radius-surface] p-4;
+  background: var(--stage-surface, var(--color-surface));
+  box-shadow: inset 0 0 0 1px var(--stage-line, var(--color-line));
+}
+@utility card-raised {
+  @apply card;
+  background: var(--color-raised);
+}
+
+/* ----------------------------------------------------------------- chip ---
+ * The selectable pill this app reaches for constantly.
+ */
+@utility chip {
+  @apply inline-flex items-center justify-center gap-2 select-none cursor-pointer
+    rounded-[--radius-control] px-3 py-1.5 text-sm font-medium
+    transition-[background-color,color,box-shadow] duration-150;
+  background: transparent;
+  color: var(--color-ink-soft);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  &:hover { color: var(--color-ink); box-shadow: inset 0 0 0 1px var(--color-line-strong); }
 }
 @utility chip-on {
   @apply chip;
-  background: var(--stage-accent, var(--color-coral));
-  color: var(--stage-accent-ink, #fff);
-  border-color: var(--stage-accent-deep, var(--color-coral-deep));
-  box-shadow: 0 3px 0 0 var(--stage-accent-deep, var(--color-coral-deep));
+  background: color-mix(in srgb, var(--stage-accent, var(--color-brand)) 16%, transparent);
+  color: var(--stage-accent, var(--color-brand));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--stage-accent, var(--color-brand)) 45%, transparent);
 }
+
+/* ---------------------------------------------------------------- input ---*/
 @utility input-blob {
-  @apply w-full rounded-2xl border-2 px-4 py-3 text-ink outline-none
-    placeholder:text-ink-soft/60;
-  background: var(--stage-surface, var(--color-card));
-  border-color: var(--stage-line, var(--color-line));
+  @apply w-full rounded-[--radius-control] px-3 py-2 text-sm outline-none
+    transition-[box-shadow] duration-150;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+  &::placeholder { color: var(--color-ink-faint); }
+  &:hover { box-shadow: inset 0 0 0 1px var(--color-line-strong); }
   &:focus {
-    border-color: var(--stage-accent, var(--color-coral));
+    box-shadow:
+      inset 0 0 0 1px var(--stage-accent, var(--color-brand)),
+      0 0 0 3px color-mix(in srgb, var(--stage-accent, var(--color-brand)) 18%, transparent);
   }
 }
 

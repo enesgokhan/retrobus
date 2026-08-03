@@ -328,17 +328,18 @@ function CardTile({
       {showVotes && (
         <button
           className={[
-            'shrink-0 w-16 min-h-[3.75rem] rounded-2xl border-2 flex flex-col items-center justify-center leading-none transition',
+            'shrink-0 w-14 min-h-[3.25rem] rounded-[--radius-control] flex flex-col items-center justify-center',
+            'leading-none transition-[background-color,box-shadow,color] duration-150',
             canVote
-              ? '[border-color:var(--stage-accent)] [background:var(--stage-wash)] shadow-[0_3px_0_0_var(--stage-accent)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none cursor-pointer'
-              : '[border-color:var(--stage-line)] bg-card',
+              ? 'cursor-pointer text-ink-soft shadow-[inset_0_0_0_1px_var(--color-line)] hover:text-[var(--stage-accent)] hover:shadow-[inset_0_0_0_1px_var(--stage-accent)]'
+              : 'text-ink-faint shadow-[inset_0_0_0_1px_var(--color-line)]',
           ].join(' ')}
           onClick={onVote}
           disabled={!canVote}
           aria-label={canVote ? 'Bu karta oy ver' : 'Oy hakkın kalmadı'}
         >
-          <span className="text-xl" aria-hidden>🔵</span>
-          <span className="text-xl font-extrabold tabular-nums mt-0.5">{votes}</span>
+          <span className="text-lg font-semibold tabular-nums">{votes}</span>
+          <span className="text-[10px] uppercase tracking-wider mt-0.5">oy</span>
         </button>
       )}
     </div>

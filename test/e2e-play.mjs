@@ -122,7 +122,7 @@ console.log('\n-- pano --')
 
   await api.from('stages').update({ state: 'revealed' }).eq('id', st.id)
   await room(p1)
-  const dot = p1.locator('button', { hasText: '🔵' }).first()
+  const dot = p1.locator('button[aria-label*="oy"]').first()
   if (!(await dot.count())) fail('board: no vote button after reveal')
   else {
     await dot.click()

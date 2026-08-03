@@ -138,7 +138,10 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
                 presenter ? 'text-6xl' : 'stage-title',
               ].join(' ')}
             >
-              <span className={presenter ? 'text-5xl' : 'text-4xl'} aria-hidden>
+              <span
+                className={['opacity-70', presenter ? 'text-4xl' : 'text-2xl'].join(' ')}
+                aria-hidden
+              >
                 {emoji}
               </span>
               {stage.title}

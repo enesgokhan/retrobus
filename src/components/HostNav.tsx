@@ -4,20 +4,27 @@ import { S } from '../lib/strings'
 
 interface Item {
   to: string
-  icon: string
   label: string
   hostOnly?: boolean
+  /** pushed to the right, away from the working set */
+  utility?: boolean
 }
 
+/**
+ * Emoji used to stand in for icons here. At nav size they read as noise rather
+ * than meaning — eight different pictograms competing along one strip — and two
+ * of them were the same book. Text labels with a quiet active state carry the
+ * same information and let the eye find the one live item.
+ */
 const ITEMS: Item[] = [
-  { to: '/host', icon: '🚌', label: 'Konsol', hostOnly: true },
-  { to: '/oda', icon: '🪑', label: 'Oda' },
-  { to: '/host/uyeler', icon: '🧑‍🤝‍🧑', label: S.members, hostOnly: true },
-  { to: '/sunum', icon: '🖥', label: 'Sunum', hostOnly: true },
-  { to: '/kurallar', icon: '📖', label: 'Kurallar' },
-  { to: '/yillik', icon: '📖', label: 'Yıllık', hostOnly: true },
-  { to: '/profil', icon: '🙂', label: 'Profil' },
-  { to: '/tani', icon: '🩺', label: 'Tanı' },
+  { to: '/host', label: 'Konsol', hostOnly: true },
+  { to: '/oda', label: 'Oda' },
+  { to: '/sunum', label: 'Sunum', hostOnly: true },
+  { to: '/host/uyeler', label: S.members, hostOnly: true },
+  { to: '/yillik', label: 'Yıllık', hostOnly: true },
+  { to: '/kurallar', label: 'Kurallar', utility: true },
+  { to: '/profil', label: 'Profil', utility: true },
+  { to: '/tani', label: 'Tanı', utility: true },
 ]
 
 /**
@@ -38,8 +45,9 @@ export default function HostNav() {
   const items = ITEMS.filter((i) => !i.hostOnly || isHost)
 
   return (
-    <nav className="flex items-center gap-1 flex-wrap">
-      {items.map((i) => {
+    <nav className="flex items-center gap-0.5 flex-wrap">
+      {items.map((i, idx) => {
+        const firstUtility = i.utility && !items[idx - 1]?.utility
         const active = loc.pathname === i.to
         return (
           <Link
@@ -49,31 +57,25 @@ export default function HostNav() {
             aria-label={i.label}
             aria-current={active ? 'page' : undefined}
             className={[
-              // 44px minimum touch target in both axes
-              'min-h-11 min-w-11 px-2.5 rounded-2xl inline-flex items-center justify-center gap-1.5',
-              'text-sm font-bold transition',
-              active ? 'text-[var(--stage-accent-ink,#fff)] [background:var(--stage-accent,var(--color-coral))]' : 'text-ink-soft hover:bg-line/60',
+              'min-h-9 px-3 rounded-[--radius-control] inline-flex items-center justify-center',
+              'text-sm font-medium transition-[color,background-color] duration-150',
+              firstUtility ? 'ml-3' : '',
+              active
+                ? 'text-ink bg-raised shadow-[inset_0_0_0_1px_var(--color-line)]'
+                : 'text-ink-faint hover:text-ink-soft',
             ].join(' ')}
           >
-            <span aria-hidden className="text-base leading-none">
-              {i.icon}
-            </span>
-            {/* label appears only when there is room for it */}
-            <span className="hidden lg:inline">{i.label}</span>
+            {i.label}
           </Link>
         )
       })}
       <button
         onClick={logout}
         title={S.logout}
-        aria-label={S.logout}
-        className="min-h-11 min-w-11 px-2.5 rounded-2xl inline-flex items-center justify-center gap-1.5
-          text-sm font-bold text-ink-soft hover:bg-line/60 transition"
+        className="ml-1 min-h-9 px-3 rounded-[--radius-control] inline-flex items-center justify-center
+          text-sm font-medium text-ink-faint hover:text-ink-soft transition-colors duration-150"
       >
-        <span aria-hidden className="text-base leading-none">
-          🚪
-        </span>
-        <span className="hidden lg:inline">{S.logout}</span>
+        {S.logout}
       </button>
     </nav>
   )

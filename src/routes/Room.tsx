@@ -29,16 +29,22 @@ export default function Room() {
     >
       {meeting && <WelcomeNote meetingId={meeting.id} note={meeting.welcome_note} />}
       <ConnStatus />
-      <header className="accent-wash flex items-center justify-between gap-3 px-4 py-2 border-b-2 flex-wrap">
-        <div className="flex items-center gap-2 font-extrabold shrink-0">
-          <span aria-hidden>🚌</span>
-          <span className="hidden sm:inline">{S.appName}</span>
-          <span className="text-sm font-semibold text-ink-soft flex items-center gap-1">
+      <header
+        className="sticky top-0 z-30 flex items-center justify-between gap-4 px-5 h-14 flex-wrap
+          border-b border-[--color-line] bg-[--color-bg]/85 backdrop-blur-md"
+      >
+        <div className="flex items-center gap-3 shrink-0 min-w-0">
+          <span className="font-semibold tracking-tight">{S.appName}</span>
+          <span className="h-4 w-px bg-[--color-line]" aria-hidden />
+          <span className="text-sm text-ink-soft truncate flex items-center gap-1.5">
             <span aria-hidden>{member?.avatar || '🙂'}</span>
             {member?.display_name}
           </span>
-          <span className="text-xs text-ink-soft" title="odadaki kişi sayısı">
-            🟢 {here.size}
+          <span
+            className="text-xs text-ink-faint tabular-nums"
+            title="odadaki kişi sayısı"
+          >
+            {here.size} kişi
           </span>
         </div>
         <HostNav />

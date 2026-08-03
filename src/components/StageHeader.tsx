@@ -43,19 +43,20 @@ export default function StageHeader({
   return (
     <div
       className={[
-        'w-full rounded-3xl border-2 px-5 flex items-center gap-4 flex-wrap',
-        presenter ? 'py-5' : 'py-3.5',
-        // Was a hardcoded amber. This strip is the widest, tallest,
-        // highest-contrast object on every stage — so painting it amber
-        // regardless of stage overrode the whole per-stage colour identity and
-        // made teal discussion, grape games and rose feedback all read as "the
-        // amber app". accent-wash reads the stage's own variables.
-        waiting ? 'bg-bg border-line' : 'accent-wash',
+        // A raised surface with a 3px accent rail on the leading edge. It used
+        // to be a filled, 2px-outlined wash of the stage colour, which made the
+        // instruction the loudest object on the screen — louder than the
+        // content it was describing.
+        'w-full card relative overflow-hidden pl-5',
+        presenter ? 'py-4' : 'py-3',
       ].join(' ')}
     >
-      <span className={presenter ? 'text-4xl' : 'text-2xl'} aria-hidden>
-        {waiting ? '⏳' : '👉'}
-      </span>
+      {!waiting && (
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-[3px] [background:var(--stage-accent)]"
+        />
+      )}
       <div className="flex-1 min-w-0">
         <div
           className={[
@@ -65,15 +66,21 @@ export default function StageHeader({
         >
           {phase}
         </div>
-        <div className={presenter ? 'text-3xl font-extrabold' : 'text-2xl font-extrabold leading-snug'}>
+        <div
+          className={[
+            'font-semibold leading-snug text-ink',
+            presenter ? 'text-3xl' : 'text-lg',
+          ].join(' ')}
+        >
           {instruction}
         </div>
       </div>
       {progress && (
         <span
           className={[
-            'shrink-0 rounded-full bg-card border-2 border-line font-bold tabular-nums',
-            presenter ? 'px-4 py-2 text-xl' : 'px-3 py-1 text-sm',
+            'shrink-0 rounded-[--radius-control] font-medium tabular-nums text-ink-soft',
+            'shadow-[inset_0_0_0_1px_var(--color-line)]',
+            presenter ? 'px-4 py-2 text-xl' : 'px-2.5 py-1 text-xs',
           ].join(' ')}
         >
           {progress}
@@ -85,7 +92,7 @@ export default function StageHeader({
           the far right of a 1600px screen; this reads from across a call and
           turns "is everyone finished?" into something you glance at. */}
       {ratio != null && (
-        <div className="basis-full h-1.5 rounded-full overflow-hidden [background:color-mix(in_srgb,var(--stage-accent)_18%,transparent)]">
+        <div className="basis-full h-[3px] rounded-full overflow-hidden [background:var(--color-line)]">
           <div
             className="h-full rounded-full transition-[width] duration-500 [background:var(--stage-accent)]"
             style={{ width: `${Math.round(ratio * 100)}%` }}
