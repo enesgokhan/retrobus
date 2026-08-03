@@ -45,7 +45,7 @@ const browser = await chromium.launch()
 const jsErrors = []
 
 async function open(label) {
-  const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, locale: 'tr-TR' })
+  const ctx = await personaContext(browser, label, { viewport: { width: 1600, height: 1000 } })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => jsErrors.push(`${label}: ${e.message.slice(0, 140)}`))
   page.on('console', (m) => {

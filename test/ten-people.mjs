@@ -53,7 +53,7 @@ const server = await preview({ preview: { port: PORT }, base: '/retrobus/' })
 const browser = await chromium.launch()
 const jsErrors = []
 async function open(label) {
-  const ctx = await browser.newContext({ viewport: { width: 1500, height: 950 }, locale: 'tr-TR' })
+  const ctx = await personaContext(browser, label, { viewport: { width: 1500, height: 950 } })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => jsErrors.push(`${label}: ${e.message.slice(0, 120)}`))
   page.on('response', async (r) => {

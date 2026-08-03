@@ -87,8 +87,14 @@ export default function LeaderboardStage({ stage, presenter = false }: { stage: 
             championIn ? 'opacity-100 scale-100' : 'opacity-0 scale-90',
           ].join(' ')}
         >
-          <div className={presenter ? 'text-[9rem] leading-none' : 'text-8xl leading-none'} aria-hidden>
-            {champion.avatar || '🙂'}
+          {/* every co-champion gets their own face; printing two names under one
+              person's avatar quietly demoted the other one */}
+          <div className="flex items-end justify-center gap-2" aria-hidden>
+            {(cochampions.length > 1 ? cochampions : [champion]).map((c) => (
+              <span key={c.member_id} className={presenter ? 'text-[9rem] leading-none' : 'text-8xl leading-none'}>
+                {c.avatar || '🙂'}
+              </span>
+            ))}
           </div>
           <div className={['font-extrabold text-center px-4', presenter ? 'text-8xl' : 'text-5xl'].join(' ')}>
             {cochampions.length > 1

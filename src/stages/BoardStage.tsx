@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { castDot, submitCard, type SubmitError } from '../lib/anon'
@@ -36,6 +36,24 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
   const { member } = useAuth()
   const sb = supabase
   const { cards, dots, myCards, myDots } = useStageData(stage.id)
+  /**
+   * The "Kimlik: İsimli" setting had no visible effect: add_card stores
+   * author_member_id only on named boards (0002_discussion.sql:116-121) and
+   * nothing ever rendered it, so three of the four board presets promised a
+   * named board and produced an anonymous one. Anything present here is
+   * therefore safe to show — an anonymous board has null.
+   */
+  const [names, setNames] = useState<Record<string, string>>({})
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabase.from('members').select('id, display_name')
+      if (cancelled) return
+      setNames(Object.fromEntries(((data as { id: string; display_name: string }[]) ?? [])
+        .map((m) => [m.id, m.display_name])))
+    })()
+    return () => { cancelled = true }
+  }, [])
   const wrote = useProgress(stage.id, 'card')
   const voted = useProgress(stage.id, 'dot')
   const [draft, setDraft] = useState('')
@@ -116,6 +134,7 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
       body={c.body}
       hidden={c.hidden}
       rank={rankOf(colKey, c.id)}
+      author={c.author_member_id ? (names[c.author_member_id] ?? null) : null}
       votes={dots[c.id] ?? 0}
       showVotes={votingPhase}
       canVote={votingPhase && !presenter && myDots < dotBudget}
@@ -243,11 +262,14 @@ function CardTile({
   onToggleHidden,
   onPromote,
   rank = 2,
+  author = null,
 }: {
   body: string
   hidden: boolean
   votes: number
   rank: 0 | 1 | 2
+  /** only ever set on a named board */
+  author?: string | null
   showVotes: boolean
   canVote: boolean
   isHost: boolean
@@ -277,6 +299,9 @@ function CardTile({
         <p className={['whitespace-pre-wrap break-words', rank === 0 ? 'text-lg font-semibold' : ''].join(' ')}>
           {body}
         </p>
+        {author && (
+          <p className="text-xs font-bold text-ink-soft">— {author}</p>
+        )}
         <div className="flex items-center justify-end gap-3 flex-wrap">
           {canPromote &&
             (promoted ? (

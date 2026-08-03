@@ -212,8 +212,14 @@ export default function Host() {
   }
   async function timerPlus() {
     if (!activeStage?.timer_ends_at) return
-    const ends = new Date(new Date(activeStage.timer_ends_at).getTime() + 60_000).toISOString()
-    await sb.from('stages').update({ timer_ends_at: ends }).eq('id', activeStage.id)
+    // Extend from NOW if it has already run out. Adding a minute to a deadline
+    // that passed six minutes ago leaves it in the past, so the clock stayed at
+    // a pulsing 0:00 on every screen and the host had to press this once for
+    // each minute already elapsed before anything moved.
+    const base = Math.max(new Date(activeStage.timer_ends_at).getTime(), Date.now())
+    const ends = new Date(base + 60_000).toISOString()
+    const { error } = await sb.from('stages').update({ timer_ends_at: ends }).eq('id', activeStage.id)
+    if (error) setHostError('Süre uzatılamadı — tekrar dene.')
   }
 
   if (loading) return <main className="min-h-dvh grid place-items-center text-ink-soft">{S.loading}</main>

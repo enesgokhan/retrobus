@@ -136,6 +136,16 @@ export default function NowNext(p: NowNextProps) {
                   <button className="btn-ghost text-xs px-3 py-1" onClick={p.onTimerPlus}>
                     {S.timerPlusMinute}
                   </button>
+                  {/* once it has run out there is nothing to pause or extend
+                      into; the host needs to be able to simply start it again */}
+                  {new Date(activeStage.timer_ends_at).getTime() <= Date.now() && (
+                    <button
+                      className="btn-ghost text-xs px-3 py-1"
+                      onClick={() => p.onTimerStart((activeStage.config.timer_s as number) ?? 300)}
+                    >
+                      ↻ Yeniden başlat
+                    </button>
+                  )}
                 </>
               ) : activeStage.timer_remaining_s != null ? (
                 <button className="btn-ghost text-xs px-3 py-1" onClick={p.onTimerResume}>

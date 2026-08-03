@@ -66,7 +66,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       if (!cancelled) setLoading(false)
     })()
+    // If the session dies mid-evening — the refresh token fails, the row is
+    // gone, the project restarts — nothing used to notice. The app carried on
+    // rendering the person's own name and avatar over a screen whose every
+    // request was being refused, with no error and no way back except clearing
+    // browser storage. Dropping the member returns them to the login card,
+    // where their code still works.
+    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT' && !cancelled) setMember(null)
+    })
+
     return () => {
+      authSub.subscription.unsubscribe()
       cancelled = true
     }
   }, [])
