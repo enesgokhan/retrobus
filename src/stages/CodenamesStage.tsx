@@ -445,7 +445,15 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
               className={[
                 'relative aspect-4/3 rounded-xl border-2 font-bold uppercase tracking-tight transition',
                 'flex items-center justify-center text-center px-1',
-                presenter ? 'text-4xl' : 'text-lg sm:text-xl lg:text-2xl',
+                // Long Turkish words overflow a fixed size — HELİKOPTER ran
+                // past its card on the shared screen. break-all would fix it by
+                // hyphenating mid-word, which looks worse than it sounds, so the
+                // type steps down instead and the word stays whole.
+                c.word.length >= 10
+                  ? presenter ? 'text-2xl' : 'text-xs sm:text-sm lg:text-base'
+                  : c.word.length >= 8
+                    ? presenter ? 'text-3xl' : 'text-sm sm:text-base lg:text-lg'
+                    : presenter ? 'text-4xl' : 'text-lg sm:text-xl lg:text-2xl',
                 // an unrevealed card is a physical object, not a blank rectangle
                 // An unrevealed card is a physical object you want to press.
                 // It used to be cream with a hard bottom edge, which on the

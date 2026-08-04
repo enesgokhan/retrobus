@@ -36,8 +36,13 @@ export default function LeaderboardStage({ stage, presenter = false }: { stage: 
       n += 1
       setShown(n)
       if (n >= rows.length) {
-        // let the room read the name before the screen fills with paper
-        burst = setTimeout(fireConfetti, 500)
+        // Celebrate a result, never an empty table. If the games were skipped
+        // for time every score is zero, the caption says exactly that, and
+        // confetti over it reads as the app not understanding its own evening.
+        if (rows.some((r) => r.points > 0)) {
+          // let the room read the name before the screen fills with paper
+          burst = setTimeout(fireConfetti, 500)
+        }
         return
       }
       timer = setTimeout(step, delayFor(rows.length - n))
