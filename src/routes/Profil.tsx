@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import AppShell from '../components/AppShell'
 import { useAuth } from '../lib/auth'
 import { S } from '../lib/strings'
 
@@ -66,15 +66,7 @@ export default function Profil() {
   }
 
   return (
-    <main className="min-h-dvh max-w-lg mx-auto px-5 py-6 flex flex-col gap-5">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold flex items-center gap-2">
-          <span aria-hidden>{avatar || '🙂'}</span> {member?.display_name}
-        </h1>
-        <Link to={member?.is_host ? '/host' : '/oda'} className="text-coral font-semibold text-sm">
-          ← Geri
-        </Link>
-      </header>
+    <AppShell title={member?.display_name ?? 'Profil'} width="narrow">
 
       {note && (
         <p
@@ -133,6 +125,6 @@ export default function Profil() {
           Gerçekte kullandığın bir PIN'i seçme.
         </p>
       </section>
-    </main>
+    </AppShell>
   )
 }

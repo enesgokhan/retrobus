@@ -2,13 +2,12 @@ import { useRef, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useMeeting } from '../../lib/useMeeting'
 import { S } from '../../lib/strings'
+import AppShell from '../../components/AppShell'
 import { stageTheme } from '../../lib/theme'
 import type { Stage, StageKind } from '../../lib/types'
 import { AGENDA_MINUTES, DEFAULT_AGENDA, STAGE_PRESETS } from '../../lib/presets'
 import StageControls from './StageControls'
 import NowNext from './NowNext'
-import HostNav from '../../components/HostNav'
-import ConnStatus from '../../components/ConnStatus'
 import { useStageReadiness } from '../../lib/useStageReadiness'
 import { usePresence } from '../../lib/usePresence'
 import PresenceBar from '../../components/PresenceBar'
@@ -225,17 +224,7 @@ export default function Host() {
   if (loading) return <main className="min-h-dvh grid place-items-center text-ink-soft">{S.loading}</main>
 
   return (
-    <main className="min-h-dvh max-w-[1400px] mx-auto px-5 py-6 flex flex-col gap-5">
-      <ConnStatus />
-      <header className="flex flex-col gap-2">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-extrabold flex items-center gap-2">
-            <span aria-hidden>🚌</span> {S.hostConsole}
-          </h1>
-          {meeting && <p className="text-sm font-semibold text-ink-soft truncate">{meeting.title}</p>}
-        </div>
-        <HostNav />
-      </header>
+    <AppShell title={S.hostConsole} subtitle={meeting?.title} width="full">
 
       {hostError && (
         <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 font-bold">
@@ -533,6 +522,6 @@ export default function Host() {
           </section>
         </div>
       )}
-    </main>
+    </AppShell>
   )
 }

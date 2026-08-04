@@ -1,18 +1,15 @@
 import { Link } from 'react-router-dom'
-import { useAuth } from '../lib/auth'
 import { useMeeting } from '../lib/useMeeting'
 import { usePresence } from '../lib/usePresence'
 import { S } from '../lib/strings'
 import StageView from '../components/StageView'
 import FrozenScreen from '../components/FrozenScreen'
-import HostNav from '../components/HostNav'
+import AppShell from '../components/AppShell'
 import WelcomeNote from '../components/WelcomeNote'
-import ConnStatus from '../components/ConnStatus'
 import { stageTheme, themeVars } from '../lib/theme'
 
 /** Yolcu görünümü — şoför nereye sürerse ekran oraya gider. */
 export default function Room() {
-  const { member } = useAuth()
   const { meeting, activeStage, loading, ended } = useMeeting()
   // tracking presence here is what makes the host's "kim odada" bar real
   const here = usePresence(meeting?.id ?? null)
@@ -23,32 +20,17 @@ export default function Room() {
   const theme = stageTheme(activeStage?.kind)
 
   return (
-    <main
-      className="min-h-dvh flex flex-col"
+    <AppShell
+      width="full"
+      bare
       style={{ ...themeVars(theme), background: theme.bg }}
+      headerAside={
+        <span className="text-xs text-ink-faint tabular-nums shrink-0" title="odadaki kişi sayısı">
+          {here.size} kişi
+        </span>
+      }
     >
       {meeting && <WelcomeNote meetingId={meeting.id} note={meeting.welcome_note} />}
-      <ConnStatus />
-      <header
-        className="sticky top-0 z-30 flex items-center justify-between gap-4 px-5 h-14 flex-wrap
-          border-b border-[--color-line] bg-[--color-bg]/85 backdrop-blur-md"
-      >
-        <div className="flex items-center gap-3 shrink-0 min-w-0">
-          <span className="font-semibold tracking-tight">{S.appName}</span>
-          <span className="h-4 w-px bg-[--color-line]" aria-hidden />
-          <span className="text-sm text-ink-soft truncate flex items-center gap-1.5">
-            <span aria-hidden>{member?.avatar || '🙂'}</span>
-            {member?.display_name}
-          </span>
-          <span
-            className="text-xs text-ink-faint tabular-nums"
-            title="odadaki kişi sayısı"
-          >
-            {here.size} kişi
-          </span>
-        </div>
-        <HostNav />
-      </header>
 
       <section className="flex-1 flex flex-col">
         {loading ? (
@@ -85,6 +67,6 @@ export default function Room() {
           </div>
         )}
       </section>
-    </main>
+    </AppShell>
   )
 }

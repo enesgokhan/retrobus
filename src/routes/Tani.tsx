@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import AppShell from '../components/AppShell'
 import { liveStatus, onLiveStatusChange } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 
@@ -97,19 +97,11 @@ export default function Tani() {
   )
 
   return (
-    <main className="min-h-dvh max-w-2xl mx-auto px-5 py-6 flex flex-col gap-5">
-      <header className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold flex items-center gap-2">
-          <span aria-hidden>🩺</span> Tanı
-        </h1>
-        <Link to={member?.is_host ? '/host' : '/oda'} className="text-coral font-semibold text-sm">
-          ← Geri
-        </Link>
-      </header>
-
-      <p className="text-sm text-ink-soft font-semibold">
-        Bir şey ters giderse bu ekranın fotoğrafını gönder. Jeton gösterilmiyor, yalnızca durumu.
-      </p>
+    <AppShell
+      title="Tanı"
+      subtitle="Bir şey ters giderse bu ekranın fotoğrafını gönder. Jeton gösterilmiyor, yalnızca durumu."
+      width="reading"
+    >
 
       {!snap ? (
         <p className="text-ink-soft">Okunuyor…</p>
@@ -193,6 +185,6 @@ export default function Tani() {
           </button>
         </>
       )}
-    </main>
+    </AppShell>
   )
 }

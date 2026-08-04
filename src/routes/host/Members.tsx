@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { S } from '../../lib/strings'
+import AppShell from '../../components/AppShell'
 
 interface MemberRow {
   id: string
@@ -90,15 +90,7 @@ export default function Members() {
   }
 
   return (
-    <main className="min-h-dvh max-w-2xl mx-auto px-5 py-6 flex flex-col gap-5">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold flex items-center gap-2">
-          <span aria-hidden>🧑‍🤝‍🧑</span> {S.members}
-        </h1>
-        <Link to="/host" className="text-coral font-semibold text-sm">
-          ← {S.hostConsole}
-        </Link>
-      </header>
+    <AppShell title={S.members} width="reading">
 
       {note && (
         <p
@@ -191,6 +183,6 @@ export default function Members() {
           {S.addMember}
         </button>
       </section>
-    </main>
+    </AppShell>
   )
 }

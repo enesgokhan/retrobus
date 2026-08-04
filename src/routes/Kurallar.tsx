@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useAuth } from '../lib/auth'
+import AppShell from '../components/AppShell'
 
 interface RuleCard {
   key: string
@@ -179,23 +178,14 @@ const RULES: RuleCard[] = [
 
 /** Oyun kuralları — toplantı sırasında kimse kural anlatmakla uğraşmasın. */
 export default function Kurallar() {
-  const { member } = useAuth()
   const [open, setOpen] = useState<string | null>(null)
 
   return (
-    <main className="min-h-dvh max-w-2xl mx-auto px-5 py-6 flex flex-col gap-4">
-      <header className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold flex items-center gap-2">
-          <span aria-hidden>📖</span> Oyun kuralları
-        </h1>
-        <Link to={member?.is_host ? '/host' : '/oda'} className="text-coral font-semibold text-sm shrink-0">
-          ← Geri
-        </Link>
-      </header>
-
-      <p className="text-sm text-ink-soft font-semibold">
-        Gerçek oyunların resmi kurallarına göre. Uyarlama yaptığımız yerleri açıkça yazdık.
-      </p>
+    <AppShell
+      title="Oyun kuralları"
+      subtitle="Gerçek oyunların resmi kurallarına göre. Uyarlama yaptığımız yerleri açıkça yazdık."
+      width="reading"
+    >
 
       <div className="flex flex-col gap-2">
         {RULES.map((r) => {
@@ -276,6 +266,6 @@ export default function Kurallar() {
           )
         })}
       </div>
-    </main>
+    </AppShell>
   )
 }

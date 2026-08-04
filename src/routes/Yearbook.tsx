@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useMeeting } from '../lib/useMeeting'
+import AppShell from '../components/AppShell'
 import { DEFAULT_DIMENSIONS } from '../stages/HealthCheckStage'
 import type { Member } from '../lib/types'
 
@@ -302,22 +302,7 @@ export default function Yearbook() {
   }
 
   return (
-    <main className="min-h-dvh max-w-3xl mx-auto px-5 py-8 flex flex-col gap-7">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-extrabold flex items-center gap-2">
-            <span aria-hidden>📖</span> Retro Yıllığı
-          </h1>
-          <p className="text-ink-soft font-semibold">{meeting.title}</p>
-          <p className="text-ink-soft text-sm font-semibold">{meetingDate}</p>
-        </div>
-        <Link
-          to={isHost ? '/host' : '/oda'}
-          className="text-coral font-semibold text-sm shrink-0 print:hidden"
-        >
-          ← Geri
-        </Link>
-      </header>
+    <AppShell title="Retro Yıllığı" subtitle={`${meeting.title} · ${meetingDate}`} width="reading">
 
       <section className="card flex flex-wrap items-center gap-3 print:hidden">
         <button className="btn-coral" onClick={download}>
@@ -533,6 +518,6 @@ export default function Yearbook() {
       <footer className="text-center text-sm text-ink-soft border-t-2 border-line pt-4">
         🚌 Retrobüs
       </footer>
-    </main>
+    </AppShell>
   )
 }
