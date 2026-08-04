@@ -66,6 +66,8 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
   const [draft, setDraft] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [newRound, setNewRound] = useState({ prompt: '', truth: '', multiplier: 1 })
+  const [confirmRound, setConfirmRound] = useState<string | null>(null)
+  const [roundArmed, setRoundArmed] = useState(0)
 
   const currentId = (stage.config.current_round_id as string | undefined) ?? null
   const round = rounds.find((r) => r.id === currentId) ?? rounds.find((r) => r.phase !== 'revealed') ?? null
@@ -172,6 +174,37 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
     const { error: e } = await supabase.rpc('reveal_fib', { p_round_id: round.id })
     if (e) setError('Açılamadı.')
   }
+  /**
+   * Put a question on the room's screens.
+   *
+   * This used to be written inline as `onClick={() => supabase.from(...)...}`.
+   * A PostgREST builder is lazy — it only performs the request when it is
+   * awaited — and React discards a handler's return value, so nothing ever
+   * called it. The request was never sent. That is why the old numbered pills
+   * appeared to do nothing, and why "adding a second question deletes the first"
+   * was an accurate description: there was genuinely no way back to it.
+   */
+  async function showRound(id: string) {
+    const { error: e } = await supabase
+      .from('stages')
+      .update({ config: { ...stage.config, current_round_id: id } })
+      .eq('id', stage.id)
+    if (e) setError('Soruya geçilemedi.')
+  }
+
+  /** Remove a question. If it was the one on screen, move to another rather
+   *  than leaving the room looking at a stop that no longer has anything. */
+  async function removeRound(id: string) {
+    const { error: e } = await supabase.from('fibbage_rounds').delete().eq('id', id)
+    if (e) { setError('Soru silinemedi.'); return }
+    if ((stage.config.current_round_id as string | undefined) === id) {
+      const next = rounds.find((r) => r.id !== id)
+      await supabase.from('stages')
+        .update({ config: { ...stage.config, current_round_id: next?.id ?? null } })
+        .eq('id', stage.id)
+    }
+  }
+
   async function addRound() {
     if (!newRound.prompt.trim() || !newRound.truth.trim()) return
     // one RPC, because prompt and truth now live in two tables and a round with
@@ -242,25 +275,61 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
           </button>
         </div>
       </details>
-      {rounds.length > 1 && (
-        <div className="flex flex-wrap gap-1.5">
-          {rounds.map((r) => (
-            <button
-              key={r.id}
-              className={[
-                'rounded-full px-2.5 py-1 text-xs font-bold border-2',
-                r.id === round?.id ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line',
-                r.phase === 'revealed' ? 'opacity-50' : '',
-              ].join(' ')}
-              onClick={() =>
-                supabase.from('stages')
-                  .update({ config: { ...stage.config, current_round_id: r.id } })
-                  .eq('id', stage.id)
-              }
-            >
-              {r.order_index}
-            </button>
-          ))}
+      {/* The question list.
+          This used to be a row of pills labelled with nothing but an order
+          index — "1", "2" — shown only once a second round existed. So adding a
+          second question made the first vanish from the screen, and the only way
+          back was guessing that a numbered dot was a button. Reported, fairly,
+          as "it deletes the first question when you add another": the data was
+          always there, but nothing on screen said so.
+          The list now shows every question in full, says which one the room is
+          looking at, and lets the host remove one. */}
+      {rounds.length > 0 && (
+        <div className="flex flex-col gap-1 pt-1">
+          <h5 className="text-xs uppercase tracking-widest text-ink-faint font-medium">
+            Sorular ({rounds.length})
+          </h5>
+          {rounds.map((r) => {
+            const current = r.id === round?.id
+            return (
+              <div
+                key={r.id}
+                className={[
+                  'flex items-center gap-3 rounded-[--radius-control] px-3 py-2 transition-colors duration-150',
+                  current ? 'bg-[--color-raised] shadow-[inset_0_0_0_1px_var(--stage-accent)]' : 'hover:bg-[--color-raised]',
+                ].join(' ')}
+              >
+                <button
+                  className="flex-1 min-w-0 text-left"
+                  onClick={() => void showRound(r.id)}
+                  title={current ? 'Şu an bu gösteriliyor' : 'Bu soruya geç'}
+                >
+                  <span className={['text-sm truncate block', r.phase === 'revealed' ? 'text-ink-faint' : ''].join(' ')}>
+                    {r.prompt}
+                  </span>
+                  <span className="text-[11px] text-ink-faint">
+                    {current && 'şu an · '}
+                    {r.phase === 'lie' ? 'yalan yazılıyor'
+                      : r.phase === 'guess' ? 'tahmin ediliyor'
+                      : 'açıldı'}
+                    {r.multiplier > 1 && ` · ×${r.multiplier}`}
+                  </span>
+                </button>
+                <button
+                  className="btn-danger text-xs shrink-0 px-2 py-1"
+                  onClick={() => {
+                    if (confirmRound !== r.id) { setConfirmRound(r.id); setRoundArmed(Date.now()); return }
+                    if (Date.now() - roundArmed < 700) return
+                    setConfirmRound(null)
+                    void removeRound(r.id)
+                  }}
+                  onBlur={() => setConfirmRound((c) => (c === r.id ? null : c))}
+                >
+                  {confirmRound === r.id ? 'Emin misin?' : 'Sil'}
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
     </section>

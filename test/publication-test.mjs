@@ -85,7 +85,10 @@ console.log('\n-- her sahne kanalı `stages`e bağlı mı --')
   ].filter((f) => /\.(tsx?|ts)$/.test(f))
 
   for (const f of files) {
+    // strip comments first, or this flags the note explaining the bug it hunts
     const body = readFileSync(f, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
     const call = body.match(/liveChannel\(([\s\S]{0,400}?)\)\s*$/m) || body.match(/liveChannel\(([\s\S]{0,400}?)load,?\s*\)/)
     if (!call) continue
     const tables = (call[1].match(/\[[^\]]*\]/) || [''])[0]
@@ -97,6 +100,47 @@ console.log('\n-- her sahne kanalı `stages`e bağlı mı --')
       ok(`${short} listens for stage state changes`)
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// A query builder that nobody awaits never runs.
+//
+// PostgREST builders are lazy: they perform the request when awaited. React
+// throws away whatever a handler returns, so `onClick={() => supabase.from(x)
+// .update(y).eq(z)}` sends nothing at all — silently, with no error anywhere.
+// That shape is why Fibbage's question switcher did nothing for its whole life,
+// which read to the user as "adding a question deletes the previous one".
+console.log('\n-- beklenmeyen tembel sorgular --')
+{
+  const { readdirSync, readFileSync, statSync } = await import('node:fs')
+  const { join, dirname } = await import('node:path')
+  const { fileURLToPath } = await import('node:url')
+  const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', 'src')
+  const files = []
+  const walk = (d) => {
+    for (const f of readdirSync(d)) {
+      const p = join(d, f)
+      if (statSync(p).isDirectory()) walk(p)
+      else if (/\.tsx?$/.test(p)) files.push(p)
+    }
+  }
+  walk(SRC)
+  let offenders = 0
+  for (const f of files) {
+    // strip comments first, or this flags the note explaining the bug it hunts
+    const body = readFileSync(f, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '')
+    // a handler whose arrow body IS a supabase call, with no await and no void
+    const re = /on[A-Z]\w+=\{\(\)\s*=>\s*\n?\s*supabase\s*\n?\s*\./g
+    let m
+    while ((m = re.exec(body))) {
+      const line = body.slice(0, m.index).split('\n').length
+      fail(`${f.split('/').slice(-1)[0]}:${line} hands an un-awaited query builder to a handler — it will never run`)
+      offenders++
+    }
+  }
+  if (!offenders) ok('no handler returns an un-awaited query builder')
 }
 
 console.log(failed ? `\n${failed} CHECK(S) FAILED` : '\nALL CHECKS PASSED')

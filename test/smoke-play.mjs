@@ -111,10 +111,18 @@ console.log('\n=== CODENAMES: play to a winner ===')
   if (await mk.count()) { await mk.click(); await host.waitForTimeout(2000) }
 
   const seat = async (pg, team, spy) => {
-    await room(pg)
-    const card = pg.locator('section.card', { hasText: team === 'red' ? 'Kırmızı' : 'Mavi' }).first()
-    const b = card.getByRole('button', { name: spy ? /Spymaster/ : /Operatör/ })
-    if (!(await b.count())) { bad('codenames', `${team} ${spy ? 'spymaster' : 'operatör'} button missing`); return }
+    // Poll for the lobby rather than assuming one fixed wait is enough after
+    // the game row is created: a slow round trip made this fail intermittently
+    // and blame the app for a race in the test.
+    let b = null
+    for (let i = 0; i < 10; i++) {
+      await room(pg)
+      const card = pg.locator('section.card', { hasText: team === 'red' ? 'Kırmızı' : 'Mavi' }).first()
+      const found = card.getByRole('button', { name: spy ? /Spymaster/ : /Operatör/ })
+      if (await found.count()) { b = found; break }
+      await pg.waitForTimeout(900)
+    }
+    if (!b) { bad('codenames', `${team} ${spy ? 'spymaster' : 'operatör'} button never appeared`); return }
     await b.first().click()
     await pg.waitForTimeout(1000)
   }

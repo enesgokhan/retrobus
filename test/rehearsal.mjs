@@ -346,9 +346,11 @@ async function hostSetup(stage) {
     await host.waitForTimeout(2200)
     // and open the first one, which is what actually puts it in front of the room
     await go(host, '/oda')
-    const openQ = host.getByRole('button', { name: /^1\. aç$/ })
+    // the question list shows the question text now, with a plain "Aç" per row,
+    // instead of pills labelled "1. aç"
+    const openQ = host.getByRole('button', { name: 'Aç', exact: true })
     if (!(await openQ.count())) { bad('kurulum:quiz', 'host cannot open a question from the stage'); return }
-    await openQ.click()
+    await openQ.first().click()
     await host.waitForTimeout(1800)
   }
 }

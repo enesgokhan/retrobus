@@ -318,28 +318,40 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
       )}
 
       {isHost && !presenter && (
-        <section className="card flex flex-col gap-2">
-          <h4 className="font-bold text-sm">Şoför: sorular</h4>
-          <div className="flex flex-wrap gap-2">
-            {questions.map((q) => (
-              <button
-                key={q.id}
-                className={[
-                  'rounded-full px-3 py-1.5 text-xs font-bold border-2',
-                  q.state === 'open'
-                    ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]'
-                    : q.state === 'draft'
-                      ? 'border-line'
-                      : 'border-teal text-teal',
-                ].join(' ')}
-                onClick={() => q.state === 'draft' && open(q.id)}
-                disabled={q.state !== 'draft'}
-                title={q.prompt}
-              >
-                {q.order_index}. {q.state === 'draft' ? 'aç' : q.state === 'open' ? 'açık' : '✓'}
-              </button>
-            ))}
-          </div>
+        <section className="card flex flex-col gap-1">
+          {/* The same treatment Fibbage needed: a question list you can read.
+              These were pills labelled "1. aç" / "2. açık" — the order index and
+              a state, with the question itself only in a title attribute. */}
+          <h4 className="text-xs uppercase tracking-widest text-ink-faint font-medium">
+            Sorular ({questions.length})
+          </h4>
+          {questions.map((q) => (
+            <div
+              key={q.id}
+              className={[
+                'flex items-center gap-3 rounded-[--radius-control] px-3 py-2 transition-colors duration-150',
+                q.state === 'open'
+                  ? 'bg-[--color-raised] shadow-[inset_0_0_0_1px_var(--stage-accent)]'
+                  : 'hover:bg-[--color-raised]',
+              ].join(' ')}
+            >
+              <span className="flex-1 min-w-0">
+                <span
+                  className={['text-sm truncate block', q.state === 'closed' ? 'text-ink-faint' : ''].join(' ')}
+                >
+                  {q.prompt}
+                </span>
+                <span className="text-[11px] text-ink-faint">
+                  {q.state === 'open' ? 'şu an açık' : q.state === 'draft' ? 'hazır' : 'açıldı'}
+                </span>
+              </span>
+              {q.state === 'draft' && (
+                <button className="btn-ghost text-xs shrink-0 px-2 py-1" onClick={() => void open(q.id)}>
+                  Aç
+                </button>
+              )}
+            </div>
+          ))}
         </section>
       )}
     </div>
