@@ -6,17 +6,40 @@ export interface StagePreset {
   kind: StageKind
   title: string
   config: StageConfig
+  /** which part of the evening this belongs to, for the picker */
+  group?: 'tartisma' | 'oyun' | 'diger'
+  /** one line, so the host does not have to remember what each one is */
+  blurb?: string
 }
+
+export const PRESET_GROUPS: { key: NonNullable<StagePreset['group']>; label: string }[] = [
+  { key: 'tartisma', label: 'Tartışma' },
+  { key: 'oyun', label: 'Oyun' },
+  { key: 'diger', label: 'Diğer' },
+]
 
 /**
  * Hazır duraklar. Şoför konsolundan tek tıkla rotaya eklenir.
  * `reveal: 'batch'` = kartlar herkes yazana kadar gizli (demirleme etkisini önler).
  */
 export const STAGE_PRESETS: StagePreset[] = [
+  // The only kind that had no preset, which is why the picker needed a second
+  // list of bare kinds alongside the presets.
+  {
+    key: 'poll',
+    label: 'Anket',
+    kind: 'poll',
+    title: 'Anket',
+    group: 'diger',
+    blurb: 'Hızlı bir soru sor, sonuçları birlikte aç.',
+    config: {},
+  },
   // --- tartışma saati: dört pano ---
   {
     key: 'board_ground',
     label: 'Pano: Takım Zemini',
+    group: 'tartisma',
+    blurb: 'Yazılı olmayan kurallarımız — biz kimiz, neye inanıyoruz.',
     kind: 'board',
     title: 'Takım Zemini — biz kimiz?',
     config: {
@@ -34,6 +57,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'board_vision',
     label: 'Pano: Vizyon',
+    group: 'tartisma',
+    blurb: 'Nereye gidiyoruz ve neyi değiştirmemiz gerekiyor.',
     kind: 'board',
     title: 'Vizyon — nereye gidiyoruz?',
     config: {
@@ -51,6 +76,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'board_pains',
     label: 'Pano: Sancılar',
+    group: 'tartisma',
+    blurb: 'Nerede tıkanıyoruz. Anonim, çünkü asıl cevaplar orada.',
     kind: 'board',
     title: 'Sancılar — ne acıtıyor?',
     config: {
@@ -70,6 +97,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'board_wins',
     label: 'Pano: İyi Şeyler',
+    group: 'tartisma',
+    blurb: 'Neyi koruyalım, neyle gurur duyuyoruz.',
     kind: 'board',
     title: 'İyi Şeyler — ne güzel gidiyor?',
     config: {
@@ -89,6 +118,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'lean_coffee',
     label: 'Lean Coffee',
+    group: 'tartisma',
+    blurb: 'Konuları oda seçer: yaz, oyla, en çok oy alanı konuş.',
     kind: 'lean_coffee',
     title: 'Lean Coffee — konuları biz seçiyoruz',
     config: {
@@ -104,6 +135,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'suggestions',
     label: 'Öneriler (gelecek dönem)',
+    group: 'tartisma',
+    blurb: 'Gelecek dönem için anonim öneriler, sonra oylama.',
     kind: 'suggestions',
     title: 'Gelecek dönem: konular ve vizyon',
     config: {
@@ -119,6 +152,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'ama',
     label: 'Ne Sorsan Söylerim (AMA)',
+    group: 'tartisma',
+    blurb: 'Ne sorsan söylerim — anonim soru, açık cevap.',
     kind: 'suggestions',
     title: 'Ne sorsan söylerim',
     config: {
@@ -134,6 +169,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'wordcloud',
     label: 'Kelime Bulutu',
+    group: 'tartisma',
+    blurb: 'Tek kelimeyle dönem. Aynı kelimeler büyür.',
     kind: 'wordcloud',
     title: 'Geçen dönem tek kelimeyle',
     config: {
@@ -147,6 +184,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'two_truths',
     label: 'İki Doğru Bir Yalan',
+    group: 'oyun',
+    blurb: 'Üç cümle, biri yalan. Oda hangisi olduğunu bulmaya çalışır.',
     kind: 'two_truths',
     title: 'İki Doğru Bir Yalan',
     config: {
@@ -157,6 +196,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'health_check',
     label: 'Takım Nabzı',
+    group: 'tartisma',
+    blurb: 'Altı boyutta iyi / orta / kötü. Tamamen anonim.',
     kind: 'health_check',
     title: 'Takım Nabzı',
     config: {
@@ -170,6 +211,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'feedback_wall',
     label: 'Geri Bildirim Duvarı',
+    group: 'tartisma',
+    blurb: 'Birbirinize güçlü yön ve gelişim alanı. Anonim, toplu açılır.',
     kind: 'feedback_wall',
     title: 'Geri Bildirim Duvarı',
     config: {
@@ -182,6 +225,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'quiz',
     label: 'Bilgi Yarışması',
+    group: 'oyun',
+    blurb: 'Bilgi yarışması. Hazır soru paketi bir tuş uzakta.',
     kind: 'quiz',
     title: 'Bilgi Yarışması',
     config: {
@@ -192,6 +237,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'fibbage',
     label: 'Fibbage (inandırıcı yalan)',
+    group: 'oyun',
+    blurb: 'Gerçek cevabı bul, bu arada kendi yalanınla kandır.',
     kind: 'fibbage',
     title: 'Fibbage',
     config: {
@@ -202,6 +249,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'rank',
     label: 'Sırala Bakalım',
+    group: 'oyun',
+    blurb: 'Listeyi sırala — amaç haklı olmak değil, çoğunlukla aynı düşünmek.',
     kind: 'rank',
     title: 'Sırala Bakalım',
     config: {
@@ -213,6 +262,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'codenames',
     label: 'Kelime Ajanları (Codenames TR)',
+    group: 'oyun',
+    blurb: 'İki takım, 25 kelime, tek kelimelik ipuçları.',
     kind: 'codenames',
     title: 'Kelime Ajanları',
     config: {
@@ -222,6 +273,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'wavelength',
     label: 'Frekans (Wavelength)',
+    group: 'oyun',
+    blurb: 'Gizli bir nokta, tek kelimelik ipucu, kadranı çevir.',
     kind: 'wavelength',
     title: 'Frekans',
     config: {
@@ -232,6 +285,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'secret_mission',
     label: 'Gizli Görev (finalde aç)',
+    group: 'oyun',
+    blurb: 'Herkese gizli bir görev. Finalde açılır.',
     kind: 'secret_mission',
     title: 'Gizli Görevler',
     config: {
@@ -241,6 +296,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'break',
     label: 'Mola',
+    group: 'diger',
+    blurb: 'Mola. Ekranda geri sayım.',
     kind: 'break',
     title: 'Mola',
     config: {
@@ -251,6 +308,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'leaderboard',
     label: 'Şampiyonluk Tablosu (final)',
+    group: 'diger',
+    blurb: 'Şampiyonluk tablosu — aşağıdan yukarı açılır.',
     kind: 'leaderboard',
     title: 'Şampiyonluk Tablosu',
     config: {
@@ -260,6 +319,8 @@ export const STAGE_PRESETS: StagePreset[] = [
   {
     key: 'kudos_wall',
     label: 'Teşekkür Duvarı',
+    group: 'tartisma',
+    blurb: 'Sadece teşekkür. Kimse eleştiri yazamaz.',
     kind: 'feedback_wall',
     title: 'Teşekkür Duvarı',
     config: {

@@ -172,21 +172,35 @@ if (!(await titleBox.count())) {
   ok('created a fresh meeting through the UI')
 }
 
-const addStop = host.getByRole('button', { name: /Durak ekle/ })
-if (!(await addStop.count())) {
-  bad('konsol', 'no way to add stops')
+// Building the route is now the thing an empty console lands on, rather than a
+// link inside a picker the host has to open first.
+const seedBtn = host.getByRole('button', { name: 'Hazır rotayı kur' })
+if (!(await seedBtn.count())) {
+  bad('konsol', 'an empty route does not offer to build the standard one')
 } else {
-  await addStop.click()
+  await seedBtn.click()
+  await host.waitForTimeout(2800)
+  ok('built the whole run of show in one press')
+}
+
+// and the picker itself must still be reachable and searchable
+await go(host, '/host')
+const addMore = host.getByRole('button', { name: /Durak ekle/ })
+if (!(await addMore.count())) {
+  note('no "add a stop" button once the route exists')
+} else {
+  await addMore.click()
   await host.waitForTimeout(700)
-  const labels = await host.locator('button').allTextContents()
-  note(`stop picker offers ${labels.length} buttons`)
-  const seedBtn = host.getByRole('button', { name: /3 saatlik|Hazır rota|Tüm rotayı|rotayı kur/i }).first()
-  if (await seedBtn.count()) {
-    await seedBtn.click()
-    await host.waitForTimeout(2800)
-    ok('built the whole run of show in one press')
-  } else {
-    bad('konsol', `no "build the standard 3-hour route" action — picker had: ${labels.slice(0, 12).join(' | ').slice(0, 200)}`)
+  const search = host.getByPlaceholder('Durak ara…')
+  if (!(await search.count())) bad('konsol', 'the stop picker has no search')
+  else {
+    await search.fill('yalan')
+    await host.waitForTimeout(600)
+    const hits = await host.locator('section h3').count()
+    if (!hits) bad('konsol', 'searching the stop picker returns nothing for a real word')
+    else ok('the stop picker filters')
+    const close = host.getByRole('button', { name: 'Kapat', exact: true })
+    if (await close.count()) { await close.click(); await host.waitForTimeout(400) }
   }
 }
 await settle(host)

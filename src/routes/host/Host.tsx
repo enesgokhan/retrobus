@@ -4,34 +4,16 @@ import { useMeeting } from '../../lib/useMeeting'
 import { S } from '../../lib/strings'
 import AppShell from '../../components/AppShell'
 import { stageTheme } from '../../lib/theme'
-import type { Stage, StageKind } from '../../lib/types'
+import type { Stage } from '../../lib/types'
 import { AGENDA_MINUTES, DEFAULT_AGENDA, STAGE_PRESETS } from '../../lib/presets'
 import StageControls from './StageControls'
+import StopPicker from './StopPicker'
 import NowNext from './NowNext'
 import { useStageReadiness } from '../../lib/useStageReadiness'
 import { usePresence } from '../../lib/usePresence'
 import PresenceBar from '../../components/PresenceBar'
 import JoinPanel from '../../components/JoinPanel'
 
-
-const ADDABLE_KINDS: StageKind[] = [
-  'wordcloud',
-  'two_truths',
-  'health_check',
-  'lean_coffee',
-  'board',
-  'poll',
-  'feedback_wall',
-  'suggestions',
-  'quiz',
-  'codenames',
-  'wavelength',
-  'leaderboard',
-  'fibbage',
-  'rank',
-  'secret_mission',
-  'break',
-]
 
 /** Şoför konsolu — rota, durak kontrolleri, zamanlayıcı. */
 export default function Host() {
@@ -110,17 +92,6 @@ export default function Host() {
 
   function nextOrder() {
     return stages.length ? Math.max(...stages.map((s) => s.order_index)) + 1 : 1
-  }
-
-  async function addStage(kind: StageKind) {
-    if (!meeting) return
-    await sb.from('stages').insert({
-      meeting_id: meeting.id,
-      kind,
-      title: S.kind[kind] ?? kind,
-      order_index: nextOrder(),
-    })
-    setAdding(false)
   }
 
   /** Hazır 3 saatlik rotayı tek seferde kur. */
@@ -472,51 +443,29 @@ export default function Host() {
                 )
               })}
 
-            {adding ? (
-              <div className="card">
-                {stages.length === 0 && (
-                  <div className="mb-5 rounded-2xl border-2 border-coral bg-rose-soft p-4 flex flex-col gap-2">
-                    <div className="font-extrabold">🚌 Hazır 3 saatlik rota</div>
-                    <p className="text-xs font-semibold">
-                      {DEFAULT_AGENDA.length} durak · ~{Math.round(AGENDA_MINUTES / 60)} saat
-                      ({AGENDA_MINUTES} dk). Yaklaşık 1 saat tartışma, 2 saat oyun. İstemediklerini
-                      sonra sil.
-                    </p>
-                    <button className="btn-coral self-start text-sm" onClick={seedAgenda}>
-                      Rotayı kur
-                    </button>
-                  </div>
-                )}
-                <div className="font-bold mb-1">Hazır duraklar</div>
-                <p className="text-xs text-ink-soft font-semibold mb-3">
-                  Ayarları (kimlik, oy hakkı, süre, yönlendirme metni) önceden dolu gelir.
+            {/* An empty route is where "hard to start" actually lived: the one
+                thing a new host should press was a small link inside a picker
+                they had to open first. It is now the thing they land on. */}
+            {stages.length === 0 && !adding ? (
+              <div className="card flex flex-col items-center text-center py-10 px-6">
+                <h3 className="text-lg font-semibold tracking-tight">Rota boş</h3>
+                <p className="text-sm text-ink-soft mt-2 max-w-sm leading-relaxed">
+                  Hazır rota {DEFAULT_AGENDA.length} durak, ~{Math.round(AGENDA_MINUTES / 60)} saat
+                  ({AGENDA_MINUTES} dk): yaklaşık bir saat tartışma, iki saat oyun. İstemediğin
+                  durağı sonra silersin.
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
-                  {STAGE_PRESETS.map((p) => (
-                    <button
-                      key={p.key}
-                      className="btn-ghost text-sm justify-start"
-                      onClick={() => addPreset(p.key)}
-                    >
-                      {p.label}
-                      {p.config.identity === 'anon' && (
-                        <span className="text-xs text-ink-soft ml-1">(anonim)</span>
-                      )}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-2 mt-6 flex-wrap justify-center">
+                  <button className="btn-coral" onClick={seedAgenda}>
+                    Hazır rotayı kur
+                  </button>
+                  <button className="btn-ghost" onClick={() => setAdding(true)}>
+                    Kendim seçeyim
+                  </button>
                 </div>
-
-                <div className="font-bold mb-3">Boş durak</div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {ADDABLE_KINDS.map((k) => (
-                    <button key={k} className="btn-ghost text-sm justify-start" onClick={() => addStage(k)}>
-                      {S.kind[k]}
-                    </button>
-                  ))}
-                </div>
-                <button className="text-ink-soft underline text-sm mt-3" onClick={() => setAdding(false)}>
-                  {S.cancel}
-                </button>
+              </div>
+            ) : adding ? (
+              <div className="card">
+                <StopPicker onPick={(k) => void addPreset(k)} onCancel={() => setAdding(false)} />
               </div>
             ) : (
               <button className="btn-ghost self-start" onClick={() => setAdding(true)}>
