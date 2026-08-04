@@ -63,7 +63,7 @@ export default function LeaderboardStage({ stage, presenter = false }: { stage: 
         <p className={presenter ? 'text-3xl font-extrabold' : 'text-xl font-extrabold'}>
           Sıralama gizli
         </p>
-        <p className="text-ink-soft mt-1">Şoför açtığında hep birlikte göreceğiz.</p>
+        <p className="text-ink-soft mt-1">Açıldığında hep birlikte göreceğiz.</p>
       </div>
     )
   }
@@ -110,7 +110,7 @@ export default function LeaderboardStage({ stage, presenter = false }: { stage: 
             {champion.points}
           </div>
           <div className="text-sm font-bold uppercase tracking-widest text-ink-soft">
-            {cochampions.length > 1 ? `🥇 ${cochampions.length} kişi berabere` : '🥇 Şampiyon'}
+            {cochampions.length > 1 ? `🥇 ${cochampions.length} kişi berabere` : 'Şampiyon'}
           </div>
         </div>
       )}

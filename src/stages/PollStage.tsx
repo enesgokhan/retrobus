@@ -79,7 +79,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
         body={
           isHost
             ? 'Konsoldaki durak ayarlarından bir soru ekle — herkesin ekranında belirir.'
-            : 'Şoför birazdan bir soru soracak.'
+            : 'Birazdan bir soru gelecek.'
         }
       />
     )
@@ -112,7 +112,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
         // The console's big "Sonuçları aç" sets the STAGE to revealed; each poll
         // also has its own state, and only that was consulted — so the host
         // pressed the most obvious button in the app and the room's screen still
-        // read "🔒 Sonuçlar kapanışta açılacak".
+        // read "Sonuçlar kapanışta açılacak".
         const stageRevealed = stage.state === 'revealed' || stage.state === 'closed'
         const showResults =
           poll.state === 'revealed' || poll.state === 'closed' || poll.reveal === 'live' || stageRevealed
@@ -168,9 +168,9 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
             <p className="text-xs font-semibold text-ink-soft">
               {poll.state === 'open'
                 ? isDone
-                  ? '✅ Cevabın kaydedildi.'
+                  ? 'Cevabın kaydedildi.'
                   : poll.reveal === 'batch'
-                    ? '🔒 Sonuçlar kapanışta açılacak.'
+                    ? 'Sonuçlar kapanışta açılacak.'
                     : 'Sonuçlar canlı.'
                 : showResults
                   ? `${tally.length} cevap`

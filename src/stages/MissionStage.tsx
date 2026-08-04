@@ -106,7 +106,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
           {mine && !presenter ? (
             <section className="card flex flex-col gap-2 border-grape bg-grape-soft">
               <span className="text-xs font-bold uppercase tracking-widest text-grape">
-                🕶️ Gizli görevin — kimseye söyleme
+                Gizli görevin — kimseye söyleme
               </span>
               <p className={presenter ? 'text-3xl font-extrabold' : 'text-xl font-extrabold'}>{mine.body}</p>
               <p className="text-xs font-semibold text-ink-soft">
@@ -120,7 +120,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
           )}
           {isHost && !presenter && (
             <section className="card flex flex-col gap-2">
-              <h4 className="font-bold text-sm">Şoför</h4>
+              <h4 className="font-bold text-sm">Yönetim</h4>
               <p className="text-xs text-ink-soft">
                 Görevleri toplantının BAŞINDA dağıt, bu durağı finale koy. Kimin hangi görevi aldığını
                 sen de göremezsin — bilseydin farkında olmadan yönlendirirdin.
@@ -143,11 +143,11 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
                     ? missions.length
                       ? 'Mevcut görevler silinip yeniden dağıtılacak — bas'
                       : 'Dağıtmak için tekrar bas'
-                    : `🎲 Görevleri dağıt (${missions.length || 0} atanmış)`}
+                    : `Görevleri dağıt (${missions.length || 0} atanmış)`}
                 </button>
                 {missions.length > 0 && (
                   <button className="btn-ghost text-sm" onClick={reveal}>
-                    🎭 Hepsini aç (final)
+                    Hepsini aç (final)
                   </button>
                 )}
               </div>
@@ -157,7 +157,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
       ) : (
         <>
           <h3 className={['text-center font-extrabold', presenter ? 'text-4xl' : 'text-2xl'].join(' ')}>
-            🕶️ Gizli görevler
+            Gizli görevler
           </h3>
           <div className="flex flex-col gap-2">
             {missions.map((m) => (

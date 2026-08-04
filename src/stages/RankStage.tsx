@@ -128,7 +128,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
           body={
             isHost
               ? 'Birkaç şey ekle — herkes kendi sırasını yapacak, sürüyle uyum puan getirecek.'
-              : 'Şoför listeyi yazıyor. Sonra herkes kendi sıralamasını yapacak.'
+              : 'Liste hazırlanıyor. Sonra herkes kendi sıralamasını yapacak.'
           }
         />
         {isHost && !presenter && (
@@ -202,7 +202,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
         </section>
       ) : mySubmitted ? (
         <p className="text-center font-bold text-teal">
-          ✅ Sıralaman kaydedildi.
+          Sıralaman kaydedildi.
         </p>
       ) : isOpen && !presenter ? (
         <section className="card flex flex-col gap-2">
@@ -239,7 +239,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
         </section>
       ) : (
         <p className="text-center text-ink-soft">
-          {presenter ? `${subs.length} kişi sıraladı…` : 'Şoför bu durağı açmayı bekliyor.'}
+          {presenter ? `${subs.length} kişi sıraladı…` : 'Bu durak henüz açılmadı.'}
         </p>
       )}
 
@@ -251,7 +251,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
             if (e) setError('Açılamadı.')
           }}
         >
-          🐄 Sonuçları aç ve puanla ({submittedCount} sıralama)
+          Sonuçları aç ve puanla ({submittedCount} sıralama)
         </button>
       )}
 

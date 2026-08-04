@@ -245,15 +245,15 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
 
   const hostPanel = isHost && !presenter && (
     <section className="card flex flex-col gap-3">
-      <h4 className="font-bold text-sm">Şoför</h4>
+      <h4 className="font-bold text-sm">Yönetim</h4>
       {round && round.phase === 'guess' && (
         <button className="btn-coral text-sm self-start" onClick={closeDial}>
-          🔒 Kadranı kilitle ({dialCount}/{activeTeamSize}) → bahis
+          Kadranı kilitle ({dialCount}/{activeTeamSize}) → bahis
         </button>
       )}
       {round && round.phase === 'bet' && (
         <button className="btn-coral text-sm self-start" onClick={reveal}>
-          🎯 Hedefi aç ve puanla ({betCount}/{otherTeamSize} bahis)
+          Hedefi aç ve puanla ({betCount}/{otherTeamSize} bahis)
         </button>
       )}
       {round && round.phase === 'clue' && (
@@ -325,7 +325,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
       <div className="w-full max-w-4xl flex flex-col gap-4">
         <StageHeader
           phase="Frekans"
-          instruction={isHost ? 'Takımları kur ve ilk turu başlat.' : 'Şoför turu hazırlıyor…'}
+          instruction={isHost ? 'Takımları kur ve ilk turu başlat.' : 'Tur hazırlanıyor.'}
           waiting={!isHost}
           presenter={presenter}
         />

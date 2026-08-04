@@ -183,17 +183,17 @@ export default function Yearbook() {
     L.push(`# 🚌 ${meeting?.title ?? 'Retrobüs'} — Retro Yıllığı`, '')
 
     if (awards.length) {
-      L.push('## 🏅 Ödüller', '')
+      L.push('## Ödüller', '')
       for (const a of awards) L.push(`- **${a.label}**: ${a.display_name} (${a.detail})`)
       L.push('')
     }
     if (board.length) {
-      L.push('## 🥇 Şampiyonluk Tablosu', '')
+      L.push('## Şampiyonluk Tablosu', '')
       board.forEach((r, i) => L.push(`${i + 1}. ${r.display_name} — ${r.points} puan`))
       L.push('')
     }
     if (cloudWords.length) {
-      L.push('## ☁️ Tek kelimeyle', '')
+      L.push('## Tek kelimeyle', '')
       L.push(cloudWords.map(([w, n]) => (n > 1 ? `**${w}** (${n})` : w)).join(' · '), '')
     }
     for (const st of boardStages) {
@@ -215,14 +215,14 @@ export default function Yearbook() {
       }
     }
     if (actions.length) {
-      L.push('## ✅ Kararlar', '')
+      L.push('## Kararlar', '')
       for (const a of actions) {
         L.push(`- [${a.done ? 'x' : ' '}] ${a.body} — **${nameOf(a.owner_member_id)}**`)
       }
       L.push('')
     }
     if (polls.length) {
-      L.push('## 📊 Anketler', '')
+      L.push('## Anketler', '')
       for (const p of polls) {
         const answers = pollCounts[p.id] ?? []
         L.push(`**${p.question}** (${answers.length} cevap)`)
@@ -241,7 +241,7 @@ export default function Yearbook() {
       }
     }
     if (health.length) {
-      L.push('## 🩺 Takım Nabzı', '')
+      L.push('## Takım Nabzı', '')
       const dims = [...new Set(health.map((h) => h.dimension_key))]
       for (const d of dims) {
         const rows = health.filter((h) => h.dimension_key === d)
@@ -254,7 +254,7 @@ export default function Yearbook() {
     }
     const revealedMissions = missions.filter((m) => m.revealed)
     if (revealedMissions.length) {
-      L.push('## 🕶️ Gizli Görevler', '')
+      L.push('## Gizli Görevler', '')
       for (const m of revealedMissions) {
         const mark = m.completed === true ? '✅' : m.completed === false ? '❌' : '❓'
         L.push(`- ${mark} **${nameOf(m.member_id)}**: ${m.body}`)
@@ -264,7 +264,7 @@ export default function Yearbook() {
     if (includeFeedback) {
       const shown = feedback.filter((f) => !f.hidden)
       if (shown.length) {
-        L.push('## 💌 Geri Bildirim Duvarı', '')
+        L.push('## Geri Bildirim Duvarı', '')
         L.push('_Anonim yazıldı; şoför bu bölümü yıllığa dahil etmeyi seçti._', '')
         for (const m of members) {
           const mine = shown.filter((f) => f.target_member_id === m.id)
@@ -334,7 +334,7 @@ export default function Yearbook() {
       {/* the year in single words */}
       {cloudWords.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-extrabold">☁️ Tek kelimeyle</h2>
+          <h2 className="text-xl font-extrabold">Tek kelimeyle</h2>
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
             {cloudWords.map(([word, n]) => (
               <span
@@ -353,7 +353,7 @@ export default function Yearbook() {
       {/* who was on the bus — the class photo */}
       {members.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-extrabold">🚌 Bu otobüsteydik</h2>
+          <h2 className="text-xl font-extrabold">Bu otobüsteydik</h2>
           <div className="flex flex-wrap gap-4">
             {members.map((m) => (
               <div key={m.id} className="flex flex-col items-center gap-1 w-20">
@@ -370,7 +370,7 @@ export default function Yearbook() {
       {/* ödüller */}
       {awards.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-extrabold">🏅 Ödüller</h2>
+          <h2 className="text-xl font-extrabold">Ödüller</h2>
           <div className="grid sm:grid-cols-2 gap-2">
             {awards.map((a) => (
               <div key={a.key} className="card flex items-center gap-3 py-3 bg-amber-soft border-amber">
@@ -391,7 +391,7 @@ export default function Yearbook() {
       {/* sıralama */}
       {board.length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-xl font-extrabold">🥇 Şampiyonluk Tablosu</h2>
+          <h2 className="text-xl font-extrabold">Şampiyonluk Tablosu</h2>
           {board.map((r, i) => (
             <div key={r.member_id} className="flex items-center gap-3 border-b border-line py-1.5">
               <span className="w-6 text-right font-bold text-ink-soft">{i + 1}</span>
@@ -429,7 +429,7 @@ export default function Yearbook() {
       {/* kararlar */}
       {actions.length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-xl font-extrabold">✅ Kararlar</h2>
+          <h2 className="text-xl font-extrabold">Kararlar</h2>
           <ul className="flex flex-col gap-1">
             {actions.map((a) => (
               <li key={a.id} className="flex items-start gap-2 border-b border-line py-1.5">
@@ -447,7 +447,7 @@ export default function Yearbook() {
       {/* gizli görevler */}
       {missions.filter((m) => m.revealed).length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-xl font-extrabold">🕶️ Gizli Görevler</h2>
+          <h2 className="text-xl font-extrabold">Gizli Görevler</h2>
           <ul className="flex flex-col gap-1">
             {missions
               .filter((m) => m.revealed)
@@ -467,7 +467,7 @@ export default function Yearbook() {
       {/* nabız */}
       {health.length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-xl font-extrabold">🩺 Takım Nabzı</h2>
+          <h2 className="text-xl font-extrabold">Takım Nabzı</h2>
           {[...new Set(health.map((h) => h.dimension_key))].map((d) => {
             const rows = health.filter((h) => h.dimension_key === d)
             const t = rows.length
@@ -492,7 +492,7 @@ export default function Yearbook() {
       {/* geri bildirim, yalnızca açıkça dahil edilirse */}
       {includeFeedback && feedback.filter((f) => !f.hidden).length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-extrabold">💌 Geri Bildirim Duvarı</h2>
+          <h2 className="text-xl font-extrabold">Geri Bildirim Duvarı</h2>
           {members.map((m) => {
             const mine = feedback.filter((f) => f.target_member_id === m.id && !f.hidden)
             if (!mine.length) return null
@@ -516,7 +516,7 @@ export default function Yearbook() {
       )}
 
       <footer className="text-center text-sm text-ink-soft border-t-2 border-line pt-4">
-        🚌 Retrobüs
+        Retrobüs
       </footer>
     </AppShell>
   )

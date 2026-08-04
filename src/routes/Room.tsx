@@ -53,7 +53,7 @@ export default function Room() {
               <h2 className="text-3xl font-extrabold mb-2">{S.endedTitle}</h2>
               <p className="text-ink-soft mb-5">{S.endedBody}</p>
               <Link to="/yillik" className="btn-coral">
-                📖 Yıllığa bak
+                Yıllığa bak
               </Link>
             </div>
           </div>

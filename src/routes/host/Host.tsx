@@ -200,7 +200,7 @@ export default function Host() {
 
       {hostError && (
         <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 font-bold">
-          ⚠️ {hostError}
+          {hostError}
         </p>
       )}
 
@@ -244,7 +244,7 @@ export default function Host() {
 
           <details className="card">
             <summary className="font-bold cursor-pointer flex items-center gap-2">
-              💬 Karşılama mesajı
+              Karşılama mesajı
               {!meeting.welcome_note && (
                 <span className="text-xs font-semibold text-ink-soft">(boş — kimseye gösterilmiyor)</span>
               )}
@@ -310,7 +310,7 @@ export default function Host() {
               onClick={endMeeting}
               onBlur={() => setConfirmEnd(null)}
             >
-              {confirmEnd === meeting.id ? 'Emin misin? Bas' : '🏁 Bitir ve arşivle'}
+              {confirmEnd === meeting.id ? 'Emin misin? Bas' : 'Bitir ve arşivle'}
             </button>
           </section>
 
@@ -379,7 +379,6 @@ export default function Host() {
                       </div>
                       {readiness[stage.id]?.todo && (
                         <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-soft border border-amber/50 px-2.5 py-0.5 text-xs font-bold">
-                          <span aria-hidden>⚠️</span>
                           {readiness[stage.id].todo}
                         </div>
                       )}
@@ -410,7 +409,7 @@ export default function Host() {
                           onClick={() => setState(stage, stage.state === 'closed' ? 'revealed' : 'open')}
                           title="Bir adım geri al"
                         >
-                          ↩︎ Geri
+                          Geri
                         </button>
                       )}
                       {!isActive && stage.state === 'pending' && (

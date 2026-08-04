@@ -477,7 +477,10 @@ for (let i = 0; i < (builtStages ?? []).length; i++) {
     // a break, and a secret mission, are meant to be read rather than acted on
     stage.kind === 'break' ||
     stage.kind === 'secret_mission' ||
-    /bekliyor|düşünüyor|hazırlan|hazırlıyor|toplanıyor|Şoför|sıran değil|kurulmadı|yazılmamış|Mola/i.test(body)
+    // Deliberately not keyed on a role name: this used to look for "Şoför",
+    // so retiring that persona from the copy made every waiting screen look
+    // like a dead end to the test.
+    /bekl|düşünüyor|hazırlan|toplanıyor|gizli|açıldığında|sıran değil|kurulmadı|yazılmamış|Mola/i.test(body)
 
   // No raw identifiers on a Turkish screen. Snake-case stage kinds and the
   // English dimension keys are internal names; seeing one means a label lookup

@@ -395,7 +395,7 @@ console.log('\n=== TWO TRUTHS: write → pick → guess → reveal ===')
 
   // host picks the first entry
   await room(host)
-  const pickBtn = host.locator('section.card', { hasText: 'Şoför: kart seç' })
+  const pickBtn = host.locator('section.card', { hasText: 'Kart seç' })
     .locator('button').filter({ hasText: NAMES[0] }).first()
   if (!(await pickBtn.count())) bad('two_truths', 'host cannot pick a card')
   else { await pickBtn.click(); await host.waitForTimeout(1800) }

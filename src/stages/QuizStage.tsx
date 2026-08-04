@@ -157,14 +157,14 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
         body={
           isHost
             ? 'Konsoldaki durak ayarlarından hazır bir soru paketi ekle — tek tuş, beş soru.'
-            : 'Şoför soruları hazırlıyor. Doğru cevap puan, hızlı doğru cevap daha çok puan.'
+            : 'Sorular hazırlanıyor. Doğru cevap puan, hızlı cevap daha çok puan.'
         }
       />
     )
   }
 
   const header = (() => {
-    if (!active) return { phase: 'Bilgi Yarışması', instruction: 'Şoförün soru açmasını bekliyoruz.', waiting: true }
+    if (!active) return { phase: 'Bilgi Yarışması', instruction: 'Bir soru açılmasını bekliyoruz.', waiting: true }
     if (revealed) return { phase: 'Cevap açıldı', instruction: 'Puanlar düştü — sıralamaya bak.', waiting: false }
     if (myAnswer) return { phase: 'Cevabın kayıtlı', instruction: 'Hız da sayılıyor. Diğerlerini bekliyoruz.', waiting: true }
     return {
@@ -277,7 +277,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
           )}
 
           {myAnswer && !revealed && (
-            <p className="text-sm font-bold text-teal text-center">✅ Cevabın kaydedildi — hız da sayılıyor.</p>
+            <p className="text-sm font-bold text-teal text-center">Cevabın kaydedildi — hız da sayılıyor.</p>
           )}
 
           {isHost && !presenter && (
@@ -297,7 +297,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
           body={
             isHost
               ? 'Aşağıdaki listeden bir soruyu aç — herkesin ekranında aynı anda belirir.'
-              : 'Şoför birazdan ilk soruyu açacak. Hız da puan getiriyor, hazır ol.'
+              : 'İlk soru birazdan açılacak. Hız da puan getiriyor.'
           }
         />
       )}

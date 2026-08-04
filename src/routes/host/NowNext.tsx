@@ -43,7 +43,7 @@ export default function NowNext(p: NowNextProps) {
   const primary = (() => {
     if (!activeStage) {
       return next
-        ? { label: `▶ Başlat: ${next.title}`, run: () => p.onActivate(next), tone: 'go' as const }
+        ? { label: `Başlat: ${next.title}`, run: () => p.onActivate(next), tone: 'go' as const }
         : null
     }
     const blocked = todo[activeStage.id]?.todo
@@ -58,17 +58,17 @@ export default function NowNext(p: NowNextProps) {
       // to where the setup actually lives. Send the host there instead.
       const inPanel = activeStage.kind === 'quiz' || activeStage.kind === 'poll'
       return {
-        label: `⚠️ ${blocked} — ${inPanel ? 'düzelt' : 'oda ekranında kur'}`,
+        label: `${blocked} — ${inPanel ? 'düzelt' : 'oda ekranında kur'}`,
         run: inPanel ? p.onFixSetup : () => navigate('/oda'),
         tone: 'warn' as const,
       }
     }
     if (activeStage.state === 'pending') {
-      return { label: '▶ Durağı aç', run: () => p.onSetState(activeStage, 'open'), tone: 'go' as const }
+      return { label: 'Durağı aç', run: () => p.onSetState(activeStage, 'open'), tone: 'go' as const }
     }
     if (activeStage.state === 'open') {
       return {
-        label: '👁 Sonuçları/oylamayı aç',
+        label: 'Sonuçları/oylamayı aç',
         run: () => p.onSetState(activeStage, 'revealed'),
         tone: 'go' as const,
       }
@@ -77,8 +77,8 @@ export default function NowNext(p: NowNextProps) {
       return { label: '✓ Durağı kapat', run: () => p.onSetState(activeStage, 'closed'), tone: 'calm' as const }
     }
     return next
-      ? { label: `▶ Sıradakine geç: ${next.title}`, run: () => p.onActivate(next), tone: 'go' as const }
-      : { label: '🏁 Rota tamamlandı', run: null, tone: 'calm' as const }
+      ? { label: `Sıradakine geç: ${next.title}`, run: () => p.onActivate(next), tone: 'go' as const }
+      : { label: 'Rota tamamlandı', run: null, tone: 'calm' as const }
   })()
 
   const stateLabel = activeStage
@@ -143,7 +143,7 @@ export default function NowNext(p: NowNextProps) {
                       className="btn-ghost text-xs px-3 py-1"
                       onClick={() => p.onTimerStart((activeStage.config.timer_s as number) ?? 300)}
                     >
-                      ↻ Yeniden başlat
+                      Yeniden başlat
                     </button>
                   )}
                 </>
@@ -197,7 +197,7 @@ export default function NowNext(p: NowNextProps) {
                     setTimeout(p.onFixSetup, 600)
                   }}
                 >
-                  ⚠️ {todo[next.id].todo}
+                  {todo[next.id].todo}
                 </button>
               )}
             </div>

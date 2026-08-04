@@ -112,7 +112,7 @@ export default function Members() {
                 {m.is_host && <span className="ml-2 text-xs text-coral font-bold">({S.isHost})</span>}
               </div>
               <div className="text-xs text-ink-soft font-semibold">
-                {m.code_set ? '🔑 kod atanmış' : '⚠️ kod bekliyor'}
+                {m.code_set ? 'kod atanmış' : 'kod bekliyor'}
               </div>
             </div>
             {codeFor === m.id ? (

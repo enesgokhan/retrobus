@@ -215,13 +215,13 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       <div className="w-full max-w-4xl flex flex-col gap-4">
         <StageHeader
           phase="Kelime Ajanları"
-          instruction={isHost ? 'Oyunu kur, sonra herkes takımını seçsin.' : 'Şoför oyunu kuruyor…'}
+          instruction={isHost ? 'Oyunu kur, sonra herkes takımını seçsin.' : 'Oyun kuruluyor.'}
           waiting={!isHost}
           presenter={presenter}
         />
         {isHost && !presenter && (
           <button className="btn-coral self-center text-lg" onClick={newGame}>
-            🕵️ Yeni oyun kur
+            Yeni oyun kur
           </button>
         )}
       </div>
@@ -294,7 +294,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
                       onClick={() => join(team, true)}
                       disabled={!!sm && sm.member_id !== member?.id}
                     >
-                      🕵️ Spymaster
+                      Spymaster
                     </button>
                   </div>
                 )}
@@ -303,11 +303,11 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
           })}
         </div>
         <p className="text-xs font-semibold text-ink-soft text-center">
-          {canDeal ? '✅ Takımlar hazır — dağıtabilirsin.' : `⚠️ ${missing}.`}
+          {canDeal ? 'Takımlar hazır — dağıtabilirsin.' : `${missing}.`}
         </p>
         {isHost && !presenter && (
           <button className="btn-coral self-center text-lg" onClick={deal} disabled={!canDeal}>
-            🎴 Tahtayı dağıt
+            Tahtayı dağıt
           </button>
         )}
       </div>
@@ -373,7 +373,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
               onClick={() => setAsOperative((v) => !v)}
               title="Takımının ne gördüğünü kontrol et"
             >
-              {asOperative ? '🕵️ Anahtarı göster' : '👁 Takım görünümü'}
+              {asOperative ? 'Anahtarı göster' : 'Takım görünümü'}
             </button>
           ) : null
         }
@@ -550,7 +550,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
               died, a spymaster went to make tea. Without a host escape the whole
               stage deadlocks in front of everyone. */}
           <button className="btn-ghost text-sm" onClick={forcePass}>
-            ⏭ Sırayı diğer takıma ver
+            Sırayı diğer takıma ver
           </button>
           <button
             className="btn-ghost text-sm"
@@ -564,7 +564,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
             }}
             onBlur={() => setRestartArmed(false)}
           >
-            {restartArmed ? 'Tahta ve roller sıfırlanacak — bas' : '↺ Oyunu baştan kur'}
+            {restartArmed ? 'Tahta ve roller sıfırlanacak — bas' : 'Oyunu baştan kur'}
           </button>
         </div>
       )}
@@ -572,7 +572,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       {game.phase === 'done' && isHost && !presenter && (
         <div className="flex gap-2 justify-center flex-wrap">
           <button className="btn-coral" onClick={award}>
-            🏅 Kazanan takıma puan ver
+            Kazanan takıma puan ver
           </button>
           <button className="btn-ghost" onClick={newGame}>
             Yeni oyun
@@ -582,7 +582,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
 
       {seeingKey && !presenter && (
         <p className="text-xs font-semibold text-grape text-center">
-          🕵️ Anahtarı görüyorsun. Takımının ne gördüğünü kontrol etmek için “Takım görünümü”ne bas.
+          Anahtarı görüyorsun. Takımının ne gördüğünü kontrol etmek için “Takım görünümü”ne bas.
         </p>
       )}
     </div>

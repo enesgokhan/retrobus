@@ -226,7 +226,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
 
   const hostPanel = isHost && !presenter && (
     <section className="card flex flex-col gap-3">
-      <h4 className="font-bold text-sm">Şoför</h4>
+      <h4 className="font-bold text-sm">Yönetim</h4>
       {round && (
         <div className="flex flex-wrap gap-2">
           {round.phase === 'lie' && (
@@ -344,7 +344,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
           body={
             isHost
               ? 'Bir soru ve gerçek cevabını yaz. Herkes buna inandırıcı bir yalan uyduracak.'
-              : 'Şoför soruyu yazıyor. Sonra herkes birer yalan uyduracak — gerçeği bulan puan alır.'
+              : 'Soru hazırlanıyor. Sonra herkes birer yalan uyduracak — gerçeği bulan puan alır.'
           }
         />
         {hostPanel}
@@ -400,7 +400,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
           <>
             {myLieBody ? (
               <p className="font-bold text-teal">
-                ✅ Yalanın hazır: “{myLieBody}” — {lieCount}/{members.length} kişi yazdı
+                Yalanın hazır: “{myLieBody}” — {lieCount}/{members.length} kişi yazdı
               </p>
             ) : (
               !presenter && (
@@ -478,7 +478,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                 )
               })}
             {myPick && round.phase === 'guess' && (
-              <p className="text-sm font-bold text-teal text-center">✅ Seçimin kaydedildi.</p>
+              <p className="text-sm font-bold text-teal text-center">Seçimin kaydedildi.</p>
             )}
           </div>
         )}

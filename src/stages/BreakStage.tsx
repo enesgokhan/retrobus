@@ -65,7 +65,7 @@ export default function BreakStage({ stage, presenter = false }: { stage: Stage;
         {over
           ? 'Süre doldu — geri dönüyoruz.'
           : left == null && planned
-            ? 'Şoför sayacı başlatınca geri sayım burada işleyecek.'
+            ? 'Sayaç başlatıldığında geri sayım burada işleyecek.'
             : 'Kahve al, biraz ayağa kalk.'}
       </p>
     </div>

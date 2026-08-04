@@ -179,8 +179,8 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
   const header = (() => {
     if (!current) {
       return isOpen && mine
-        ? { phase: 'Cümlelerin kayıtlı', instruction: 'Şoför bir kart seçmeyi bekliyoruz.', waiting: true }
-        : { phase: 'İki Doğru Bir Yalan', instruction: 'Şoför bir kart seçecek.', waiting: true }
+        ? { phase: 'Cümlelerin kayıtlı', instruction: 'Kart seçilmesini bekliyoruz.', waiting: true }
+        : { phase: 'İki Doğru Bir Yalan', instruction: 'Birazdan bir kart seçilecek.', waiting: true }
     }
     const revealed = current.revealed
     const isMine = current.member_id === member?.id
@@ -211,7 +211,7 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
 
       {isOpen && mine && !current && (
         <p className="text-center text-ink-soft font-semibold">
-          ✅ Cümlelerin kayıtlı. {entries.length}/{members.length} kişi yazdı — şoförü bekliyoruz.
+          Cümlelerin kayıtlı. {entries.length}/{members.length} kişi yazdı — şoförü bekliyoruz.
         </p>
       )}
 
@@ -228,14 +228,14 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
           onGuess={(i) => guess(current.id, i)}
         />
       ) : (
-        !isOpen && <p className="text-center text-ink-soft">Şoför bir kart seçmeyi bekliyor.</p>
+        !isOpen && <p className="text-center text-ink-soft">Kart seçilmesini bekliyoruz.</p>
       )}
 
       {isOpen && !presenter && !mine && isHost && authoringCard}
 
       {isHost && !presenter && (
         <section className="card flex flex-col gap-2">
-          <h4 className="font-bold text-sm">Şoför: kart seç</h4>
+          <h4 className="font-bold text-sm">Kart seç</h4>
           <div className="flex flex-wrap gap-2">
             {entries.map((e) => (
               <button

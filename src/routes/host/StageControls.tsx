@@ -124,7 +124,7 @@ export default function StageControls({
 
           {locked && identity === 'anon' && (
             <p className="text-xs font-semibold text-ink-soft">
-              🔒 Durak açıldıktan sonra kimlik modu kilitlenir — sonradan değiştirmek zaten yazılmış
+              Durak açıldıktan sonra kimlik modu kilitlenir — sonradan değiştirmek zaten yazılmış
               kartları etkilemez, sadece kafa karıştırır.
             </p>
           )}
@@ -203,7 +203,7 @@ function PollComposer({ stage }: { stage: Stage }) {
 
   return (
     <div className="border-t-2 border-line pt-4 flex flex-col gap-3">
-      <div className="font-bold">📊 Hızlı anket</div>
+      <div className="font-bold">Hızlı anket</div>
       <input
         className="input-blob"
         value={question}

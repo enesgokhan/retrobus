@@ -108,7 +108,7 @@ export default function ActionsPanel({ meetingId }: { meetingId: string }) {
                   <span className="text-xs font-semibold text-ink-soft">
                     {a.owner_member_id
                       ? `👤 ${members.find((m) => m.id === a.owner_member_id)?.display_name ?? '—'}`
-                      : '👤 sahibi yok'}
+                      : 'sahibi yok'}
                   </span>
                 )}
               </div>

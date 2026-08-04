@@ -90,9 +90,9 @@ const RULES: RuleCard[] = [
     title: 'Bilgi Yarışması',
     oneLine: 'Doğru cevap puan, hızlı doğru cevap daha çok puan.',
     steps: [
-      'Şoför soruyu açar, süre başlar.',
+      'Soru açılır, süre başlar.',
       'Cevabını seç — ilk cevabın kesindir, değiştirilemez.',
-      'Şoför cevabı açar, puanlar düşer, sıralama görünür.',
+      'Cevap açılır, puanlar düşer, sıralama görünür.',
     ],
     scoring: [
       'Çoktan seçmeli: 1000 × (1 − geçen süre / süre limiti / 2). Yani en yavaş doğru cevap bile yarım puan alır.',
@@ -109,7 +109,7 @@ const RULES: RuleCard[] = [
     oneLine: 'Üç cümle yaz, biri yalan olsun.',
     steps: [
       'Herkes kendisi hakkında üç cümle yazar ve hangisinin yalan olduğunu işaretler.',
-      'Şoför sırayla bir kişinin kartını açar.',
+      'Yöneten sırayla bir kişinin kartını açar.',
       'Oda yalanı tahmin eder, sonra açılır.',
     ],
     scoring: ['Doğru tahmin: 2 puan.', 'Kandırdığın her kişi için: 1 puan.'],
@@ -154,7 +154,7 @@ const RULES: RuleCard[] = [
     steps: [
       'Kişi seç, tür seç, yaz.',
       'Yazılanlar toplanırken KİMSE göremez — şoför de dahil.',
-      'Şoför açtığında hepsi aynı anda, karışık sırayla görünür.',
+      'Yöneten açtığında hepsi aynı anda, karışık sırayla görünür.',
     ],
     scoring: ['Puan yok.'],
     gotchas: [
@@ -247,9 +247,7 @@ export default function Kurallar() {
                       <ul className="flex flex-col gap-1.5 text-sm">
                         {r.gotchas.map((g, i) => (
                           <li key={i} className="flex gap-2">
-                            <span aria-hidden className="shrink-0">
-                              ⚠️
-                            </span>
+                            <span aria-hidden className="shrink-0 text-ink-faint">·</span>
                             <span>{g}</span>
                           </li>
                         ))}

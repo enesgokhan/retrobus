@@ -206,7 +206,7 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
           </div>
           {stage.config.reveal !== 'live' && (
             <p className="text-xs text-ink-soft font-semibold">
-              🔒 Kartlar herkes yazana kadar gizli kalır.
+              Kartlar herkes yazana kadar gizli kalır.
             </p>
           )}
         </div>
@@ -305,7 +305,7 @@ function CardTile({
         <div className="flex items-center justify-end gap-3 flex-wrap">
           {canPromote &&
             (promoted ? (
-              <span className="text-xs font-bold text-teal">✅ karara eklendi</span>
+              <span className="text-xs font-bold text-teal">karara eklendi</span>
             ) : (
               <button className="text-xs font-bold text-teal underline" onClick={onPromote}>
                 → karara dönüştür

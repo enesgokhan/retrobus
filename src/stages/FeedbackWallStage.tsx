@@ -49,7 +49,7 @@ export default function FeedbackWallStage({
   const [sent, setSent] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  /** Şoför tek tek ilerletir; null = herkes birden. */
+  /** Yöneten tek tek ilerletir; null = herkes birden. */
   const focus = (stage.config.focus_member_id as string | undefined) ?? null
 
   const isOpen = stage.state === 'open'
@@ -200,7 +200,7 @@ export default function FeedbackWallStage({
         )}
         {presenter && (
           <p className="text-center text-2xl font-bold text-ink-soft">
-            ✍️ Yazılıyor… {kudosOnly ? 'teşekkürler' : 'geri bildirimler'} toplanıyor
+            Yazılıyor… {kudosOnly ? 'teşekkürler' : 'geri bildirimler'} toplanıyor
           </p>
         )}
       </div>
@@ -221,7 +221,7 @@ export default function FeedbackWallStage({
     <div className="w-full max-w-5xl flex flex-col gap-4">
       {isHost && !presenter && (
         <section className="card flex flex-col gap-2">
-          <h4 className="font-bold text-sm">Şoför: sırayla göster</h4>
+          <h4 className="font-bold text-sm">Sırayla göster</h4>
           <div className="flex flex-wrap gap-2">
             <button
               className={[

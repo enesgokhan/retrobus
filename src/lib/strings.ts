@@ -3,23 +3,22 @@
 
 export const S = {
   appName: 'Retrobüs',
-  tagline: 'Takım retrosu, oyunlar ve daha fazlası — hep birlikte tek rotada.',
+  tagline: 'Takım retrosu ve oyunlar, tek bir akışta.',
 
   // Giriş
-  loginTitle: 'Otobüse bin',
+  loginTitle: 'Giriş',
   loginName: 'Adın',
   loginNamePlaceholder: 'örn. Enes',
-  loginCode: 'Bilet kodun',
-  loginButton: 'Hadi bin',
+  loginCode: 'Kodun',
+  loginButton: 'Devam',
   loginWrong: 'Ad veya kod hatalı.',
-  loginNoCode: 'Sana henüz kod atanmamış — şoföre söyle.',
+  loginNoCode: 'Sana henüz kod atanmamış. Toplantıyı yöneten kişiye sor.',
   loginLocked: (sec: number) =>
     `Çok fazla deneme. ${Math.ceil(sec / 60)} dakika sonra tekrar dene.`,
   loginError: 'Bir şeyler ters gitti, tekrar dene.',
-  loginWaiting: 'Sıraya girdik — sunucu yoğun, birkaç saniye…',
+  loginWaiting: 'Sunucu yoğun, birkaç saniye.',
   loginRateLimited:
-    'Aynı anda çok kişi giriş yaptı — sunucu bir süre yeni giriş almıyor. ' +
-    'Birkaç dakika bekleyip tekrar dene; kodun doğru, sorun sende değil.',
+    'Aynı anda çok kişi giriş yaptı. Birkaç dakika sonra tekrar dene — kodun doğru.',
   loginUnconfigured: 'Uygulama henüz sunucuya bağlanmadı (Supabase ayarları eksik).',
 
   // Ortak
@@ -33,10 +32,10 @@ export const S = {
   ok: 'Tamam',
 
   // Yolcu görünümü
-  endedTitle: 'Otobüs garaja döndü',
-  endedBody: 'Bu akşamlık bu kadar. İyi ki geldin — yıllık burada kalıyor.',
-  waitingTitle: 'Otobüs kalkmak üzere',
-  waitingBody: 'Şoför rotayı ayarlıyor. Birazdan hareket ediyoruz.',
+  endedTitle: 'Toplantı bitti',
+  endedBody: 'Bu akşamlık bu kadar. Yıllık burada duruyor.',
+  waitingTitle: 'Birazdan başlıyoruz',
+  waitingBody: 'Akış hazırlanıyor.',
   nextStop: 'Sonraki durak',
   currentStop: 'Şu anki durak',
 
@@ -47,7 +46,7 @@ export const S = {
   stageClosed: 'Tamamlandı',
 
   // Şoför konsolu
-  hostConsole: 'Şoför Konsolu',
+  hostConsole: 'Konsol',
   route: 'Rota',
   newMeeting: 'Yeni toplantı',
   meetingTitlePlaceholder: 'örn. 2026 Yaz Retrosu',
@@ -68,7 +67,7 @@ export const S = {
 
   // Dondurma (panik butonu)
   frozenTitle: 'Kısa bir ara',
-  frozenBody: 'Şoför bir saniye durdurdu. Ekranına bakmayı bırakabilirsin.',
+  frozenBody: 'Ekranlar bir saniye durduruldu. Ekranına bakmayı bırakabilirsin.',
   freeze: 'Ekranları dondur',
   unfreeze: 'Devam et',
 

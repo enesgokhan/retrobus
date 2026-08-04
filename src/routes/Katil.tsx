@@ -54,7 +54,7 @@ export default function Katil() {
     const r = data as { ok: boolean; reason?: string } | null
     if (e || !r?.ok) {
       setError(
-        r?.reason === 'closed' ? 'Katılım kapandı — şoföre söyle.'
+        r?.reason === 'closed' ? 'Katılım kapandı — toplantıyı yöneten kişiye söyle.'
         : r?.reason === 'unknown_code' ? 'Bu kod artık geçerli değil.'
         : r?.reason === 'bad_name' ? 'Bir isim yaz.'
         : r?.reason === 'name_taken' ? 'Bu isim alınmış — başka bir şey dene.'
@@ -78,7 +78,7 @@ export default function Katil() {
           <>
             <h1 className="text-2xl font-semibold tracking-tight mt-2">Bu kod çalışmıyor</h1>
             <p className="text-ink-soft mt-2 text-sm">
-              Kod yanlış yazılmış olabilir, ya da toplantı henüz başlamamış. Şoföre sor.
+              Kod yanlış yazılmış olabilir, ya da toplantı henüz başlamamış. Toplantıyı yöneten kişiye sor.
             </p>
           </>
         )}
@@ -87,7 +87,7 @@ export default function Katil() {
           <>
             <h1 className="text-2xl font-semibold tracking-tight mt-2">Katılım kapalı</h1>
             <p className="text-ink-soft mt-2 text-sm">
-              {title ? `“${title}” başlamış.` : 'Toplantı başlamış.'} Şoför kapıyı kapatmış — söyle, açsın.
+              {title ? `“${title}” başlamış.` : 'Toplantı başlamış.'} Katılım kapatılmış. Açılmasını iste.
             </p>
           </>
         )}
