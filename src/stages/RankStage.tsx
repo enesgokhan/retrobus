@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import StageHeader from '../components/StageHeader'
+import StageEmpty from '../components/StageEmpty'
 import type { Member, Stage } from '../lib/types'
 
 interface Item {
@@ -121,9 +122,15 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
   if (!items.length) {
     return (
       <div className="w-full max-w-2xl flex flex-col gap-3">
-        <p className="text-center text-ink-soft">
-          {isHost ? 'Sıralanacak öğe yok — aşağıdan ekle.' : 'Şoför listeyi hazırlıyor…'}
-        </p>
+        <StageEmpty
+          icon="🔢"
+          title={isHost ? 'Sıralanacak bir şey yok' : 'Liste hazırlanıyor'}
+          body={
+            isHost
+              ? 'Birkaç şey ekle — herkes kendi sırasını yapacak, sürüyle uyum puan getirecek.'
+              : 'Şoför listeyi yazıyor. Sonra herkes kendi sıralamasını yapacak.'
+          }
+        />
         {isHost && !presenter && (
           <div className="card flex items-center gap-2">
             <input

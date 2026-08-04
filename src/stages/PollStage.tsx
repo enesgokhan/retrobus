@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { submitPollResponse, type Poll, type SubmitError } from '../lib/anon'
 import StageHeader from '../components/StageHeader'
+import StageEmpty from '../components/StageEmpty'
 import type { Stage } from '../lib/types'
 
 const ERR: Record<SubmitError, string> = {
@@ -17,6 +18,7 @@ const ERR: Record<SubmitError, string> = {
 /** Anket durağı — aynı durakta birden fazla anket sırayla açılabilir. */
 export default function PollStage({ stage, presenter = false }: { stage: Stage; presenter?: boolean }) {
   const { member } = useAuth()
+  const isHost = member?.is_host ?? false
   const sb = supabase
   const [polls, setPolls] = useState<Poll[]>([])
   const [responses, setResponses] = useState<Record<string, number[]>>({})
@@ -70,7 +72,17 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
   }
 
   if (!polls.length) {
-    return <p className="text-ink-soft text-center">Anket bekleniyor…</p>
+    return (
+      <StageEmpty
+        icon="📊"
+        title={isHost ? 'Henüz anket yok' : 'Anket bekleniyor'}
+        body={
+          isHost
+            ? 'Konsoldaki durak ayarlarından bir soru ekle — herkesin ekranında belirir.'
+            : 'Şoför birazdan bir soru soracak.'
+        }
+      />
+    )
   }
 
   const openPolls = polls.filter((x) => x.state === 'open')

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import StageHeader from '../components/StageHeader'
+import StageEmpty from '../components/StageEmpty'
 import type { Member, Stage } from '../lib/types'
 
 interface FeedbackItem {
@@ -252,7 +253,11 @@ export default function FeedbackWallStage({
       )}
 
       {!revealed ? (
-        <p className="text-center text-ink-soft">Şoför duvarı açmayı bekliyor.</p>
+        <StageEmpty
+          icon="💌"
+          title="Duvar henüz açılmadı"
+          body="Yazdıkların hep birlikte, karışık sırayla açılacak — kimin ne zaman yazdığı görünmeyecek."
+        />
       ) : byTarget.size === 0 ? (
         <p className="text-center text-ink-soft">Gösterilecek bir şey yok.</p>
       ) : (

@@ -99,10 +99,10 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
     <div
       className={[
         'stage-world flex-1 flex flex-col items-center gap-4 w-full px-3 pt-5 pb-8 sm:px-6',
-        // Centre only the screens that ARE a moment — a break, the finale, the
-        // shared screen. Centring a content page just moves the empty field from
-        // below the cards to above the title, and a board that fills up will
-        // top-align on its own anyway.
+        // Short content centres, tall content top-aligns and scrolls — the
+        // flexbox `m-auto` trick on the body below does both without anyone
+        // having to measure anything. Explicit centring is kept only for the
+        // screens that ARE a moment, where the title should be centred too.
         presenter || bare || moment ? 'justify-center' : '',
       ].join(' ')}
       style={themeVars(theme)}
@@ -152,7 +152,11 @@ export default function StageView({ stage, presenter = false }: { stage: Stage; 
       {/* Keyed by stage: two consecutive stops of the same kind (three boards in
           a row, two feedback walls) otherwise reconcile as one component and
           carry the previous stop's drafts and selections across. */}
-      <div key={stage.id} className="contents">
+      {/* Keyed by stage: two consecutive stops of the same kind (three boards in
+          a row, two feedback walls) otherwise reconcile as one component and
+          carry the previous stop's drafts and selections across.
+          `m-auto` centres a short body and top-aligns a tall one. */}
+      <div key={stage.id} className="w-full flex flex-col items-center m-auto">
         {body}
       </div>
     </div>

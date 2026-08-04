@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import StageHeader from '../components/StageHeader'
+import StageEmpty from '../components/StageEmpty'
 import type { Member, Stage } from '../lib/types'
 
 interface Round {
@@ -267,10 +268,16 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
 
   if (!round) {
     return (
-      <div className="w-full max-w-4xl flex flex-col gap-4">
-        <p className="text-center text-ink-soft">
-          {isHost ? 'Tur yok — aşağıdan ekle.' : 'Şoför turu hazırlıyor…'}
-        </p>
+      <div className="w-full max-w-3xl flex flex-col gap-6">
+        <StageEmpty
+          icon="🤫"
+          title={isHost ? 'Henüz bir tur yok' : 'Tur hazırlanıyor'}
+          body={
+            isHost
+              ? 'Bir soru ve gerçek cevabını yaz. Herkes buna inandırıcı bir yalan uyduracak.'
+              : 'Şoför soruyu yazıyor. Sonra herkes birer yalan uyduracak — gerçeği bulan puan alır.'
+          }
+        />
         {hostPanel}
       </div>
     )

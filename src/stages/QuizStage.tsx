@@ -4,6 +4,7 @@ import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import { useLeaderboard } from '../lib/useLeaderboard'
 import StageHeader from '../components/StageHeader'
+import StageEmpty from '../components/StageEmpty'
 import type { Member, Stage } from '../lib/types'
 
 interface Question {
@@ -150,9 +151,15 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
 
   if (!questions.length) {
     return (
-      <div className="text-center text-ink-soft">
-        {isHost ? 'Soru yok — konsoldan ekle.' : 'Sorular hazırlanıyor…'}
-      </div>
+      <StageEmpty
+        icon="🏆"
+        title={isHost ? 'Soru listesi boş' : 'Sorular hazırlanıyor'}
+        body={
+          isHost
+            ? 'Konsoldaki durak ayarlarından hazır bir soru paketi ekle — tek tuş, beş soru.'
+            : 'Şoför soruları hazırlıyor. Doğru cevap puan, hızlı doğru cevap daha çok puan.'
+        }
+      />
     )
   }
 
@@ -284,7 +291,15 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
           )}
         </section>
       ) : (
-        <p className="text-center text-ink-soft">Şoför bir soru açmayı bekliyor.</p>
+        <StageEmpty
+          icon="🏆"
+          title={isHost ? 'Henüz soru açmadın' : 'Soru bekleniyor'}
+          body={
+            isHost
+              ? 'Aşağıdaki listeden bir soruyu aç — herkesin ekranında aynı anda belirir.'
+              : 'Şoför birazdan ilk soruyu açacak. Hız da puan getiriyor, hazır ol.'
+          }
+        />
       )}
 
       {/* sorular arası sıralama */}
