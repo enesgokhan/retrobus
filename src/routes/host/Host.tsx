@@ -11,6 +11,7 @@ import NowNext from './NowNext'
 import { useStageReadiness } from '../../lib/useStageReadiness'
 import { usePresence } from '../../lib/usePresence'
 import PresenceBar from '../../components/PresenceBar'
+import JoinPanel from '../../components/JoinPanel'
 
 
 const ADDABLE_KINDS: StageKind[] = [
@@ -266,6 +267,9 @@ export default function Host() {
           />
 
           <PresenceBar here={here} />
+
+          {/* the code the room joins with, right under who is already here */}
+          <JoinPanel meeting={meeting} compact />
 
           <details className="card">
             <summary className="font-bold cursor-pointer flex items-center gap-2">

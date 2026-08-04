@@ -6,11 +6,11 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 fails=0
-suites="publication grants flow phase3 phase4 phase5 phase6 reconnect agenda iteration rules fibbage-cheat reveal-live presenter-secrets rehearsal messy-night blocked-network"
+suites="publication grants flow phase3 phase4 phase5 phase6 reconnect agenda iteration rules fibbage-cheat join-code reveal-live presenter-secrets rehearsal messy-night blocked-network"
 for t in $suites; do
   echo "################ $t ################"
   # Suites are named either foo-test.mjs or foo.mjs. This used to assume the
-  # first, so rehearsal, messy-night, blocked-network and fibbage-cheat — the
+  # first, so rehearsal, messy-night, blocked-network and fibbage-cheat join-code — the
   # four newest and most valuable — were silently never run by this script.
   if [ -f "test/$t-test.mjs" ]; then
     node "test/$t-test.mjs" || fails=$((fails + 1))

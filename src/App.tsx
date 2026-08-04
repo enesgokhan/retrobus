@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useAuth } from './lib/auth'
 import { S } from './lib/strings'
 import Login from './routes/Login'
+import Katil from './routes/Katil'
 import Room from './routes/Room'
 import Sunum from './routes/Sunum'
 import Host from './routes/host/Host'
@@ -44,6 +45,9 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
+      {/* joining by room code needs no prior identity, so it sits outside the
+          signed-in routes entirely */}
+      <Route path="/kat/:code" element={<Katil />} />
       <Route
         path="/oda"
         element={

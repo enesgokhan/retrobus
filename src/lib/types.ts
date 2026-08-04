@@ -34,6 +34,9 @@ export interface Meeting {
   status: MeetingStatus
   active_stage_id: string | null
   created_at: string
+  /** short room code shown on the shared screen; anyone with it can join */
+  join_code: string | null
+  join_open: boolean
   /** host panic control: blanks every screen at once */
   frozen: boolean
   frozen_note: string | null

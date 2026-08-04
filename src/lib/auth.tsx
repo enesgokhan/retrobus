@@ -19,6 +19,8 @@ interface AuthCtx {
   logout: () => Promise<void>
   /** merge a change into the local member (e.g. a freshly picked avatar) */
   patchMember: (patch: Partial<Member>) => void
+  /** re-read who this session is — used after joining by room code */
+  refresh: () => Promise<void>
 }
 
 const Ctx = createContext<AuthCtx>({
@@ -27,6 +29,7 @@ const Ctx = createContext<AuthCtx>({
   login: async () => ({ ok: false, reason: 'error' }),
   logout: async () => {},
   patchMember: () => {},
+  refresh: async () => {},
 })
 
 /** Shape returned by the claim_member RPC (a single jsonb object). */
@@ -155,9 +158,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMember(null)
   }, [])
 
+  /** Re-read who this session belongs to. Joining by room code creates the
+   *  member server-side, so the client has to ask again rather than guess. */
+  const refresh = useCallback(async () => {
+    const m = await fetchCurrentMember()
+    setMember(m)
+  }, [])
+
   const value = useMemo(
-    () => ({ member, loading, login, logout, patchMember }),
-    [member, loading, login, logout, patchMember],
+    () => ({ member, loading, login, logout, patchMember, refresh }),
+    [member, loading, login, logout, patchMember, refresh],
   )
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
