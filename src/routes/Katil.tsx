@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { S } from '../lib/strings'
+import Button from '../components/ui/Button'
+import { Field } from '../components/ui/Field'
 
 /**
  * Joining by room code — the screen behind the QR.
@@ -68,56 +70,77 @@ export default function Katil() {
   }
 
   return (
-    <main className="min-h-dvh grid place-items-center px-5">
-      <div className="w-full max-w-sm">
-        <p className="text-sm text-ink-soft">{S.appName}</p>
+    <main className="tint-brand min-h-dvh grid place-items-center px-5 py-10 relative overflow-hidden">
+      <div
+        className="absolute inset-x-0 top-0 h-[60vh] pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(70% 60% at 50% 0%, color-mix(in srgb, var(--color-brand) 12%, transparent), transparent 70%)',
+        }}
+        aria-hidden
+      />
 
-        {state === 'checking' && <p className="mt-6 text-ink-soft">{S.loading}</p>}
+      <div className="relative w-full max-w-sm animate-rise">
+        <div className="text-5xl leading-none mb-5" aria-hidden>
+          🚌
+        </div>
+        <p className="text-overline uppercase text-label-3">{S.appName}</p>
+
+        {state === 'checking' && <p className="mt-4 text-subhead text-label-2">{S.loading}</p>}
 
         {state === 'unknown' && (
           <>
-            <h1 className="text-2xl font-semibold tracking-tight mt-2">Bu kod çalışmıyor</h1>
-            <p className="text-ink-soft mt-2 text-sm">
-              Kod yanlış yazılmış olabilir, ya da toplantı henüz başlamamış. Toplantıyı yöneten kişiye sor.
+            <h1 className="text-title-1 mt-2">Bu kod çalışmıyor</h1>
+            <p className="text-body text-label-2 mt-3 leading-relaxed">
+              Kod yanlış yazılmış olabilir, ya da toplantı henüz başlamamış. Toplantıyı yöneten
+              kişiye sor.
             </p>
           </>
         )}
 
         {state === 'closed' && (
           <>
-            <h1 className="text-2xl font-semibold tracking-tight mt-2">Katılım kapalı</h1>
-            <p className="text-ink-soft mt-2 text-sm">
-              {title ? `“${title}” başlamış.` : 'Toplantı başlamış.'} Katılım kapatılmış. Açılmasını iste.
+            <h1 className="text-title-1 mt-2">Katılım kapalı</h1>
+            <p className="text-body text-label-2 mt-3 leading-relaxed">
+              {title ? `“${title}” başlamış.` : 'Toplantı başlamış.'} Katılım kapatılmış. Açılmasını
+              iste.
             </p>
           </>
         )}
 
         {state === 'ready' && (
           <>
-            <h1 className="text-3xl font-semibold tracking-tight mt-2">{title ?? 'Toplantı'}</h1>
-            <p className="text-ink-soft mt-2 text-sm">Adını yaz, hemen katıl.</p>
+            <h1 className="text-title-1 mt-2 text-balance">{title ?? 'Toplantı'}</h1>
+            <p className="text-body text-label-2 mt-2">Adını yaz, hemen katıl.</p>
 
-            <label className="block mt-6">
-              <span className="text-sm text-ink-soft">Adın</span>
-              <input
-                className="input-blob mt-1.5"
+            <div className="mt-7 flex flex-col gap-3">
+              <Field
+                label="Adın"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') void join() }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void join()
+                }}
                 placeholder="örn. Enes"
                 maxLength={40}
                 autoFocus
                 autoComplete="name"
+                error={error}
               />
-            </label>
 
-            {error && <p className="text-sm text-[#ff8a7a] mt-3">{error}</p>}
+              <Button
+                variant="filled"
+                size="lg"
+                block
+                onClick={join}
+                busy={busy}
+                disabled={!name.trim()}
+              >
+                Katıl
+              </Button>
+            </div>
 
-            <button className="btn-coral w-full mt-4" onClick={join} disabled={!name.trim() || busy}>
-              {busy ? S.loading : 'Katıl'}
-            </button>
-
-            <p className="text-xs text-ink-faint mt-4">
+            <p className="text-footnote text-label-3 mt-5 leading-relaxed">
               Kendi adını yazıyorsun — bu isim odadaki herkese görünür.
             </p>
           </>

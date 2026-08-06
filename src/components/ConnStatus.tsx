@@ -104,7 +104,7 @@ export default function ConnStatus() {
         title="Canlı bağlantı yok — birkaç saniyede bir yenileniyor."
         onClick={() => setReopened(Date.now())}
         className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 size-8 rounded-full
-          bg-card border-2 border-line shadow grid place-items-center text-xs"
+          material-raised shadow-2 grid place-items-center text-caption"
       >
         <span aria-hidden>🔄</span>
       </button>
@@ -116,10 +116,15 @@ export default function ConnStatus() {
       role="status"
       aria-live="polite"
       className={[
-        'fixed bottom-4 left-1/2 -translate-x-1/2 z-40 rounded-full pl-4 pr-3 py-2',
-        'text-sm font-semibold shadow-lg border-2 flex items-center gap-2 max-w-[92vw]',
-        alarming ? 'bg-ink text-white border-ink' : 'bg-card text-ink-soft border-line',
+        'fixed bottom-4 left-1/2 -translate-x-1/2 z-40 rounded-full pl-4 pr-3 py-2 animate-rise',
+        'text-subhead shadow-2 flex items-center gap-2 max-w-[92vw] material-raised',
+        alarming ? 'text-label' : 'text-label-2',
       ].join(' ')}
+      style={
+        alarming
+          ? { boxShadow: 'var(--shadow-2), inset 0 0 0 1px color-mix(in srgb, var(--color-warn) 45%, transparent)' }
+          : undefined
+      }
     >
       <span aria-hidden>{shown === 'offline' ? '📴' : shown === 'stale' ? '⚠️' : '🔄'}</span>
       <span className="truncate">
@@ -131,7 +136,7 @@ export default function ConnStatus() {
       </span>
       {alarming && (
         <button
-          className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-xs font-bold hover:bg-white/25"
+          className="shrink-0 rounded-full bg-fill px-3 py-1 text-footnote font-semibold hover:bg-fill-2"
           onClick={() => window.location.reload()}
         >
           Yenile

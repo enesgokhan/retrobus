@@ -6,6 +6,7 @@ import StageView from '../components/StageView'
 import FrozenScreen from '../components/FrozenScreen'
 import AppShell from '../components/AppShell'
 import WelcomeNote from '../components/WelcomeNote'
+import Empty from '../components/ui/Empty'
 import { stageTheme, themeVars } from '../lib/theme'
 
 /** Yolcu görünümü — şoför nereye sürerse ekran oraya gider. */
@@ -14,18 +15,21 @@ export default function Room() {
   // tracking presence here is what makes the host's "kim odada" bar real
   const here = usePresence(meeting?.id ?? null)
 
-  // The whole room, header included, sits inside the active stage's world —
-  // otherwise the top strip stays flat white and the nav pill stays coral while
-  // everything below them changes colour, which reads as chrome bolted on.
+  // The header sits inside the active stop's world too, so the tint reaches
+  // the chrome. It no longer paints a background: the page is one colour on
+  // every stop, and only the tint moves.
   const theme = stageTheme(activeStage?.kind)
 
   return (
     <AppShell
       width="full"
       bare
-      style={{ ...themeVars(theme), background: theme.bg }}
+      style={themeVars(theme)}
       headerAside={
-        <span className="text-xs text-ink-faint tabular-nums shrink-0" title="odadaki kişi sayısı">
+        <span
+          className="text-footnote text-label-3 nums shrink-0 ml-auto sm:ml-0"
+          title="odadaki kişi sayısı"
+        >
           {here.size} kişi
         </span>
       }
@@ -35,7 +39,7 @@ export default function Room() {
       <section className="flex-1 flex flex-col">
         {loading ? (
           <div className="flex-1 grid place-items-center">
-            <p className="text-ink-soft">{S.loading}</p>
+            <p className="text-subhead text-label-2">{S.loading}</p>
           </div>
         ) : meeting?.frozen ? (
           <div className="flex-1 grid place-items-center px-5">
@@ -45,25 +49,28 @@ export default function Room() {
           <StageView stage={activeStage} />
         ) : ended ? (
           // the evening is over — say so, and hand them the keepsake
-          <div className="flex-1 grid place-items-center px-5 text-center max-w-md mx-auto">
-            <div>
-              <div className="text-8xl mb-4" aria-hidden>
-                🚌
-              </div>
-              <h2 className="text-3xl font-extrabold mb-2">{S.endedTitle}</h2>
-              <p className="text-ink-soft mb-5">{S.endedBody}</p>
-              <Link to="/yillik" className="btn-coral">
-                Yıllığa bak
-              </Link>
-            </div>
+          <div className="flex-1 grid place-items-center px-5">
+            <Empty
+              size="lg"
+              icon="🚌"
+              title={S.endedTitle}
+              body={S.endedBody}
+              action={
+                <Link to="/yillik" className="btn-filled btn-lg">
+                  Yıllığa bak
+                </Link>
+              }
+            />
           </div>
         ) : (
-          <div className="flex-1 grid place-items-center px-5 text-center max-w-sm mx-auto">
-            <div className="text-7xl mb-4" aria-hidden>
-              🚏
-            </div>
-            <h2 className="text-2xl font-extrabold mb-1">{S.waitingTitle}</h2>
-            <p className="text-ink-soft">{S.waitingBody}</p>
+          <div className="flex-1 grid place-items-center px-5">
+            <Empty
+              size="lg"
+              icon="🚏"
+              title={S.waitingTitle}
+              body={S.waitingBody}
+              hint={`${here.size} kişi burada bekliyor.`}
+            />
           </div>
         )}
       </section>

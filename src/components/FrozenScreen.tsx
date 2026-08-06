@@ -7,14 +7,14 @@ import { S } from '../lib/strings'
  */
 export default function FrozenScreen({ note, big = false }: { note?: string | null; big?: boolean }) {
   return (
-    <div className="text-center max-w-md">
-      <div className={big ? 'text-9xl mb-6' : 'text-7xl mb-4'} aria-hidden>
+    <div className="text-center max-w-lg animate-fade">
+      <div className={[big ? 'text-8xl mb-8' : 'text-6xl mb-5', 'leading-none'].join(' ')} aria-hidden>
         ☕
       </div>
-      <h2 className={big ? 'text-5xl font-extrabold mb-2' : 'text-2xl font-extrabold mb-1'}>
-        {S.frozenTitle}
-      </h2>
-      <p className={big ? 'text-2xl text-ink-soft' : 'text-ink-soft'}>{note?.trim() || S.frozenBody}</p>
+      <h2 className={[big ? 'text-display' : 'text-title-1', 'mb-3'].join(' ')}>{S.frozenTitle}</h2>
+      <p className={[big ? 'text-title-3' : 'text-body', 'text-label-2 text-balance'].join(' ')}>
+        {note?.trim() || S.frozenBody}
+      </p>
     </div>
   )
 }

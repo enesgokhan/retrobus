@@ -30,7 +30,15 @@ const { data: meeting } = await api.from('meetings').insert({
 const server = await preview({ preview: { port: PORT }, base: '/retrobus/' })
 const browser = await chromium.launch()
 async function login(name, code, avatar = true) {
-  const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, locale: 'tr-TR' })
+  // Width/height are settable so the same camera can shoot the phone pass:
+  //   W=430 H=930 SHOT_DIR=... node test/_gallery.mjs
+  const ctx = await browser.newContext({
+    viewport: { width: Number(process.env.W ?? 1600), height: Number(process.env.H ?? 1000) },
+    locale: 'tr-TR',
+    isMobile: process.env.W ? Number(process.env.W) < 700 : false,
+    hasTouch: process.env.W ? Number(process.env.W) < 700 : false,
+    deviceScaleFactor: 2,
+  })
   const page = await ctx.newPage()
   await page.goto(APP, { waitUntil: 'domcontentloaded' })
   await page.waitForTimeout(1500)

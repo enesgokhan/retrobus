@@ -46,14 +46,47 @@ for (const k of KINDS) {
   await pg.goto(APP + '#/oda', { waitUntil: 'domcontentloaded' })
   await pg.waitForTimeout(2600)
   const w = pg.getByRole('button', { name: 'Hadi başlayalım' }); if (await w.count()) { await w.click(); await pg.waitForTimeout(300) }
+  // Measure INK, not the container.
+  //
+  // This used to take the bounding box of the stage wrapper's children, which
+  // stopped meaning anything the moment those children became `flex-1` — every
+  // one of the fifteen kinds then reported an identical 94% / 940×1458,
+  // because what was being measured was the viewport with extra steps. Fifteen
+  // different screens agreeing to the pixel is never a result; it is a broken
+  // instrument.
+  //
+  // So: walk every element that actually paints something (a background, or a
+  // non-empty text node), union their vertical extents, and report how much of
+  // the viewport that union covers.
   const r = await pg.evaluate(() => {
-    const world = document.querySelector('.stage-world') ?? document.querySelector('main')
-    if (!world) return null
-    const kids = [...world.children].filter(e => e.getBoundingClientRect().height > 0)
-    const top = Math.min(...kids.map(e => e.getBoundingClientRect().top))
-    const bot = Math.max(...kids.map(e => e.getBoundingClientRect().bottom))
-    const wide = Math.max(...kids.map(e => e.getBoundingClientRect().width))
-    return { h: Math.round(bot - top), vh: window.innerHeight, w: Math.round(wide), vw: window.innerWidth }
+    const vh = window.innerHeight
+    const vw = window.innerWidth
+    const spans = []
+    let widest = 0
+    for (const el of document.querySelectorAll('main *, .stage-world *')) {
+      const b = el.getBoundingClientRect()
+      if (b.width < 8 || b.height < 8 || b.top > vh || b.bottom < 0) continue
+      const cs = getComputedStyle(el)
+      if (cs.visibility === 'hidden' || cs.opacity === '0') continue
+      const paints =
+        cs.backgroundColor !== 'rgba(0, 0, 0, 0)' ||
+        cs.backgroundImage !== 'none' ||
+        [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())
+      if (!paints) continue
+      spans.push([Math.max(0, b.top), Math.min(vh, b.bottom)])
+      widest = Math.max(widest, Math.min(b.width, vw))
+    }
+    spans.sort((a, b) => a[0] - b[0])
+    let painted = 0
+    let cur = null
+    for (const [t, bt] of spans) {
+      if (!cur || t > cur[1]) {
+        if (cur) painted += cur[1] - cur[0]
+        cur = [t, bt]
+      } else cur[1] = Math.max(cur[1], bt)
+    }
+    if (cur) painted += cur[1] - cur[0]
+    return { h: Math.round(painted), vh, w: Math.round(widest), vw }
   })
   if (r) {
     const fill = Math.round((r.h / r.vh) * 100)

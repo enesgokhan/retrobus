@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import StageHeader from '../components/StageHeader'
-import StageEmpty from '../components/StageEmpty'
+import Empty from '../components/ui/Empty'
+import Alert from '../components/ui/Alert'
 import type { Member, Stage } from '../lib/types'
 
 interface Item {
@@ -121,8 +122,8 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
 
   if (!items.length) {
     return (
-      <div className="w-full max-w-2xl flex flex-col gap-3">
-        <StageEmpty
+      <div className="w-full max-w-2xl mx-auto flex-1 flex flex-col gap-3">
+        <Empty
           icon="🔢"
           title={isHost ? 'Sıralanacak bir şey yok' : 'Liste hazırlanıyor'}
           body={
@@ -134,14 +135,14 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
         {isHost && !presenter && (
           <div className="card flex items-center gap-2">
             <input
-              className="input-blob flex-1"
+              className="field flex-1"
               value={newLabel}
               onChange={(e) => setNewLabel(e.target.value)}
               placeholder="Öğe (örn. Pizza)"
               maxLength={100}
               onKeyDown={(e) => e.key === 'Enter' && addItem()}
             />
-            <button className="btn-coral" onClick={addItem} disabled={!newLabel.trim()}>
+            <button className="btn-filled" onClick={addItem} disabled={!newLabel.trim()}>
               Ekle
             </button>
           </div>
@@ -151,11 +152,9 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
   }
 
   return (
-    <div className="w-full max-w-2xl flex flex-col gap-4">
+    <div className="w-full max-w-2xl mx-auto flex-1 flex flex-col gap-4">
       {error && (
-        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
-          {error}
-        </p>
+        <Alert>{error}</Alert>
       )}
 
       <StageHeader
@@ -174,25 +173,25 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
 
       {revealed ? (
         <section className="card flex flex-col gap-2">
-          <h3 className="font-extrabold">Odanın ortak sıralaması ({subs.length} kişi)</h3>
+          <h3 className="font-semibold">Odanın ortak sıralaması ({subs.length} kişi)</h3>
           {consensus.map((c, i) => (
-            <div key={c.id} className="flex items-center gap-3 rounded-2xl border-2 border-line px-4 py-2.5">
-              <span className="w-6 text-right font-extrabold text-ink-soft">{i + 1}</span>
-              <span className={['flex-1 font-bold', presenter ? 'text-2xl' : ''].join(' ')}>
+            <div key={c.id} className="flex items-center gap-3 rounded-2xl border-2 border-sep px-4 py-2.5">
+              <span className="w-6 text-right font-semibold text-label-2">{i + 1}</span>
+              <span className={['flex-1 min-w-0 truncate', presenter ? 'text-title-3' : 'text-headline'].join(' ')}>
                 {labelOf(c.id)}
               </span>
-              <span className="text-xs text-ink-soft tabular-nums">ort. {(c.avg + 1).toFixed(1)}</span>
+              <span className="text-footnote text-label-2 tabular-nums">ort. {(c.avg + 1).toFixed(1)}</span>
             </div>
           ))}
           {subs.some((x) => x.member_id) && (
-            <div className="border-t-2 border-line pt-2 mt-1 flex flex-col gap-1">
-              <h4 className="text-xs font-bold uppercase tracking-widest text-ink-soft">Kim ne dedi</h4>
+            <div className="border-t-2 border-sep pt-2 mt-1 flex flex-col gap-1">
+              <h4 className="text-footnote font-bold uppercase tracking-widest text-label-2">Kim ne dedi</h4>
               {subs.filter((x) => x.member_id).map((x) => (
-                <div key={x.id} className="text-sm flex gap-2">
+                <div key={x.id} className="text-subhead flex gap-2">
                   <span className="font-bold shrink-0">
                     {members.find((m) => m.id === x.member_id)?.display_name ?? '—'}:
                   </span>
-                  <span className="text-ink-soft truncate">
+                  <span className="text-label-2 truncate">
                     {x.ordering.map((id) => labelOf(id)).join(' › ')}
                   </span>
                 </div>
@@ -205,47 +204,51 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
           Sıralaman kaydedildi.
         </p>
       ) : isOpen && !presenter ? (
-        <section className="card flex flex-col gap-2">
+        <section className="flex flex-col gap-3">
+          <div className="list-group">
           {order.map((id, i) => (
-            <div key={id} className="flex items-center gap-3 rounded-2xl border-2 border-line px-3 py-2.5">
-              <span className="w-6 text-right font-extrabold text-ink-soft tabular-nums">{i + 1}</span>
-              <span className="flex-1 font-bold truncate text-lg">{labelOf(id)}</span>
-              <div className="flex items-center gap-1.5">
+            <div key={id} className="list-row">
+              <span className="w-6 shrink-0 text-right text-label-3 nums">{i + 1}</span>
+              <span className="flex-1 min-w-0 truncate text-headline">{labelOf(id)}</span>
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button
-                  className="size-9 rounded-full border-2 border-line grid place-items-center font-bold
-                    transition hover:[border-color:var(--stage-accent)] disabled:opacity-25 disabled:hover:border-line"
+                  className="size-9 rounded-full bg-fill-3 text-label-2 grid place-items-center
+                    transition-[background-color,color] duration-150
+                    hover:bg-fill-2 hover:text-[--tint] disabled:opacity-25 disabled:hover:bg-fill-3"
                   disabled={i === 0}
                   onClick={() => move(i, -1)}
                   aria-label="Yukarı"
                 >
-                  ▲
+                  <Arrow up />
                 </button>
                 <button
-                  className="size-9 rounded-full border-2 border-line grid place-items-center font-bold
-                    transition hover:[border-color:var(--stage-accent)] disabled:opacity-25 disabled:hover:border-line"
+                  className="size-9 rounded-full bg-fill-3 text-label-2 grid place-items-center
+                    transition-[background-color,color] duration-150
+                    hover:bg-fill-2 hover:text-[--tint] disabled:opacity-25 disabled:hover:bg-fill-3"
                   disabled={i === order.length - 1}
                   onClick={() => move(i, 1)}
                   aria-label="Aşağı"
                 >
-                  ▼
+                  <Arrow />
                 </button>
               </div>
             </div>
           ))}
-          <button className="btn-coral self-start mt-2" onClick={submit}>
+          </div>
+          <button className="btn-filled self-start" onClick={submit}>
             Sıralamamı gönder
           </button>
 
         </section>
       ) : (
-        <p className="text-center text-ink-soft">
+        <p className="text-center text-label-2">
           {presenter ? `${subs.length} kişi sıraladı…` : 'Bu durak henüz açılmadı.'}
         </p>
       )}
 
       {isHost && !presenter && !revealed && (
         <button
-          className="btn-coral self-center"
+          className="btn-filled self-center"
           onClick={async () => {
             const { error: e } = await supabase.rpc('reveal_ranking', { p_stage_id: stage.id })
             if (e) setError('Açılamadı.')
@@ -258,18 +261,38 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
       {isHost && !presenter && !revealed && (
         <div className="card flex items-center gap-2">
           <input
-            className="input-blob flex-1"
+            className="field flex-1"
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
             placeholder="Öğe ekle"
             maxLength={100}
             onKeyDown={(e) => e.key === 'Enter' && addItem()}
           />
-          <button className="btn-coral" onClick={addItem} disabled={!newLabel.trim()}>
+          <button className="btn-filled" onClick={addItem} disabled={!newLabel.trim()}>
             Ekle
           </button>
         </div>
       )}
     </div>
+  )
+}
+
+/** A monochrome arrow that cannot be re-interpreted as an emoji. */
+function Arrow({ up = false }: { up?: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className={['size-3.5', up ? '' : 'rotate-180'].join(' ')}
+      fill="none"
+      aria-hidden
+    >
+      <path
+        d="M8 12.5V4M8 4L4 8M8 4l4 4"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }

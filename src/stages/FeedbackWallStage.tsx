@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import StageHeader from '../components/StageHeader'
-import StageEmpty from '../components/StageEmpty'
+import Empty from '../components/ui/Empty'
 import type { Member, Stage } from '../lib/types'
 
 interface FeedbackItem {
@@ -120,7 +120,7 @@ export default function FeedbackWallStage({
   // --- toplama aşaması ---
   if (isOpen) {
     return (
-      <div className="w-full max-w-2xl flex flex-col gap-4">
+      <div className="w-full max-w-2xl mx-auto flex-1 flex flex-col gap-4">
         <StageHeader
           phase="Yazma zamanı"
           instruction={
@@ -133,7 +133,7 @@ export default function FeedbackWallStage({
         />
         {!presenter && (
           <div className="card flex flex-col gap-3">
-            <h3 className="font-extrabold">
+            <h3 className="font-semibold">
               {kudosOnly ? 'Kime teşekkür etmek istersin?' : 'Kim hakkında yazıyorsun?'}
             </h3>
             {/* Was a native <select>: the one OS-drawn control in an app made
@@ -159,8 +159,8 @@ export default function FeedbackWallStage({
                   <button
                     key={k}
                     className={[
-                      'flex-1 rounded-2xl border-2 py-2.5 font-bold text-sm transition',
-                      kind === k ? `${KIND_META[k].bg} ${KIND_META[k].border}` : 'border-line',
+                      'flex-1 rounded-2xl border-2 py-2.5 font-bold text-subhead transition',
+                      kind === k ? `${KIND_META[k].bg} ${KIND_META[k].border}` : 'border-sep',
                     ].join(' ')}
                     onClick={() => setKind(k)}
                   >
@@ -171,35 +171,35 @@ export default function FeedbackWallStage({
             )}
 
             <textarea
-              className="input-blob resize-none"
+              className="field resize-none"
               rows={5}
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder={kudosOnly ? 'Teşekkürün…' : 'Yazacağın şey…'}
               maxLength={500}
             />
-            {error && <p className="text-sm font-semibold text-coral-deep">{error}</p>}
+            {error && <p className="text-subhead font-semibold text-bad">{error}</p>}
             <div className="flex items-center gap-3 flex-wrap">
-              <button className="btn-coral self-start" onClick={send} disabled={!target || !body.trim() || busy}>
+              <button className="btn-filled self-start" onClick={send} disabled={!target || !body.trim() || busy}>
                 Gönder
               </button>
               {/* A disabled primary with no stated reason is the most common way
                   a screen wastes someone's time: they type, press, nothing
                   happens, and they have to guess what is missing. */}
               {(!target || !body.trim()) && (
-                <span className="text-xs font-semibold text-ink-soft">
+                <span className="text-footnote font-semibold text-label-2">
                   {!target ? 'Önce yukarıdan kime yazdığını seç.' : 'Bir şeyler yaz.'}
                 </span>
               )}
             </div>
             {/* the band above already promises anonymity; only the count is new */}
             {sent > 0 && (
-              <p className="text-xs font-semibold text-ink-soft">✅ {sent} tane gönderdin.</p>
+              <p className="text-footnote font-semibold text-label-2">✅ {sent} tane gönderdin.</p>
             )}
           </div>
         )}
         {presenter && (
-          <p className="text-center text-2xl font-bold text-ink-soft">
+          <p className="text-center text-title-3 text-label-2">
             Yazılıyor… {kudosOnly ? 'teşekkürler' : 'geri bildirimler'} toplanıyor
           </p>
         )}
@@ -218,15 +218,15 @@ export default function FeedbackWallStage({
   }
 
   return (
-    <div className="w-full max-w-5xl flex flex-col gap-4">
+    <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col gap-4">
       {isHost && !presenter && (
         <section className="card flex flex-col gap-2">
-          <h4 className="font-bold text-sm">Sırayla göster</h4>
+          <h4 className="font-bold text-subhead">Sırayla göster</h4>
           <div className="flex flex-wrap gap-2">
             <button
               className={[
-                'rounded-full px-3 py-1.5 text-sm font-bold border-2',
-                focus === null ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line',
+                'rounded-full px-3 py-1.5 text-subhead font-bold border-2',
+                focus === null ? 'bg-[--tint] text-[--tint-ink]' : 'border-sep',
               ].join(' ')}
               onClick={() => setFocus(null)}
             >
@@ -238,8 +238,8 @@ export default function FeedbackWallStage({
                 <button
                   key={m.id}
                   className={[
-                    'rounded-full px-3 py-1.5 text-sm font-bold border-2',
-                    focus === m.id ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line',
+                    'rounded-full px-3 py-1.5 text-subhead font-bold border-2',
+                    focus === m.id ? 'bg-[--tint] text-[--tint-ink]' : 'border-sep',
                     n === 0 ? 'opacity-40' : '',
                   ].join(' ')}
                   onClick={() => setFocus(m.id)}
@@ -253,17 +253,17 @@ export default function FeedbackWallStage({
       )}
 
       {!revealed ? (
-        <StageEmpty
+        <Empty
           icon="💌"
           title="Duvar henüz açılmadı"
           body="Yazdıkların hep birlikte, karışık sırayla açılacak — kimin ne zaman yazdığı görünmeyecek."
         />
       ) : byTarget.size === 0 ? (
-        <p className="text-center text-ink-soft">Gösterilecek bir şey yok.</p>
+        <p className="text-center text-label-2">Gösterilecek bir şey yok.</p>
       ) : (
         [...byTarget.entries()].map(([memberId, list]) => (
           <section key={memberId} className="flex flex-col gap-2">
-            <h3 className={presenter ? 'text-3xl font-extrabold' : 'text-xl font-extrabold'}>
+            <h3 className={presenter ? 'text-title-1' : 'text-title-3'}>
               {members.find((m) => m.id === memberId)?.display_name ?? '—'}
             </h3>
             <div className="grid gap-2 sm:grid-cols-2">
@@ -274,16 +274,16 @@ export default function FeedbackWallStage({
                     key={i.id}
                     className={[
                       'rounded-2xl border-2 p-4 flex flex-col gap-2',
-                      i.hidden ? 'border-dashed border-ink-soft/40 opacity-50 bg-card' : `${meta.bg} ${meta.border}`,
+                      i.hidden ? 'border-dashed border-label-2/40 opacity-50 bg-bg-1' : `${meta.bg} ${meta.border}`,
                     ].join(' ')}
                   >
-                    <span className="text-xs font-bold uppercase tracking-wide opacity-70">
+                    <span className="text-footnote font-bold uppercase tracking-wide opacity-70">
                       {meta.emoji} {meta.label}
                     </span>
                     <p className="whitespace-pre-wrap break-words">{i.body}</p>
                     {isHost && !presenter && (
                       <button
-                        className="text-xs text-ink-soft underline self-start"
+                        className="text-footnote text-label-2 underline self-start"
                         onClick={() => toggleHidden(i.id, !i.hidden)}
                       >
                         {i.hidden ? 'göster' : 'gizle'}

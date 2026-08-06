@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth'
 import { drawBoard } from '../content/tr/codenames'
 import { fireConfetti } from '../lib/celebrate'
 import StageHeader from '../components/StageHeader'
+import Alert from '../components/ui/Alert'
 import type { Member, Stage } from '../lib/types'
 
 interface Game {
@@ -49,12 +50,12 @@ interface Card {
 /**
  * Team colours are semantic, not decorative — they name the two sides — so they
  * stay saturated. The neutral and assassin cards had to be rebuilt for the dark
- * system: `bg-ink text-white` was white-on-white once ink became a light token.
+ * system: `bg-label text-white` was white-on-white once ink became a light token.
  */
 const ROLE_MARK: Record<string, { mark: string; label: string; cls: string }> = {
   red: { mark: '🔴', label: 'Kırmızı', cls: 'bg-coral text-[#1a0806] shadow-[inset_0_0_0_1px_var(--color-coral-deep)]' },
   blue: { mark: '🔵', label: 'Mavi', cls: 'bg-sky text-[#04101f] shadow-[inset_0_0_0_1px_#3d7fd0]' },
-  neutral: { mark: '⬜', label: 'Tarafsız', cls: 'bg-[#2a2721] text-ink-soft shadow-[inset_0_0_0_1px_#3a352c]' },
+  neutral: { mark: '⬜', label: 'Tarafsız', cls: 'bg-[#2a2721] text-label-2 shadow-[inset_0_0_0_1px_#3a352c]' },
   assassin: { mark: '💀', label: 'Suikastçı', cls: 'bg-black text-[#ff8a7a] shadow-[inset_0_0_0_2px_#6b2a24]' },
 }
 
@@ -212,7 +213,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
   // ---------- no game ----------
   if (!game) {
     return (
-      <div className="w-full max-w-4xl flex flex-col gap-4">
+      <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
         <StageHeader
           phase="Kelime Ajanları"
           instruction={isHost ? 'Oyunu kur, sonra herkes takımını seçsin.' : 'Oyun kuruluyor.'}
@@ -220,7 +221,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
           presenter={presenter}
         />
         {isHost && !presenter && (
-          <button className="btn-coral self-center text-lg" onClick={newGame}>
+          <button className="btn-filled self-center text-headline" onClick={newGame}>
             Yeni oyun kur
           </button>
         )}
@@ -244,7 +245,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       : !blueOp ? 'Mavi takıma en az bir operatör lazım'
       : null
     return (
-      <div className="w-full max-w-4xl flex flex-col gap-4">
+      <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
         <StageHeader
           phase="Takım seçimi"
           instruction={
@@ -256,9 +257,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
           presenter={presenter}
         />
         {error && (
-          <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
-            {error}
-          </p>
+          <Alert>{error}</Alert>
         )}
         <div className="grid sm:grid-cols-2 gap-3">
           {(['red', 'blue'] as const).map((team) => {
@@ -267,30 +266,37 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
             return (
               <section
                 key={team}
-                className={['card flex flex-col gap-2 border-2', team === 'red' ? 'border-coral' : 'border-sky'].join(' ')}
+                className="card flex flex-col gap-2"
+                style={{
+                  // The team's own colour, as a wash and a leading rail rather
+                  // than a 2px saturated outline around the whole panel. The
+                  // teams still read instantly; they just stop shouting.
+                  background: `color-mix(in srgb, var(--color-${team === 'red' ? 'coral' : 'sky'}) 8%, var(--color-bg-1))`,
+                  boxShadow: `inset 3px 0 0 0 var(--color-${team === 'red' ? 'coral' : 'sky'})`,
+                }}
               >
-                <h3 className={['font-extrabold flex items-center gap-2', team === 'red' ? 'text-coral' : 'text-sky'].join(' ')}>
+                <h3 className={['font-semibold flex items-center gap-2', team === 'red' ? 'text-coral' : 'text-sky'].join(' ')}>
                   <span aria-hidden>{team === 'red' ? '🔴' : '🔵'}</span>
                   {team === 'red' ? 'Kırmızı' : 'Mavi'}
-                  <span className="text-ink-soft font-semibold">({roster.length})</span>
+                  <span className="text-label-2 font-semibold">({roster.length})</span>
                 </h3>
-                <ul className="text-sm flex flex-col gap-1 min-h-16">
+                <ul className="text-subhead flex flex-col gap-1 min-h-16">
                   {roster.map((p) => (
                     <li key={p.member_id} className="font-semibold">
                       {p.is_spymaster ? '🕵️ ' : '👤 '}
                       {nameOf(p.member_id)}
-                      {p.member_id === member?.id && <span className="text-ink-soft"> (sen)</span>}
+                      {p.member_id === member?.id && <span className="text-label-2"> (sen)</span>}
                     </li>
                   ))}
-                  {!roster.length && <li className="text-ink-soft">boş</li>}
+                  {!roster.length && <li className="text-label-2">boş</li>}
                 </ul>
                 {!presenter && (
                   <div className="flex gap-2">
-                    <button className="btn-ghost text-xs flex-1" onClick={() => join(team, false)}>
+                    <button className="btn-gray text-footnote flex-1" onClick={() => join(team, false)}>
                       Operatör
                     </button>
                     <button
-                      className="btn-ghost text-xs flex-1"
+                      className="btn-gray text-footnote flex-1"
                       onClick={() => join(team, true)}
                       disabled={!!sm && sm.member_id !== member?.id}
                     >
@@ -302,11 +308,11 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
             )
           })}
         </div>
-        <p className="text-xs font-semibold text-ink-soft text-center">
+        <p className="text-footnote font-semibold text-label-2 text-center">
           {canDeal ? 'Takımlar hazır — dağıtabilirsin.' : `${missing}.`}
         </p>
         {isHost && !presenter && (
-          <button className="btn-coral self-center text-lg" onClick={deal} disabled={!canDeal}>
+          <button className="btn-filled self-center text-headline" onClick={deal} disabled={!canDeal}>
             Tahtayı dağıt
           </button>
         )}
@@ -357,7 +363,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
   })()
 
   return (
-    <div className="w-full max-w-5xl flex flex-col gap-3">
+    <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col gap-3">
       <StageHeader
         {...header}
         presenter={presenter}
@@ -369,7 +375,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
         aside={
           amSpymaster && !presenter ? (
             <button
-              className="btn-ghost text-xs shrink-0"
+              className="btn-gray text-footnote shrink-0"
               onClick={() => setAsOperative((v) => !v)}
               title="Takımının ne gördüğünü kontrol et"
             >
@@ -380,9 +386,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       />
 
       {error && (
-        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
-          {error}
-        </p>
+        <Alert>{error}</Alert>
       )}
 
       {/* kalan kartlar + sıra, gerçek uygulamada olduğu gibi tahtanın üstünde */}
@@ -391,19 +395,29 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
           <div
             key={team}
             className={[
-              'flex-1 rounded-2xl border-2 px-4 py-2 flex items-center justify-between',
-              team === game.turn && game.phase === 'playing'
-                ? team === 'red'
-                  ? 'bg-coral text-white border-coral-deep'
-                  : 'bg-sky text-white border-sky'
-                : 'bg-card border-line',
+              // Whose turn it is is stated by a tint wash and a leading bar,
+              // not by filling half the screen with saturated colour. A solid
+              // blue slab across 700px outshouted the board it sits above.
+              'flex-1 relative overflow-hidden rounded-md px-4 py-2.5 flex items-center justify-between',
+              team === game.turn && game.phase === 'playing' ? '' : 'bg-bg-1',
             ].join(' ')}
+            style={
+              team === game.turn && game.phase === 'playing'
+                ? {
+                    background: `color-mix(in srgb, var(--color-${team === 'red' ? 'coral' : 'sky'}) 16%, var(--color-bg-1))`,
+                    boxShadow: `inset 3px 0 0 0 var(--color-${team === 'red' ? 'coral' : 'sky'})`,
+                  }
+                : undefined
+            }
           >
-            <span className="font-bold text-sm">
-              {team === 'red' ? '🔴 Kırmızı' : '🔵 Mavi'}
-              {team === game.turn && game.phase === 'playing' && ' · sıra'}
+            <span className="text-subhead flex items-center gap-2">
+              <span aria-hidden>{team === 'red' ? '🔴' : '🔵'}</span>
+              {team === 'red' ? 'Kırmızı' : 'Mavi'}
+              {team === game.turn && game.phase === 'playing' && (
+                <span className="text-footnote text-label-2">· sıra</span>
+              )}
             </span>
-            <span className={presenter ? 'text-4xl font-extrabold tabular-nums' : 'text-2xl font-extrabold tabular-nums'}>
+            <span className={['nums', presenter ? 'text-title-1' : 'text-title-3'].join(' ')}>
               {leftFor(team)}
             </span>
           </div>
@@ -414,17 +428,19 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
           while they argue about the board; it used to be a fragment of a
           sentence smaller than the page title. */}
       {game.phase === 'playing' && game.clue_word && (
-        <div className="accent-wash rounded-2xl border-2 px-6 py-3 flex items-center gap-4">
+        <div className="card-tinted flex items-center gap-4 py-3">
           <span
-            className={['font-extrabold uppercase tracking-wide', presenter ? 'text-6xl' : 'text-4xl'].join(' ')}
+            className={[
+              'uppercase tracking-wide',
+              presenter ? 'text-display' : 'text-title-1',
+            ].join(' ')}
           >
             {game.clue_word}
           </span>
           <span
             className={[
-              'shrink-0 rounded-full grid place-items-center font-extrabold tabular-nums',
-              '[background:var(--stage-accent)] text-[var(--stage-accent-ink)]',
-              presenter ? 'size-16 text-3xl' : 'size-11 text-xl',
+              'shrink-0 rounded-full grid place-items-center nums bg-[--tint] text-[--tint-ink]',
+              presenter ? 'size-16 text-title-2' : 'size-11 text-title-3',
             ].join(' ')}
           >
             {unlimited ? '∞' : game.clue_count}
@@ -433,7 +449,12 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       )}
 
       {/* 5x5 tahta */}
-      <div className={['grid grid-cols-5 gap-2 sm:gap-3 w-full', presenter ? 'max-w-6xl' : 'max-w-5xl'].join(' ')}>
+      <div
+        className={[
+          'grid grid-cols-5 gap-1.5 sm:gap-3 w-full',
+          presenter ? 'max-w-6xl' : 'max-w-5xl',
+        ].join(' ')}
+      >
         {cards.map((c) => {
           const role = keyOf(c.id)
           const showRole = c.revealed || (seeingKey && role)
@@ -443,27 +464,43 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
             <button
               key={c.id}
               className={[
-                'relative aspect-4/3 rounded-xl border-2 font-bold uppercase tracking-tight transition',
-                'flex items-center justify-center text-center px-1',
+                // No border. Tailwind v4 defaults `border-2` to currentColor,
+                // and currentColor here is near-white text — so the board was
+                // twenty-five bright outlined rectangles on near-black, which
+                // is the loudest possible way to draw a grid. A card is a
+                // filled surface; separation comes from the gap between them.
+                // Square on a phone, 4:3 above it. At 430px a 4:3 cell is 71x53
+                // and a 5x5 grid leaves ~59px of text room per tile — one line
+                // only, and not a long one.
+                'relative aspect-square sm:aspect-4/3 rounded-lg sm:rounded-xl',
+                'font-semibold uppercase tracking-tight',
+                'transition-[background-color,transform,opacity,box-shadow] duration-150',
+                'flex items-center justify-center text-center px-1 sm:px-1.5',
+                // Belt and braces: the type below is sized to fit, and this
+                // guarantees a word can never paint outside its own tile even
+                // if a longer one than we planned for turns up.
+                'overflow-hidden leading-[1.1] [overflow-wrap:anywhere]',
                 // Long Turkish words overflow a fixed size — HELİKOPTER ran
                 // past its card on the shared screen. break-all would fix it by
                 // hyphenating mid-word, which looks worse than it sounds, so the
                 // type steps down instead and the word stays whole.
+                // On a phone the tile is a fraction of the VIEWPORT, so the type
+                // is too — a fixed 17px "short word" size overflowed a 71px cell
+                // and BAKLAVA painted straight across OYUN next to it. From `sm`
+                // up the board has room and goes back to the ramp.
                 c.word.length >= 10
-                  ? presenter ? 'text-2xl' : 'text-xs sm:text-sm lg:text-base'
+                  ? presenter ? 'text-2xl' : 'text-[2.1vw] sm:text-subhead lg:text-base'
                   : c.word.length >= 8
-                    ? presenter ? 'text-3xl' : 'text-sm sm:text-base lg:text-lg'
-                    : presenter ? 'text-4xl' : 'text-lg sm:text-xl lg:text-2xl',
+                    ? presenter ? 'text-3xl' : 'text-[2.5vw] sm:text-base lg:text-headline'
+                    : presenter ? 'text-4xl' : 'text-[3vw] sm:text-xl lg:text-2xl',
                 // an unrevealed card is a physical object, not a blank rectangle
                 // An unrevealed card is a physical object you want to press.
                 // It used to be cream with a hard bottom edge, which on the
                 // dark system rendered near-white text on near-white card.
-                showRole && meta
-                  ? meta.cls
-                  : 'bg-[--color-raised] text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#22242a]',
+                showRole && meta ? meta.cls : 'bg-bg-2 text-label hover:bg-bg-3',
                 // revealed cards SINK — the whole job is scanning what is left
-                c.revealed ? 'opacity-35 saturate-[.4] shadow-none' : '',
-                canGuess ? 'hover:-translate-y-0.5 cursor-pointer' : 'cursor-default',
+                c.revealed ? 'opacity-30 saturate-[.4]' : '',
+                canGuess ? 'hover:-translate-y-0.5 active:translate-y-0 cursor-pointer' : 'cursor-default',
               ].join(' ')}
               onClick={() => canGuess && guessCard(c.id)}
               disabled={!canGuess}
@@ -473,7 +510,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
               {/* renk körlüğü için: rol ayrıca simgeyle işaretli */}
               {showRole && meta && (
                 <span
-                  className="absolute top-1 right-1.5 text-sm leading-none opacity-95"
+                  className="absolute top-1 right-1.5 text-subhead leading-none opacity-95"
                   aria-label={meta.label}
                 >
                   {meta.mark}
@@ -496,7 +533,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <input
-                  className="input-blob flex-1 min-w-40"
+                  className="field flex-1 min-w-40"
                   value={clue.word}
                   onChange={(e) => setClue((c) => ({ ...c, word: e.target.value }))}
                   placeholder="Tek kelime ipucu"
@@ -504,7 +541,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
                   onKeyDown={(e) => e.key === 'Enter' && giveClue()}
                 />
                 <select
-                  className="input-blob w-32"
+                  className="field w-32"
                   value={clue.count}
                   onChange={(e) => setClue((c) => ({ ...c, count: Number(e.target.value) }))}
                 >
@@ -515,24 +552,24 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
                   ))}
                   <option value={0}>sınırsız</option>
                 </select>
-                <button className="btn-coral" onClick={giveClue} disabled={!clue.word.trim()}>
+                <button className="btn-filled" onClick={giveClue} disabled={!clue.word.trim()}>
                   Ver
                 </button>
               </div>
-              <p className="text-xs font-semibold text-ink-soft">
+              <p className="text-footnote font-semibold text-label-2">
                 Kural: tek kelime, tahtadaki kelimelerden biri olamaz. Takımın {clue.count > 0 ? clue.count + 1 : '∞'} tahmin
                 hakkı kazanır.
               </p>
             </div>
           ) : myTurn ? (
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="font-semibold text-ink-soft text-sm">
+              <span className="font-semibold text-label-2 text-subhead">
                 {game.guesses_made === 0
                   ? 'Kural: pas geçmeden önce en az bir tahmin yapmalısın.'
                   : `${unlimited ? 'Sınırsız' : game.guesses_left} tahmin hakkın kaldı.`}
               </span>
               <button
-                className="btn-ghost text-sm"
+                className="btn-gray text-subhead"
                 onClick={pass}
                 disabled={game.guesses_made === 0}
                 title={game.guesses_made === 0 ? 'En az bir tahmin gerekli' : 'Sırayı devret'}
@@ -549,11 +586,11 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
           {/* The turn can stall for reasons the rules cannot fix: someone's tab
               died, a spymaster went to make tea. Without a host escape the whole
               stage deadlocks in front of everyone. */}
-          <button className="btn-ghost text-sm" onClick={forcePass}>
+          <button className="btn-gray text-subhead" onClick={forcePass}>
             Sırayı diğer takıma ver
           </button>
           <button
-            className="btn-ghost text-sm"
+            className="btn-gray text-subhead"
             onClick={() => {
               // a live board, both key cards and everyone's seats, one click
               // away from the pass button the host actually reaches for
@@ -571,17 +608,17 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
 
       {game.phase === 'done' && isHost && !presenter && (
         <div className="flex gap-2 justify-center flex-wrap">
-          <button className="btn-coral" onClick={award}>
+          <button className="btn-filled" onClick={award}>
             Kazanan takıma puan ver
           </button>
-          <button className="btn-ghost" onClick={newGame}>
+          <button className="btn-gray" onClick={newGame}>
             Yeni oyun
           </button>
         </div>
       )}
 
       {seeingKey && !presenter && (
-        <p className="text-xs font-semibold text-grape text-center">
+        <p className="text-footnote font-semibold text-grape text-center">
           Anahtarı görüyorsun. Takımının ne gördüğünü kontrol etmek için “Takım görünümü”ne bas.
         </p>
       )}

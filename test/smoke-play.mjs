@@ -381,7 +381,11 @@ console.log('\n=== TWO TRUTHS: write → pick → guess → reveal ===')
   await activate(st)
   for (const [pg, who] of [[p1, 'a'], [p2, 'b'], [p3, 'c']]) {
     await room(pg)
-    const inputs = pg.locator('input.input-blob')
+    // By placeholder, not by class. This used to be `input.input-blob` — a
+    // STYLING class — so renaming it during the design rework made the suite
+    // report "authoring form missing" for a form that was rendering fine.
+    // A test should describe what the user sees, not what the CSS is called.
+    const inputs = pg.getByPlaceholder(/^\d\. cümle$/)
     if ((await inputs.count()) < 3) { bad('two_truths', 'authoring form missing'); break }
     for (let i = 0; i < 3; i++) await inputs.nth(i).fill(`${who} cümle ${i + 1}`)
     const lieBtn = pg.getByRole('button', { name: '2. cümle yalan' })

@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth'
 import { SPECTRUM_PAIRS } from '../content/tr/spectrums'
 import { fireConfetti } from '../lib/celebrate'
 import StageHeader from '../components/StageHeader'
+import Alert from '../components/ui/Alert'
 import type { Member, Stage } from '../lib/types'
 
 interface Round {
@@ -245,32 +246,32 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
 
   const hostPanel = isHost && !presenter && (
     <section className="card flex flex-col gap-3">
-      <h4 className="font-bold text-sm">Yönetim</h4>
+      <h4 className="font-bold text-subhead">Yönetim</h4>
       {round && round.phase === 'guess' && (
-        <button className="btn-coral text-sm self-start" onClick={closeDial}>
+        <button className="btn-filled text-subhead self-start" onClick={closeDial}>
           Kadranı kilitle ({dialCount}/{activeTeamSize}) → bahis
         </button>
       )}
       {round && round.phase === 'bet' && (
-        <button className="btn-coral text-sm self-start" onClick={reveal}>
+        <button className="btn-filled text-subhead self-start" onClick={reveal}>
           Hedefi aç ve puanla ({betCount}/{otherTeamSize} bahis)
         </button>
       )}
       {round && round.phase === 'clue' && (
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-xs text-ink-soft flex-1">{nameOf(round.psychic_member_id)} ipucu veriyor…</p>
+          <p className="text-footnote text-label-2 flex-1">{nameOf(round.psychic_member_id)} ipucu veriyor…</p>
           {/* If the psychic cannot or will not act, the host must still be able
               to move the meeting on. Without this the stage deadlocks: nothing
               but give_wave_clue leaves this phase, and only the psychic may
               call it. */}
-          <button className="btn-ghost text-xs" onClick={reveal}>
+          <button className="btn-gray text-footnote" onClick={reveal}>
             Turu bitir ve geç
           </button>
         </div>
       )}
 
       {!Object.keys(teams).length ? (
-        <button className="btn-coral self-start text-sm" onClick={autoTeams}>
+        <button className="btn-filled self-start text-subhead" onClick={autoTeams}>
           👥 Takımları otomatik kur
         </button>
       ) : (
@@ -280,7 +281,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
               <button
                 key={m.id}
                 className={[
-                  'rounded-full px-2.5 py-1 text-xs font-bold border-2',
+                  'rounded-full px-2.5 py-1 text-footnote font-bold border-2',
                   teams[m.id] === 'a' ? 'bg-grape-soft border-grape' : 'bg-amber-soft border-amber',
                 ].join(' ')}
                 onClick={() => swapTeam(m.id)}
@@ -292,8 +293,8 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
           </div>
           <div className="flex items-end gap-2 flex-wrap">
             <label className="flex flex-col gap-1 flex-1 min-w-40">
-              <span className="text-xs font-semibold text-ink-soft">Sıradaki medyum</span>
-              <select className="input-blob" value={psychic} onChange={(e) => setPsychic(e.target.value)}>
+              <span className="text-footnote font-semibold text-label-2">Sıradaki medyum</span>
+              <select className="field" value={psychic} onChange={(e) => setPsychic(e.target.value)}>
                 <option value="">— seç —</option>
                 {members.filter((m) => teams[m.id]).map((m) => (
                   <option key={m.id} value={m.id}>
@@ -302,16 +303,16 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
                 ))}
               </select>
             </label>
-            <button className="btn-coral" onClick={startRound} disabled={!psychic}>
+            <button className="btn-filled" onClick={startRound} disabled={!psychic}>
               Yeni tur
             </button>
           </div>
           {!psychic && (
-            <p className="text-xs font-semibold text-ink-soft">
+            <p className="text-footnote font-semibold text-label-2">
               Turu başlatmak için önce medyumu seç. Sıra kimdeyse onu öneriyorum.
             </p>
           )}
-          <p className="text-xs text-ink-soft">
+          <p className="text-footnote text-label-2">
             Sıradaki spektrum: {SPECTRUM_PAIRS[pairIdx % SPECTRUM_PAIRS.length].left} ↔{' '}
             {SPECTRUM_PAIRS[pairIdx % SPECTRUM_PAIRS.length].right}
           </p>
@@ -322,7 +323,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
 
   if (!round) {
     return (
-      <div className="w-full max-w-4xl flex flex-col gap-4">
+      <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
         <StageHeader
           phase="Frekans"
           instruction={isHost ? 'Takımları kur ve ilk turu başlat.' : 'Tur hazırlanıyor.'}
@@ -378,7 +379,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     : null
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-4">
+    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
       <StageHeader
         {...header}
         presenter={presenter}
@@ -390,24 +391,43 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
       />
 
       {error && (
-        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
-          {error}
-        </p>
+        <Alert>{error}</Alert>
       )}
 
       <section className="card flex flex-col gap-4">
-        <div className="flex items-center justify-between font-extrabold">
-          <span className={presenter ? 'text-4xl text-coral' : 'text-2xl text-coral'}>← {round.left_label}</span>
-          <span className="text-xs text-ink-soft font-semibold">
+        {/* Who is playing goes ABOVE the poles, not between them. Squeezed into
+            the middle of a three-column row it had ~90px at 430px and wrapped
+            through both labels, so "← soğuk" and "sıcak →" collided with
+            "B takımı · medyum Enes". The poles are the thing you read while
+            guessing; they get the whole width. */}
+        <div className="flex flex-col gap-2">
+          <div className="text-footnote text-label-2">
             {teamLabel(round.active_team)} · medyum {nameOf(round.psychic_member_id)}
-          </span>
-          <span className={presenter ? 'text-4xl text-sky' : 'text-2xl text-sky'}>{round.right_label} →</span>
+          </div>
+          <div className="flex items-center justify-between gap-3 font-semibold">
+            <span
+              className={[
+                'text-coral min-w-0 truncate',
+                presenter ? 'text-title-1' : 'text-title-3',
+              ].join(' ')}
+            >
+              ← {round.left_label}
+            </span>
+            <span
+              className={[
+                'text-sky min-w-0 truncate text-right',
+                presenter ? 'text-title-1' : 'text-title-3',
+              ].join(' ')}
+            >
+              {round.right_label} →
+            </span>
+          </div>
         </div>
 
         {/* spektrum */}
         <div
           className={[
-            'relative rounded-2xl overflow-hidden border-2 border-line bg-gradient-to-r from-coral via-amber to-sky',
+            'relative rounded-2xl overflow-hidden border-2 border-sep bg-gradient-to-r from-coral via-amber to-sky',
             presenter ? 'h-36' : 'h-28',
           ].join(' ')}
         >
@@ -437,11 +457,11 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
           {/* takım kadranı */}
           {round.team_dial != null && (
             <div
-              className="absolute inset-y-0 w-1 bg-ink shadow-[0_0_0_3px_rgba(255,255,255,0.85)]"
+              className="absolute inset-y-0 w-1 bg-label shadow-[0_0_0_3px_rgba(255,255,255,0.85)]"
               style={{ left: `calc(${round.team_dial}% - 2px)` }}
               title={`Takım kadranı: ${round.team_dial}`}
             >
-              <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 size-4 rounded-full bg-ink border-2 border-white" />
+              <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 size-4 rounded-full bg-label border-2 border-white" />
             </div>
           )}
           {/* açılışta bireysel kadranlar */}
@@ -449,7 +469,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
             roundGuesses.map((g) => (
               <div
                 key={g.member_id}
-                className="absolute top-1.5 size-3.5 rounded-full bg-ink/70 ring-2 ring-white"
+                className="absolute top-1.5 size-3.5 rounded-full bg-label/70 ring-2 ring-white"
                 style={{ left: `calc(${g.value}% - 7px)` }}
                 title={`${nameOf(g.member_id)}: ${g.value}`}
               />
@@ -457,14 +477,14 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
           {/* kendi kadranın, gönderilmeden önce */}
           {round.phase === 'guess' && onActiveTeam && !amPsychic && (
             <div
-              className="absolute inset-y-0 w-1 bg-ink/80"
+              className="absolute inset-y-0 w-1 bg-label/80"
               style={{ left: `calc(${myGuess?.value ?? dial}% - 2px)` }}
             />
           )}
         </div>
 
         {round.clue && (
-          <p className={['text-center font-extrabold', presenter ? 'text-5xl' : 'text-3xl'].join(' ')}>
+          <p className={['text-center', presenter ? 'text-display' : 'text-title-1'].join(' ')}>
             “{round.clue}”
           </p>
         )}
@@ -473,14 +493,14 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
         {round.phase === 'clue' && amPsychic && !presenter && (
           <div className="flex items-center gap-2">
             <input
-              className="input-blob flex-1"
+              className="field flex-1"
               value={clue}
               onChange={(e) => setClue(e.target.value)}
               placeholder="Tek kelime ipucu…"
               maxLength={120}
               onKeyDown={(e) => e.key === 'Enter' && sendClue()}
             />
-            <button className="btn-coral" onClick={sendClue} disabled={!clue.trim()}>
+            <button className="btn-filled" onClick={sendClue} disabled={!clue.trim()}>
               Ver
             </button>
           </div>
@@ -497,7 +517,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
               onChange={(e) => setDial(Number(e.target.value))}
               className="w-full accent-coral h-6"
             />
-            <button className="btn-coral self-center text-lg" onClick={sendGuess}>
+            <button className="btn-filled self-center text-headline" onClick={sendGuess}>
               {dial} olarak gönder
             </button>
           </div>
@@ -506,7 +526,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
         {/* karşı takım bahis yapıyor */}
         {round.phase === 'bet' && !onActiveTeam && !amPsychic && !presenter && (
           <div className="flex flex-col gap-2">
-            <p className="text-center text-sm font-semibold text-ink-soft">
+            <p className="text-center text-subhead font-semibold text-label-2">
               Takım kadranı <b>{round.team_dial}</b>. Gerçek merkez hangi tarafta?
             </p>
             <div className="flex gap-3">
@@ -514,8 +534,8 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
                 <button
                   key={side}
                   className={[
-                    'flex-1 rounded-2xl border-2 py-4 font-extrabold text-lg transition',
-                    myBet?.side === side ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line hover:border-coral',
+                    'flex-1 rounded-2xl border-2 py-4 font-semibold text-headline transition',
+                    myBet?.side === side ? 'bg-[--tint] text-[--tint-ink]' : 'border-sep hover:border-coral',
                   ].join(' ')}
                   onClick={() => sendBet(side)}
                 >
@@ -530,12 +550,12 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
         {revealed && (
           <div className="flex flex-col gap-2">
             {correctSide && (
-              <p className="text-center text-sm font-bold">
+              <p className="text-center text-subhead font-bold">
                 Doğru taraf: {correctSide === 'left' ? '⬅ sol' : 'sağ ➡'} ·{' '}
                 {roundBets.filter((b) => b.side === correctSide).length}/{roundBets.length} bahis doğru
               </p>
             )}
-            <ul className="flex flex-col gap-1 text-sm">
+            <ul className="flex flex-col gap-1 text-subhead">
               {[...roundGuesses]
                 .sort((a, b) => Math.abs(a.value - (target ?? 0)) - Math.abs(b.value - (target ?? 0)))
                 .map((g, i) => (
@@ -544,7 +564,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
                       {i === 0 ? '🎯 ' : ''}
                       {nameOf(g.member_id)}
                     </span>
-                    <span className="tabular-nums text-ink-soft">
+                    <span className="tabular-nums text-label-2">
                       {g.value} · {Math.abs(g.value - (target ?? 0))} sapma
                     </span>
                   </li>
@@ -555,7 +575,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
                     {b.side === correctSide ? '✅ ' : '❌ '}
                     {nameOf(b.member_id)}
                   </span>
-                  <span className="text-ink-soft">{b.side === 'left' ? 'sol' : 'sağ'} dedi</span>
+                  <span className="text-label-2">{b.side === 'left' ? 'sol' : 'sağ'} dedi</span>
                 </li>
               ))}
             </ul>

@@ -88,9 +88,9 @@ export default function Tani() {
   }, [])
 
   const Row = ({ k, v, bad = false }: { k: string; v: string; bad?: boolean }) => (
-    <div className="flex justify-between gap-4 border-b border-line py-1.5 text-sm">
-      <span className="font-semibold text-ink-soft shrink-0">{k}</span>
-      <span className={['text-right break-all', bad ? 'font-bold text-coral-deep' : 'font-semibold'].join(' ')}>
+    <div className="flex justify-between gap-4 border-b border-sep py-1.5 text-subhead">
+      <span className="font-semibold text-label-2 shrink-0">{k}</span>
+      <span className={['text-right break-all', bad ? 'font-bold text-bad' : 'font-semibold'].join(' ')}>
         {v}
       </span>
     </div>
@@ -104,11 +104,11 @@ export default function Tani() {
     >
 
       {!snap ? (
-        <p className="text-ink-soft">Okunuyor…</p>
+        <p className="text-subhead text-label-2">Okunuyor…</p>
       ) : (
-        <>
+        <div className="flex flex-col gap-5">
           <section className="card flex flex-col">
-            <h2 className="font-bold mb-2">Güncelleme yolu</h2>
+            <h2 className="text-overline uppercase text-label-3 mb-2.5">Güncelleme yolu</h2>
             {/* This page opens no channels of its own, so the registry has
                 nothing to report here. Saying "canlı" in that case would be a
                 guess — and this is the one screen that must never guess. */}
@@ -137,7 +137,7 @@ export default function Tani() {
             <Row k="tarayıcı çevrimiçi" v={snap.online ? 'evet' : 'HAYIR'} bad={!snap.online} />
             <Row k="veritabanı (düz HTTP)" v={rpcOk} bad={rpcOk.startsWith('HATA')} />
             {!snap.socketConnected && (
-              <p className="text-xs font-semibold text-ink-soft mt-3">
+              <p className="text-footnote text-label-2 mt-3 leading-relaxed">
                 Websocket kurulamıyor — büyük olasılıkla ağdaki bir proxy engelliyor. Uygulama bu
                 durumda da çalışır: ekranlar birkaç saniyede bir kendini yeniler.
               </p>
@@ -145,7 +145,7 @@ export default function Tani() {
           </section>
 
           <section className="card flex flex-col">
-            <h2 className="font-bold mb-2">Oturum</h2>
+            <h2 className="text-overline uppercase text-label-3 mb-2.5">Oturum</h2>
             <Row k="kişi" v={`${snap.member}${snap.host ? ' (şoför)' : ''}`} />
             <Row k="oturum geçerli" v={snap.sessionOk ? 'evet' : 'HAYIR'} bad={!snap.sessionOk} />
             <Row
@@ -156,8 +156,8 @@ export default function Tani() {
           </section>
 
           <section className="card flex flex-col">
-            <h2 className="font-bold mb-2">Kanallar ({snap.channels.length})</h2>
-            {snap.channels.length === 0 && <p className="text-sm text-ink-soft">Bu sayfada kanal yok.</p>}
+            <h2 className="text-overline uppercase text-label-3 mb-2.5">Kanallar ({snap.channels.length})</h2>
+            {snap.channels.length === 0 && <p className="text-subhead text-label-2">Bu sayfada kanal yok.</p>}
             {snap.channels.map((c) => (
               <Row
                 key={c.name}
@@ -167,7 +167,7 @@ export default function Tani() {
               />
             ))}
             {snap.rawChannels.length > 0 && (
-              <div className="mt-3 pt-2 border-t border-line">
+              <div className="mt-3 pt-2 border-t border-sep">
                 {snap.rawChannels.map((c) => (
                   <Row key={c.topic} k={c.topic.replace('realtime:', '')} v={c.state} bad={c.state !== 'joined'} />
                 ))}
@@ -176,14 +176,14 @@ export default function Tani() {
           </section>
 
           <section className="card">
-            <h2 className="font-bold mb-2">Tarayıcı</h2>
-            <p className="text-xs break-all text-ink-soft font-semibold">{snap.ua}</p>
+            <h2 className="text-overline uppercase text-label-3 mb-2.5">Tarayıcı</h2>
+            <p className="text-footnote break-all text-label-2">{snap.ua}</p>
           </section>
 
-          <button className="btn-ghost self-start" onClick={() => window.location.reload()}>
+          <button className="btn-gray self-start" onClick={() => window.location.reload()}>
             Sayfayı yenile
           </button>
-        </>
+        </div>
       )}
     </AppShell>
   )

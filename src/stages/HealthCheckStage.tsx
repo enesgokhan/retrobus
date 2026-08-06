@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import StageHeader from '../components/StageHeader'
+import Alert from '../components/ui/Alert'
 import type { Stage } from '../lib/types'
 
 export interface Dimension {
@@ -25,10 +26,19 @@ export const DEFAULT_DIMENSIONS: Dimension[] = [
  * O yüzden her seçenek renkten BAĞIMSIZ olarak da ayırt edilebilir: farklı
  * şekil, farklı yazı, farklı konum.
  */
+/**
+ * The shapes carry U+FE0E (VARIATION SELECTOR-15) — "render this as text, not
+ * as an emoji". Without it ▲ ● ▼ are free to pick up a colour emoji glyph, and
+ * a 36px control ends up containing a solid white lozenge. The same three
+ * characters rendered as arrows on one machine and as blobs on another.
+ *
+ * Colour is never the only signal here: each rating also has its own shape, so
+ * the scale survives colour blindness and a compressed video stream.
+ */
 const RATINGS = [
-  { value: 3, shape: '▲', emoji: '🟢', label: 'İyi', bg: 'bg-teal-soft', ring: 'border-teal', bar: 'bg-teal' },
-  { value: 2, shape: '●', emoji: '🟡', label: 'Orta', bg: 'bg-amber-soft', ring: 'border-amber', bar: 'bg-amber' },
-  { value: 1, shape: '▼', emoji: '🔴', label: 'Kötü', bg: 'bg-rose-soft', ring: 'border-coral', bar: 'bg-coral' },
+  { value: 3, shape: '▲︎', emoji: '🟢', label: 'İyi', bg: 'bg-teal-soft', ring: 'shadow-[inset_0_0_0_1px_var(--color-teal)] text-teal', bar: 'bg-teal' },
+  { value: 2, shape: '●︎', emoji: '🟡', label: 'Orta', bg: 'bg-amber-soft', ring: 'shadow-[inset_0_0_0_1px_var(--color-amber)] text-amber', bar: 'bg-amber' },
+  { value: 1, shape: '▼︎', emoji: '🔴', label: 'Kötü', bg: 'bg-rose-soft', ring: 'shadow-[inset_0_0_0_1px_var(--color-bad)] text-bad', bar: 'bg-coral' },
 ]
 
 interface Row {
@@ -120,7 +130,7 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
   const allDone = dims.every((d) => done.has(d.key))
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-2">
+    <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col gap-6">
       <StageHeader
         phase={showResults ? 'Sonuçlar' : 'Nabız zamanı'}
         instruction={
@@ -133,12 +143,12 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
         presenter={presenter}
       />
 
-      {error && (
-        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
-          {error}
-        </p>
-      )}
+      {error && <Alert>{error}</Alert>}
 
+      {/* Six dimensions is a list, not six stacked panels. Each was its own
+          rounded card with a gap, so the eye counted six objects before it
+          read one label. */}
+      <div className="list-group">
       {dims.map((d) => {
         const forDim = rows.filter((r) => r.dimension_key === d.key)
         const total = forDim.length
@@ -148,11 +158,11 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
         const answered = done.has(d.key)
 
         return (
-          <section key={d.key} className="card flex items-center gap-4 flex-wrap !py-3">
-            <h3 className={['flex-1 min-w-40', presenter ? 'text-2xl font-extrabold' : 'font-extrabold'].join(' ')}>
+          <section key={d.key} className="list-row flex-wrap gap-y-3 py-3">
+            <h3 className={['flex-1 min-w-40', presenter ? 'text-title-3' : 'text-headline'].join(' ')}>
               {d.label}
             </h3>
-            {showResults && <span className="text-xs font-semibold text-ink-soft">{total} oy</span>}
+            {showResults && <span className="text-footnote text-label-3 nums">{total} oy</span>}
 
             {isOpen && !presenter && (
               <div className="flex gap-2 shrink-0">
@@ -162,8 +172,9 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
                     <button
                       key={r.value}
                       className={[
-                        'w-28 rounded-2xl border-2 py-2.5 font-bold transition',
-                        chosen ? `${r.bg} ${r.ring} shadow-[0_3px_0_0_var(--stage-line)]` : 'border-line hover:border-ink-soft',
+                        'w-24 rounded-sm py-2 text-subhead font-semibold min-h-11',
+                        'transition-[background-color,box-shadow,opacity] duration-150',
+                        chosen ? `${r.bg} ${r.ring}` : 'bg-fill-3 hover:bg-fill-2 text-label-2',
                         // fade the roads not taken, never your own answer —
                         // the whole row used to dim once you had chosen, making
                         // your choice the faintest thing on it
@@ -172,7 +183,7 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
                       ].join(' ')}
                       onClick={() => rate(d.key, r.value)}
                     >
-                      <span aria-hidden className="mr-1.5 text-lg">
+                      <span aria-hidden className="mr-1.5 text-headline">
                         {r.shape}
                       </span>
                       {r.label}
@@ -184,36 +195,37 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
 
 
             {showResults && total > 0 && (
-              <div className="flex h-8 overflow-hidden rounded-full border-2 border-line">
+              <div className="flex h-7 w-full overflow-hidden rounded-full bg-fill-3">
                 {red > 0 && (
-                  <div className="bg-coral grid place-items-center text-xs font-bold text-white"
+                  <div className="bg-coral grid place-items-center text-caption font-semibold text-[#1a0806]"
                        style={{ width: `${(red / total) * 100}%` }}
                        title={`Kötü: ${red}`}>
-                    ▼{red}
+                    ▼︎{red}
                   </div>
                 )}
                 {yellow > 0 && (
-                  <div className="bg-amber grid place-items-center text-xs font-bold text-ink"
+                  <div className="bg-amber grid place-items-center text-caption font-semibold text-[#1a1000]"
                        style={{ width: `${(yellow / total) * 100}%` }}
                        title={`Orta: ${yellow}`}>
-                    ●{yellow}
+                    ●︎{yellow}
                   </div>
                 )}
                 {green > 0 && (
-                  <div className="bg-teal grid place-items-center text-xs font-bold text-white"
+                  <div className="bg-teal grid place-items-center text-caption font-semibold text-[#04141a]"
                        style={{ width: `${(green / total) * 100}%` }}
                        title={`İyi: ${green}`}>
-                    ▲{green}
+                    ▲︎{green}
                   </div>
                 )}
               </div>
             )}
             {showResults && total === 0 && (
-              <p className="text-sm text-ink-soft">Oy yok.</p>
+              <p className="text-subhead text-label-2">Oy yok.</p>
             )}
           </section>
         )
       })}
+      </div>
     </div>
   )
 }

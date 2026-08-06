@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import AppShell from '../components/AppShell'
+import Button from '../components/ui/Button'
+import Alert from '../components/ui/Alert'
 import { useAuth } from '../lib/auth'
 import { S } from '../lib/strings'
 
@@ -68,63 +70,59 @@ export default function Profil() {
   return (
     <AppShell title={member?.display_name ?? 'Profil'} width="narrow">
 
-      {note && (
-        <p
-          className={[
-            'rounded-2xl px-4 py-2.5 text-sm font-semibold',
-            isError ? 'bg-rose-soft text-coral-deep' : 'bg-teal-soft',
-          ].join(' ')}
-        >
-          {note}
-        </p>
-      )}
+      <div className="flex flex-col gap-6">
+        {note && <Alert tone={isError ? 'bad' : 'info'}>{note}</Alert>}
 
-      <section className="card flex flex-col gap-3">
-        <h2 className="font-bold">Avatarın</h2>
-        <div className="grid grid-cols-8 gap-2">
-          {AVATARS.map((a) => (
-            <button
-              key={a}
-              className={[
-                'aspect-square rounded-2xl border-2 text-2xl transition',
-                avatar === a ? 'border-coral bg-rose-soft' : 'border-line hover:border-ink-soft',
-              ].join(' ')}
-              onClick={() => pick(a)}
-              aria-label={a}
-            >
-              {a}
-            </button>
-          ))}
-        </div>
-      </section>
+        <section className="flex flex-col gap-3">
+          <h2 className="text-overline uppercase text-label-3 px-1">Avatarın</h2>
+          <div className="grid grid-cols-8 gap-2">
+            {AVATARS.map((a) => (
+              <button
+                key={a}
+                className={[
+                  'aspect-square rounded-sm text-2xl grid place-items-center min-h-11',
+                  'transition-[background-color,box-shadow,transform] duration-150',
+                  avatar === a
+                    ? 'bg-[color-mix(in_srgb,var(--tint)_22%,transparent)] shadow-[inset_0_0_0_1px_var(--tint)] scale-105'
+                    : 'bg-fill-3 hover:bg-fill-2',
+                ].join(' ')}
+                onClick={() => pick(a)}
+                aria-label={a}
+              >
+                {a}
+              </button>
+            ))}
+          </div>
+        </section>
 
-      <section className="card flex flex-col gap-3">
-        <h2 className="font-bold">Kodunu değiştir</h2>
-        <input
-          className="input-blob text-center tracking-widest"
-          value={current}
-          onChange={(e) => setCurrent(e.target.value.replace(/\D/g, '').slice(0, 6))}
-          placeholder="Mevcut kod"
-          inputMode="numeric"
-        />
-        <input
-          className="input-blob text-center tracking-widest"
-          value={next}
-          onChange={(e) => setNext(e.target.value.replace(/\D/g, '').slice(0, 6))}
-          placeholder="Yeni 6 haneli kod"
-          inputMode="numeric"
-        />
-        <button
-          className="btn-coral self-start"
-          onClick={changeCode}
-          disabled={current.length !== 6 || next.length !== 6}
-        >
-          Değiştir
-        </button>
-        <p className="text-xs font-semibold text-ink-soft">
-          Gerçekte kullandığın bir PIN'i seçme.
-        </p>
-      </section>
+        <section className="flex flex-col gap-3">
+          <h2 className="text-overline uppercase text-label-3 px-1">Kodunu değiştir</h2>
+          <input
+            className="field text-center tracking-widest nums"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="Mevcut kod"
+            aria-label="Mevcut kod"
+            inputMode="numeric"
+          />
+          <input
+            className="field text-center tracking-widest nums"
+            value={next}
+            onChange={(e) => setNext(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="Yeni 6 haneli kod"
+            aria-label="Yeni 6 haneli kod"
+            inputMode="numeric"
+          />
+          <Button
+            variant="filled"
+            onClick={changeCode}
+            disabled={current.length !== 6 || next.length !== 6}
+          >
+            Değiştir
+          </Button>
+          <p className="text-footnote text-label-3">Gerçekte kullandığın bir PIN'i seçme.</p>
+        </section>
+      </div>
     </AppShell>
   )
 }

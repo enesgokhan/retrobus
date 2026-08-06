@@ -4,7 +4,8 @@ import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import { useLeaderboard } from '../lib/useLeaderboard'
 import StageHeader from '../components/StageHeader'
-import StageEmpty from '../components/StageEmpty'
+import Empty from '../components/ui/Empty'
+import Alert from '../components/ui/Alert'
 import type { Member, Stage } from '../lib/types'
 
 interface Question {
@@ -28,12 +29,12 @@ interface Answer {
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 const TINTS = [
-  'bg-coral text-white border-coral-deep',
-  'bg-sky text-white border-sky',
-  'bg-amber text-ink border-amber',
-  'bg-grape text-white border-grape',
-  'bg-teal text-white border-teal',
-  'bg-ink text-white border-ink',
+  'bg-coral text-[#1a0806] border-coral-deep',
+  'bg-sky text-[#04101f] border-sky',
+  'bg-amber text-[#1a1000] border-amber',
+  'bg-grape text-[#160421] border-grape',
+  'bg-teal text-[#04141a] border-teal',
+  'bg-green text-[#04150a] border-green',
 ]
 
 /** Bilgi yarışması — hız ağırlıklı puan, sorular arası canlı sıralama. */
@@ -151,7 +152,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
 
   if (!questions.length) {
     return (
-      <StageEmpty
+      <Empty
         icon="🏆"
         title={isHost ? 'Soru listesi boş' : 'Sorular hazırlanıyor'}
         body={
@@ -175,7 +176,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
   })()
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-4">
+    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
       <StageHeader
         {...header}
         presenter={presenter}
@@ -183,14 +184,12 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
       />
 
       {error && (
-        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
-          {error}
-        </p>
+        <Alert>{error}</Alert>
       )}
 
       {active ? (
         <section className="card flex flex-col gap-4">
-          <h3 className={presenter ? 'text-4xl font-extrabold' : 'text-2xl font-extrabold'}>{active.prompt}</h3>
+          <h3 className={presenter ? 'text-display' : 'text-title-2'}>{active.prompt}</h3>
 
           {active.kind === 'choice' ? (
             <div className="grid gap-2 sm:grid-cols-2">
@@ -206,21 +205,21 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
                       'rounded-2xl border-2 px-4 py-4 text-left font-bold transition flex items-center gap-3',
                       revealed
                         ? isCorrect
-                          ? 'bg-teal text-white border-teal'
-                          : 'border-line opacity-60'
+                          ? 'bg-teal text-[#04141a] border-teal'
+                          : 'border-sep opacity-60'
                         : isMine
                           ? TINTS[i % TINTS.length]
-                          : 'border-line hover:border-ink-soft',
+                          : 'border-sep hover:border-label-2',
                       canPick ? 'cursor-pointer' : 'cursor-default',
                     ].join(' ')}
                     onClick={() => canPick && answerChoice(i)}
                     disabled={!canPick}
                   >
-                    <span className="shrink-0 grid place-items-center size-8 rounded-full bg-black/10 text-sm">
+                    <span className="shrink-0 grid place-items-center size-8 rounded-full bg-black/10 text-subhead">
                       {LETTERS[i]}
                     </span>
-                    <span className={presenter ? 'text-xl' : ''}>{opt}</span>
-                    {revealed && <span className="ml-auto text-sm opacity-80">{count}</span>}
+                    <span className={presenter ? 'text-title-3' : ''}>{opt}</span>
+                    {revealed && <span className="ml-auto text-subhead opacity-80">{count}</span>}
                     {isCorrect && <span aria-hidden>✅</span>}
                   </button>
                 )
@@ -230,8 +229,8 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
             <div className="flex flex-col gap-3">
               {revealed ? (
                 <div className="text-center">
-                  <div className="text-sm font-bold uppercase tracking-widest text-ink-soft">Doğru cevap</div>
-                  <div className="text-5xl font-extrabold text-teal">{key?.correct_number ?? '—'}</div>
+                  <div className="text-subhead font-bold uppercase tracking-widest text-label-2">Doğru cevap</div>
+                  <div className="text-title-1 text-teal nums">{key?.correct_number ?? '—'}</div>
                 </div>
               ) : myAnswer ? (
                 <p className="text-center font-bold">
@@ -241,21 +240,21 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
                 !presenter && (
                   <div className="flex items-center gap-2">
                     <input
-                      className="input-blob flex-1 text-center text-xl"
+                      className="field flex-1 text-center text-title-3 nums"
                       value={guess}
                       onChange={(e) => setGuess(e.target.value)}
                       placeholder="Sayı tahminin"
                       inputMode="decimal"
                       onKeyDown={(e) => e.key === 'Enter' && answerNumber()}
                     />
-                    <button className="btn-coral" onClick={answerNumber} disabled={!guess.trim()}>
+                    <button className="btn-filled" onClick={answerNumber} disabled={!guess.trim()}>
                       Gönder
                     </button>
                   </div>
                 )
               )}
               {revealed && (
-                <ul className="flex flex-col gap-1 text-sm">
+                <ul className="flex flex-col gap-1 text-subhead">
                   {[...forQ]
                     .sort(
                       (a, b) =>
@@ -277,13 +276,13 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
           )}
 
           {myAnswer && !revealed && (
-            <p className="text-sm font-bold text-teal text-center">Cevabın kaydedildi — hız da sayılıyor.</p>
+            <p className="text-subhead font-bold text-teal text-center">Cevabın kaydedildi — hız da sayılıyor.</p>
           )}
 
           {isHost && !presenter && (
-            <div className="flex gap-2 border-t-2 border-line pt-3">
+            <div className="flex gap-2 border-t-2 border-sep pt-3">
               {active.state === 'open' && (
-                <button className="btn-coral" onClick={() => reveal(active.id)}>
+                <button className="btn-filled" onClick={() => reveal(active.id)}>
                   Cevabı aç ve puanla
                 </button>
               )}
@@ -291,7 +290,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
           )}
         </section>
       ) : (
-        <StageEmpty
+        <Empty
           icon="🏆"
           title={isHost ? 'Henüz soru açmadın' : 'Soru bekleniyor'}
           body={
@@ -305,13 +304,13 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
       {/* sorular arası sıralama */}
       {revealed && board.length > 0 && (
         <section className="card flex flex-col gap-2">
-          <h4 className="font-extrabold text-sm uppercase tracking-widest text-ink-soft">Sıralama</h4>
+          <h4 className="font-semibold text-subhead uppercase tracking-widest text-label-2">Sıralama</h4>
           {board.slice(0, presenter ? 10 : 5).map((r, i) => (
             <div key={r.member_id} className="flex items-center gap-3">
-              <span className="w-6 text-right font-bold text-ink-soft">{i + 1}</span>
+              <span className="w-6 text-right font-bold text-label-2">{i + 1}</span>
               <span aria-hidden>{r.avatar || '🙂'}</span>
               <span className="flex-1 font-bold truncate">{r.display_name}</span>
-              <span className="font-extrabold tabular-nums">{r.points}</span>
+              <span className="font-semibold tabular-nums">{r.points}</span>
             </div>
           ))}
         </section>
@@ -322,31 +321,31 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
           {/* The same treatment Fibbage needed: a question list you can read.
               These were pills labelled "1. aç" / "2. açık" — the order index and
               a state, with the question itself only in a title attribute. */}
-          <h4 className="text-xs uppercase tracking-widest text-ink-faint font-medium">
+          <h4 className="text-footnote uppercase tracking-widest text-label-3 font-medium">
             Sorular ({questions.length})
           </h4>
           {questions.map((q) => (
             <div
               key={q.id}
               className={[
-                'flex items-center gap-3 rounded-[--radius-control] px-3 py-2 transition-colors duration-150',
+                'flex items-center gap-3 rounded-sm px-3 py-2 transition-colors duration-150',
                 q.state === 'open'
-                  ? 'bg-[--color-raised] shadow-[inset_0_0_0_1px_var(--stage-accent)]'
-                  : 'hover:bg-[--color-raised]',
+                  ? 'bg-[--color-bg-2] shadow-[inset_0_0_0_1px_var(--tint)]'
+                  : 'hover:bg-[--color-bg-2]',
               ].join(' ')}
             >
               <span className="flex-1 min-w-0">
                 <span
-                  className={['text-sm truncate block', q.state === 'closed' ? 'text-ink-faint' : ''].join(' ')}
+                  className={['text-subhead truncate block', q.state === 'closed' ? 'text-label-3' : ''].join(' ')}
                 >
                   {q.prompt}
                 </span>
-                <span className="text-[11px] text-ink-faint">
+                <span className="text-[11px] text-label-3">
                   {q.state === 'open' ? 'şu an açık' : q.state === 'draft' ? 'hazır' : 'açıldı'}
                 </span>
               </span>
               {q.state === 'draft' && (
-                <button className="btn-ghost text-xs shrink-0 px-2 py-1" onClick={() => void open(q.id)}>
+                <button className="btn-gray text-footnote shrink-0 px-2 py-1" onClick={() => void open(q.id)}>
                   Aç
                 </button>
               )}

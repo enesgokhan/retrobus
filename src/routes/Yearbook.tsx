@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useMeeting } from '../lib/useMeeting'
 import AppShell from '../components/AppShell'
+import Button from '../components/ui/Button'
 import { DEFAULT_DIMENSIONS } from '../stages/HealthCheckStage'
 import type { Member } from '../lib/types'
 
@@ -292,30 +293,32 @@ export default function Yearbook() {
     window.URL.revokeObjectURL(url)
   }
 
-  if (loading) return <main className="min-h-dvh grid place-items-center text-ink-soft">Yükleniyor…</main>
+  if (loading)
+    return (
+      <main className="min-h-dvh grid place-items-center text-subhead text-label-2">Yükleniyor…</main>
+    )
   if (!meeting) {
     return (
       <main className="min-h-dvh grid place-items-center">
-        <p className="text-ink-soft">Aktif toplantı yok.</p>
+        <p className="text-subhead text-label-2">Aktif toplantı yok.</p>
       </main>
     )
   }
 
   return (
     <AppShell title="Retro Yıllığı" subtitle={`${meeting.title} · ${meetingDate}`} width="reading">
+      <div className="flex flex-col gap-10">
 
       <section className="card flex flex-wrap items-center gap-3 print:hidden">
-        <button className="btn-coral" onClick={download}>
-          ⬇ Markdown indir
-        </button>
-        <button className="btn-ghost" onClick={() => window.print()}>
-          🖨 Yazdır / PDF
-        </button>
+        <Button variant="filled" onClick={download}>
+          Markdown indir
+        </Button>
+        <Button onClick={() => window.print()}>Yazdır / PDF</Button>
         {isHost && (
-          <label className="flex items-center gap-2 text-sm font-semibold ml-auto">
+          <label className="flex items-center gap-2 text-subhead text-label-2 ml-auto">
             <input
               type="checkbox"
-              className="size-4 accent-teal"
+              className="size-4 accent-[var(--tint)]"
               checked={includeFeedback}
               onChange={(e) => setIncludeFeedback(e.target.checked)}
             />
@@ -325,7 +328,7 @@ export default function Yearbook() {
       </section>
 
       {isHost && !includeFeedback && feedback.length > 0 && (
-        <p className="text-xs font-semibold text-ink-soft print:hidden">
+        <p className="text-footnote text-label-3 print:hidden leading-relaxed">
           Geri bildirim duvarı yıllığa dahil edilmedi. Anonim yazılmış bir şeyi kalıcı bir belgeye
           koymak ayrı bir karar — istersen yukarıdan aç.
         </p>
@@ -334,12 +337,12 @@ export default function Yearbook() {
       {/* the year in single words */}
       {cloudWords.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-extrabold">Tek kelimeyle</h2>
+          <h2 className="text-title-3">Tek kelimeyle</h2>
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
             {cloudWords.map(([word, n]) => (
               <span
                 key={word}
-                className="font-extrabold"
+                className="font-semibold"
                 style={{ fontSize: `${Math.min(2.4, 1 + n * 0.35)}rem`, lineHeight: 1.15 }}
                 title={n > 1 ? `${n} kişi yazdı` : undefined}
               >
@@ -353,14 +356,14 @@ export default function Yearbook() {
       {/* who was on the bus — the class photo */}
       {members.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-extrabold">Bu otobüsteydik</h2>
+          <h2 className="text-title-3">Bu otobüsteydik</h2>
           <div className="flex flex-wrap gap-4">
             {members.map((m) => (
               <div key={m.id} className="flex flex-col items-center gap-1 w-20">
                 <span className="text-5xl leading-none" aria-hidden>
                   {m.avatar || '🙂'}
                 </span>
-                <span className="text-sm font-bold text-center leading-tight">{m.display_name}</span>
+                <span className="text-subhead font-bold text-center leading-tight">{m.display_name}</span>
               </div>
             ))}
           </div>
@@ -370,17 +373,21 @@ export default function Yearbook() {
       {/* ödüller */}
       {awards.length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-extrabold">Ödüller</h2>
+          <h2 className="text-title-3">Ödüller</h2>
           <div className="grid sm:grid-cols-2 gap-2">
             {awards.map((a) => (
-              <div key={a.key} className="card flex items-center gap-3 py-3 bg-amber-soft border-amber">
+              <div
+                key={a.key}
+                className="card-tinted flex items-center gap-3 py-3"
+                style={{ ['--tint']: 'var(--color-yellow)' } as React.CSSProperties}
+              >
                 <span className="text-3xl" aria-hidden>
                   {a.avatar || '🙂'}
                 </span>
                 <div className="min-w-0">
-                  <div className="text-xs font-bold uppercase tracking-wide text-ink-soft">{a.label}</div>
-                  <div className="font-extrabold truncate">{a.display_name}</div>
-                  <div className="text-xs text-ink-soft">{a.detail}</div>
+                  <div className="text-footnote font-bold uppercase tracking-wide text-label-2">{a.label}</div>
+                  <div className="font-semibold truncate">{a.display_name}</div>
+                  <div className="text-footnote text-label-2">{a.detail}</div>
                 </div>
               </div>
             ))}
@@ -390,16 +397,18 @@ export default function Yearbook() {
 
       {/* sıralama */}
       {board.length > 0 && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-xl font-extrabold">Şampiyonluk Tablosu</h2>
-          {board.map((r, i) => (
-            <div key={r.member_id} className="flex items-center gap-3 border-b border-line py-1.5">
-              <span className="w-6 text-right font-bold text-ink-soft">{i + 1}</span>
-              <span aria-hidden>{r.avatar || '🙂'}</span>
-              <span className="flex-1 font-bold">{r.display_name}</span>
-              <span className="font-extrabold tabular-nums">{r.points}</span>
-            </div>
-          ))}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-title-3">Şampiyonluk Tablosu</h2>
+          <div className="list-group">
+            {board.map((r, i) => (
+              <div key={r.member_id} className="list-row py-2.5">
+                <span className="w-6 shrink-0 text-right nums text-label-3">{i + 1}</span>
+                <span className="text-xl" aria-hidden>{r.avatar || '🙂'}</span>
+                <span className="flex-1 min-w-0 truncate text-headline">{r.display_name}</span>
+                <span className="nums shrink-0">{r.points}</span>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 
@@ -411,13 +420,13 @@ export default function Yearbook() {
         if (!mine.length) return null
         return (
           <section key={st.id} className="flex flex-col gap-2">
-            <h2 className="text-xl font-extrabold">📌 {st.title}</h2>
+            <h2 className="text-title-3">📌 {st.title}</h2>
             <ul className="flex flex-col gap-1">
               {mine.map((c) => (
-                <li key={c.id} className="flex items-start gap-2 border-b border-line py-1.5">
+                <li key={c.id} className="flex items-start gap-2 border-b border-sep py-1.5">
                   <span className="flex-1">{c.body}</span>
                   {(votes[c.id] ?? 0) > 0 && (
-                    <span className="text-sm font-bold text-ink-soft shrink-0">🔵 {votes[c.id]}</span>
+                    <span className="text-subhead font-bold text-label-2 shrink-0">🔵 {votes[c.id]}</span>
                   )}
                 </li>
               ))}
@@ -429,13 +438,13 @@ export default function Yearbook() {
       {/* kararlar */}
       {actions.length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-xl font-extrabold">Kararlar</h2>
+          <h2 className="text-title-3">Kararlar</h2>
           <ul className="flex flex-col gap-1">
             {actions.map((a) => (
-              <li key={a.id} className="flex items-start gap-2 border-b border-line py-1.5">
+              <li key={a.id} className="flex items-start gap-2 border-b border-sep py-1.5">
                 <span aria-hidden>{a.done ? '☑' : '☐'}</span>
                 <span className="flex-1">{a.body}</span>
-                <span className="text-sm font-bold text-ink-soft shrink-0">
+                <span className="text-subhead font-bold text-label-2 shrink-0">
                   {nameOf(a.owner_member_id)}
                 </span>
               </li>
@@ -447,12 +456,12 @@ export default function Yearbook() {
       {/* gizli görevler */}
       {missions.filter((m) => m.revealed).length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-xl font-extrabold">Gizli Görevler</h2>
+          <h2 className="text-title-3">Gizli Görevler</h2>
           <ul className="flex flex-col gap-1">
             {missions
               .filter((m) => m.revealed)
               .map((m) => (
-                <li key={m.member_id} className="flex items-start gap-2 border-b border-line py-1.5">
+                <li key={m.member_id} className="flex items-start gap-2 border-b border-sep py-1.5">
                   <span aria-hidden>
                     {m.completed === true ? '✅' : m.completed === false ? '❌' : '❓'}
                   </span>
@@ -467,7 +476,7 @@ export default function Yearbook() {
       {/* nabız */}
       {health.length > 0 && (
         <section className="flex flex-col gap-2">
-          <h2 className="text-xl font-extrabold">Takım Nabzı</h2>
+          <h2 className="text-title-3">Takım Nabzı</h2>
           {[...new Set(health.map((h) => h.dimension_key))].map((d) => {
             const rows = health.filter((h) => h.dimension_key === d)
             const t = rows.length
@@ -476,13 +485,13 @@ export default function Yearbook() {
             const r = rows.filter((x) => x.rating === 1).length
             return (
               <div key={d} className="flex items-center gap-3">
-                <span className="w-32 font-bold text-sm truncate">{dimLabel.get(d) ?? d}</span>
-                <div className="flex-1 flex h-5 rounded-full overflow-hidden border border-line">
+                <span className="w-32 font-bold text-subhead truncate">{dimLabel.get(d) ?? d}</span>
+                <div className="flex-1 flex h-5 rounded-full overflow-hidden border border-sep">
                   {r > 0 && <div className="bg-coral" style={{ width: `${(r / t) * 100}%` }} />}
                   {y > 0 && <div className="bg-amber" style={{ width: `${(y / t) * 100}%` }} />}
                   {g > 0 && <div className="bg-teal" style={{ width: `${(g / t) * 100}%` }} />}
                 </div>
-                <span className="text-xs text-ink-soft tabular-nums shrink-0">{t} oy</span>
+                <span className="text-footnote text-label-2 tabular-nums shrink-0">{t} oy</span>
               </div>
             )
           })}
@@ -492,16 +501,16 @@ export default function Yearbook() {
       {/* geri bildirim, yalnızca açıkça dahil edilirse */}
       {includeFeedback && feedback.filter((f) => !f.hidden).length > 0 && (
         <section className="flex flex-col gap-3">
-          <h2 className="text-xl font-extrabold">Geri Bildirim Duvarı</h2>
+          <h2 className="text-title-3">Geri Bildirim Duvarı</h2>
           {members.map((m) => {
             const mine = feedback.filter((f) => f.target_member_id === m.id && !f.hidden)
             if (!mine.length) return null
             return (
               <div key={m.id} className="flex flex-col gap-1">
-                <h3 className="font-extrabold">{m.display_name}</h3>
+                <h3 className="text-headline">{m.display_name}</h3>
                 <ul className="flex flex-col gap-1">
                   {mine.map((f, i) => (
-                    <li key={i} className="border-b border-line py-1.5">
+                    <li key={i} className="border-b border-sep py-1.5">
                       <span aria-hidden className="mr-1">
                         {f.kind === 'growth' ? '🌱' : f.kind === 'kudos' ? '💛' : '💪'}
                       </span>
@@ -515,9 +524,10 @@ export default function Yearbook() {
         </section>
       )}
 
-      <footer className="text-center text-sm text-ink-soft border-t-2 border-line pt-4">
+      <footer className="text-center text-footnote text-label-3 border-t border-sep pt-6">
         Retrobüs
       </footer>
+      </div>
     </AppShell>
   )
 }

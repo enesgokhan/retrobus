@@ -1,99 +1,55 @@
 import type { StageKind } from './types'
 
+/**
+ * A stop's colour world.
+ *
+ * The previous version of this file moved the page background, the card
+ * surface AND the hairline colour for each of six worlds — #0b0c0f for a
+ * discussion, #0d0b06 for the finale, #0f0b0c for feedback. Individually
+ * imperceptible; together they meant no two screens in the app shared a
+ * surface, and the ground shifted under the reader at every stop. It also made
+ * every component that wanted a border pick between two sources of truth.
+ *
+ * A stop now changes exactly one thing: THE TINT. The page, the surfaces and
+ * the separators are identical across all sixteen kinds. Moving from a
+ * discussion into a game reads as the room changing colour — which is the
+ * effect that was wanted — rather than as the app reloading as a different
+ * product.
+ *
+ * The other thing that left: `scale`, a per-world multiplier that grew stage
+ * titles up to 1.9×. That was a type ramp implemented as a number. Emphasis is
+ * now chosen from the ramp by the screen that needs it (`text-title-1` for a
+ * moment, `text-title-2` for a working stop), which means the same intent
+ * produces the same size everywhere.
+ */
 export interface StageTheme {
-  /** short human label for the mood, shown nowhere — documentation for us */
+  /** short human label for the mood — documentation, rendered nowhere */
   mood: string
-  /** page background */
-  bg: string
-  /** card surface */
-  surface: string
-  /** the one accent colour this stage world uses */
-  accent: string
-  /** darker accent, for the pressed edge on buttons */
-  accentDeep: string
-  /** text on top of the accent */
-  accentInk: string
-  /** tinted wash for headers and highlights */
-  wash: string
-  /** hairline / border */
-  line: string
-  /** heading scale multiplier applied to stage titles */
-  scale: number
+  /** the one colour this world is allowed */
+  tint: string
+  /** text placed ON the tint; dark, because every tint is vivid */
+  tintInk: string
+  /**
+   * Whether this stop is a MOMENT (looked at together) or a WORKSPACE (worked
+   * in individually). It decides vertical centring and title size — the two
+   * things that were previously decided per-stage by hand and disagreed.
+   */
+  weight: 'moment' | 'work'
 }
 
 const T = {
-  /** Tartışma: sakin, kağıt gibi. Konuşmak için, oynamak için değil. */
-  discussion: {
-    mood: 'calm / papery',
-    bg: '#0b0c0f',
-    surface: '#141519',
-    accent: '#3fb6a8',
-    accentDeep: '#2f9488',
-    accentInk: '#04110e',
-    wash: '#12211f',
-    line: '#24262c',
-    scale: 1,
-  },
+  /** Tartışma: sakin, nötr. Konuşmak için, oynamak için değil. */
+  discussion: { mood: 'calm', tint: '#3d95ff', tintInk: '#03101f', weight: 'work' },
   /** Buz kırıcı: sıcak, samimi, düşük risk. */
-  icebreaker: {
-    mood: 'warm / friendly',
-    bg: '#0c0b09',
-    surface: '#161512',
-    accent: '#e0a343',
-    accentDeep: '#bd8730',
-    accentInk: '#140f04',
-    wash: '#221c11',
-    line: '#2a2721',
-    scale: 1.1,
-  },
-  /** Oyun: canlı, yüksek kontrast, büyük tip. Vites değişimi burada hissedilir. */
-  game: {
-    mood: 'vivid / high-contrast',
-    bg: '#0b0b10',
-    surface: '#15151c',
-    accent: '#8b7cf6',
-    accentDeep: '#6e5de0',
-    accentInk: '#0a0714',
-    wash: '#1c1a2b',
-    line: '#272632',
-    scale: 1.35,
-  },
-  /** Geri bildirim: bilinçli olarak sakin. Burası parti değil. */
-  feedback: {
-    mood: 'soft / deliberately not party',
-    bg: '#0f0b0c',
-    surface: '#181315',
-    accent: '#e8738f',
-    accentDeep: '#c85875',
-    accentInk: '#160609',
-    wash: '#251519',
-    line: '#2d2427',
-    scale: 1,
-  },
-  /** Final: kutlama. En büyük tip, altın. */
-  finale: {
-    mood: 'gold / celebration',
-    bg: '#0d0b06',
-    surface: '#171410',
-    accent: '#f0c24b',
-    accentDeep: '#cba233',
-    accentInk: '#140f02',
-    wash: '#241d0e',
-    line: '#2c2720',
-    scale: 1.9,
-  },
+  icebreaker: { mood: 'warm', tint: '#ff9f0a', tintInk: '#1a1000', weight: 'work' },
+  /** Oyun: canlı. Vites değişimi burada hissedilir. */
+  game: { mood: 'vivid', tint: '#bf5af2', tintInk: '#160421', weight: 'work' },
+  /** Geri bildirim: bilinçli olarak yumuşak. Burası parti değil. */
+  feedback: { mood: 'soft', tint: '#ff6482', tintInk: '#1e050c', weight: 'work' },
+  /** Final: kutlama. Altın, ve bakılacak bir an. */
+  finale: { mood: 'gold', tint: '#ffd60a', tintInk: '#1a1500', weight: 'moment' },
   /** Mola: sessiz, neredeyse boş. */
-  pause: {
-    mood: 'quiet',
-    bg: '#0a0b0d',
-    surface: '#131518',
-    accent: '#7c8595',
-    accentDeep: '#636c7b',
-    accentInk: '#080a0c',
-    wash: '#191c21',
-    line: '#232629',
-    scale: 1,
-  },
+  pause: { mood: 'quiet', tint: '#98989f', tintInk: '#0d0d0f', weight: 'moment' },
 } satisfies Record<string, StageTheme>
 
 const BY_KIND: Record<StageKind, StageTheme> = {
@@ -120,34 +76,35 @@ const BY_KIND: Record<StageKind, StageTheme> = {
   break: T.pause,
 }
 
-/**
- * Her durak türünün kendi renk dünyası.
- *
- * Neden: uygulamanın hedefi "bir araç değil, bir etkinlik" gibi hissettirmek.
- * Tartışmadan oyuna geçtiğinde odanın vites değiştirdiğini GÖRMEK gerekiyor —
- * hepsi aynı krem/beyaz kartlarsa üç saat tek bir düzlük gibi geçiyor.
- *
- * Tek mekanizma: burada dönen tokenlar CSS custom property olarak StageView'in
- * sardığı bir div'e basılır ve `card` / `btn-coral` / `input-blob` gibi mevcut
- * yardımcılar bunları okur. Hiçbir bileşenin yeniden yazılması gerekmiyor.
- */
+/** The world a stop lives in; the calm one is the right place to wait. */
 export function stageTheme(kind: StageKind | undefined): StageTheme {
-  // undefined = no stage yet (the room before the host starts); the calm
-  // papery world is the right default to wait in
   return (kind && BY_KIND[kind]) || T.discussion
 }
 
-/** The custom properties to spread onto a wrapper element's style. */
+/**
+ * The custom properties to spread onto the wrapper element.
+ *
+ * `--tint` / `--tint-ink` are what the design system reads: every button,
+ * chip, field and focus ring resolves its colour from them, so a stage
+ * component never names a colour and cannot drift.
+ *
+ * The `--stage-*` names below are the old vocabulary, still emitted while the
+ * stage components migrate off them. They are aliases now, not a second source
+ * of truth — `--stage-accent` IS `--tint`.
+ */
 export function themeVars(theme: StageTheme): React.CSSProperties {
   return {
-    // consumed by the @utility rules in index.css
-    ['--stage-bg' as string]: theme.bg,
-    ['--stage-surface' as string]: theme.surface,
-    ['--stage-accent' as string]: theme.accent,
-    ['--stage-accent-deep' as string]: theme.accentDeep,
-    ['--stage-accent-ink' as string]: theme.accentInk,
-    ['--stage-wash' as string]: theme.wash,
-    ['--stage-line' as string]: theme.line,
-    ['--stage-scale' as string]: String(theme.scale),
+    ['--tint' as string]: theme.tint,
+    ['--tint-ink' as string]: theme.tintInk,
+
+    // compatibility, pending migration of the stage components
+    ['--stage-tint' as string]: theme.tint,
+    ['--stage-tint-ink' as string]: theme.tintInk,
+    ['--stage-accent' as string]: theme.tint,
+    ['--stage-accent-deep' as string]: theme.tint,
+    ['--stage-accent-ink' as string]: theme.tintInk,
+    ['--stage-wash' as string]: `color-mix(in srgb, ${theme.tint} 12%, transparent)`,
+    ['--stage-line' as string]: 'var(--color-sep)',
+    ['--stage-surface' as string]: 'var(--color-bg-1)',
   } as React.CSSProperties
 }

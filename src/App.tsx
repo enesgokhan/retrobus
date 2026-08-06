@@ -12,15 +12,16 @@ import Profil from './routes/Profil'
 import Yearbook from './routes/Yearbook'
 import Kurallar from './routes/Kurallar'
 import Tani from './routes/Tani'
+import Tasarim from './routes/Tasarim'
 
 function Splash() {
   return (
     <main className="min-h-dvh grid place-items-center">
-      <div className="text-center">
-        <div className="text-6xl mb-3 animate-bounce" aria-hidden>
+      <div className="text-center animate-fade">
+        <div className="text-5xl mb-4 leading-none" aria-hidden>
           🚌
         </div>
-        <p className="text-ink-soft font-semibold">{S.loading}</p>
+        <p className="text-subhead text-label-2">{S.loading}</p>
       </div>
     </main>
   )
@@ -112,6 +113,8 @@ export default function App() {
           </RequireHost>
         }
       />
+      {/* the design workbench: every component in every state, unlinked */}
+      <Route path="/tasarim" element={<Tasarim />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

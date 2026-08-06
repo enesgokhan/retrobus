@@ -3,10 +3,11 @@ import { supabase } from '../lib/supabase'
 import { submitCard } from '../lib/anon'
 import { useStageData } from '../lib/useStageData'
 import StageHeader from '../components/StageHeader'
+import Alert from '../components/ui/Alert'
 import type { Stage } from '../lib/types'
 
-const SIZES = ['text-lg', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl']
-const TINTS = ['text-coral', 'text-teal', 'text-grape', 'text-amber', 'text-sky', 'text-ink']
+const SIZES = ['text-headline', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl']
+const TINTS = ['text-coral', 'text-teal', 'text-grape', 'text-amber', 'text-sky', 'text-label']
 
 /**
  * Kelime bulutu — herkes tek kelime yazar, aynı kelimeler büyür.
@@ -52,7 +53,7 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
   }
 
   return (
-    <div className="w-full max-w-5xl flex flex-col items-center gap-5">
+    <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col items-center gap-5">
       <StageHeader
         phase={isOpen ? 'Yazma zamanı' : 'Kapandı'}
         instruction={
@@ -68,31 +69,29 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
         <div className="card w-full max-w-md flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <input
-              className="input-blob flex-1"
+              className="field flex-1"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Tek kelime…"
               maxLength={30}
               onKeyDown={(e) => e.key === 'Enter' && send()}
             />
-            <button className="btn-coral" onClick={send} disabled={!draft.trim() || busy}>
+            <button className="btn-filled" onClick={send} disabled={!draft.trim() || busy}>
               Ekle
             </button>
           </div>
-          <p className="text-xs font-semibold text-ink-soft">
+          <p className="text-footnote font-semibold text-label-2">
             {maxWords - myCards} kelime hakkın kaldı.
           </p>
         </div>
       )}
 
       {error && (
-        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
-          {error}
-        </p>
+        <Alert>{error}</Alert>
       )}
 
       {words.length === 0 ? (
-        <p className="text-ink-soft">
+        <p className="text-label-2">
           {isOpen ? 'Kelimeler toplanıyor…' : 'Henüz kelime yok.'}
         </p>
       ) : (
@@ -110,12 +109,12 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
                 className={[
                   SIZES[presenter ? Math.min(step + 1, SIZES.length - 1) : step],
                   TINTS[i % TINTS.length],
-                  'font-extrabold leading-tight',
+                  'font-semibold leading-tight',
                 ].join(' ')}
                 title={`${w.n}×`}
               >
                 {w.label}
-                {w.n > 1 && <sub className="text-xs align-super opacity-60 ml-0.5">{w.n}</sub>}
+                {w.n > 1 && <sub className="text-footnote align-super opacity-60 ml-0.5">{w.n}</sub>}
               </span>
             )
           })}

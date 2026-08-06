@@ -1,31 +1,52 @@
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useMeeting } from '../../lib/useMeeting'
 import { S } from '../../lib/strings'
 import AppShell from '../../components/AppShell'
-import { stageTheme } from '../../lib/theme'
 import type { Stage } from '../../lib/types'
 import { AGENDA_MINUTES, DEFAULT_AGENDA, STAGE_PRESETS } from '../../lib/presets'
-import StageControls from './StageControls'
 import StopPicker from './StopPicker'
-import NowNext from './NowNext'
+import NowBar from './NowBar'
+import RunOfShow from './RunOfShow'
+import StopInspector from './StopInspector'
 import { useStageReadiness } from '../../lib/useStageReadiness'
 import { usePresence } from '../../lib/usePresence'
 import PresenceBar from '../../components/PresenceBar'
 import JoinPanel from '../../components/JoinPanel'
+import Button from '../../components/ui/Button'
+import Segmented from '../../components/ui/Segmented'
+import Sheet from '../../components/ui/Sheet'
+import Empty from '../../components/ui/Empty'
+import Alert from '../../components/ui/Alert'
+import { Field, TextArea } from '../../components/ui/Field'
 
-
-/** Şoför konsolu — rota, durak kontrolleri, zamanlayıcı. */
+/**
+ * Şoför konsolu.
+ *
+ * Rebuilt as a cockpit rather than a column of panels. The old console stacked
+ * six unrelated cards down the left (now/next, presence, join code, welcome
+ * note, freeze, end) and seventeen individually-bordered agenda cards down the
+ * right, and scrolled to 2300px. Nothing was where you would look for it twice
+ * running, and a stop's configuration was scattered across four of those
+ * panels plus, for most kinds, a different screen entirely.
+ *
+ * Three zones now, and they map to the three questions the host actually has:
+ *
+ *   ŞU AN      what is live, how long is left, what do I press — pinned at the
+ *              top so it is answerable without scrolling, all evening.
+ *   ROTA       the run of show, as one list. Select to inspect, jump to drive.
+ *   MÜFETTİŞ   everything about the selected stop, in one place. The second tab
+ *              holds what belongs to the MEETING rather than to a stop.
+ */
 export default function Host() {
   const { meeting, stages, activeStage, loading } = useMeeting()
   const [newTitle, setNewTitle] = useState('')
   const [adding, setAdding] = useState(false)
   const readiness = useStageReadiness(stages)
-  const setupRef = useRef<HTMLDivElement>(null)
-  // bumping this forces StageControls open, even if the host had collapsed it
-  const [forceSetup, setForceSetup] = useState(0)
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
-  const [confirmEnd, setConfirmEnd] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [pane, setPane] = useState<'stop' | 'room'>('stop')
+  const [confirmEnd, setConfirmEnd] = useState(false)
   /**
    * When the confirm was armed. A two-press confirm does not survive a
    * double-click: both presses land, and ending the night is not undoable from
@@ -34,14 +55,23 @@ export default function Host() {
   const [armedAt, setArmedAt] = useState(0)
   /** the console's own voice — writes that fail must say so */
   const [hostError, setHostError] = useState<string | null>(null)
-
-  function fixSetup() {
-    setForceSetup((n) => n + 1)
-    setTimeout(() => setupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)
-  }
   const here = usePresence(meeting?.id ?? null)
   const [freezeNote, setFreezeNote] = useState('')
   const sb = supabase
+
+  const sorted = useMemo(
+    () => [...stages].sort((a, b) => a.order_index - b.order_index),
+    [stages],
+  )
+
+  // The inspector follows the meeting unless the host has pointed it somewhere
+  // else: land on what is live, fall back to what is next.
+  useEffect(() => {
+    if (selectedId && sorted.some((s) => s.id === selectedId)) return
+    setSelectedId(activeStage?.id ?? sorted[0]?.id ?? null)
+  }, [activeStage?.id, sorted, selectedId])
+
+  const selected = sorted.find((s) => s.id === selectedId) ?? null
 
   /**
    * Freezing is the panic button: it is pressed because something needs to stop
@@ -64,8 +94,9 @@ export default function Host() {
     // accumulates live meetings, everyone follows whichever is newest, and
     // archiving the current one drops the whole room back into an older night.
     await sb.from('meetings').update({ status: 'done', active_stage_id: null }).eq('status', 'live')
-    await sb.from('meetings').insert({ title: newTitle.trim(), status: 'live' })
-    setNewTitle('')
+    const { error } = await sb.from('meetings').insert({ title: newTitle.trim(), status: 'live' })
+    if (error) setHostError('Toplantı açılamadı — tekrar dene.')
+    else setNewTitle('')
   }
 
   /**
@@ -80,14 +111,18 @@ export default function Host() {
    */
   async function endMeeting() {
     if (!meeting) return
-    if (confirmEnd !== meeting.id) {
-      setConfirmEnd(meeting.id)
+    if (!confirmEnd) {
+      setConfirmEnd(true)
       setArmedAt(Date.now())
       return
     }
     if (Date.now() - armedAt < 700) return // a double-click, not an answer
-    setConfirmEnd(null)
-    await sb.from('meetings').update({ status: 'done', active_stage_id: null }).eq('id', meeting.id)
+    setConfirmEnd(false)
+    const { error } = await sb
+      .from('meetings')
+      .update({ status: 'done', active_stage_id: null })
+      .eq('id', meeting.id)
+    if (error) setHostError('Toplantı arşivlenemedi — tekrar dene.')
   }
 
   function nextOrder() {
@@ -101,15 +136,18 @@ export default function Host() {
     const rows = DEFAULT_AGENDA.flatMap((entry) => {
       const preset = STAGE_PRESETS.find((p) => p.key === entry.preset)
       if (!preset) return []
-      return [{
-        meeting_id: meeting.id,
-        kind: preset.kind,
-        title: preset.title,
-        order_index: order++,
-        config: { ...preset.config, timer_s: entry.minutes * 60 },
-      }]
+      return [
+        {
+          meeting_id: meeting.id,
+          kind: preset.kind,
+          title: preset.title,
+          order_index: order++,
+          config: { ...preset.config, timer_s: entry.minutes * 60 },
+        },
+      ]
     })
-    await sb.from('stages').insert(rows)
+    const { error } = await sb.from('stages').insert(rows)
+    if (error) setHostError('Rota kurulamadı — tekrar dene.')
     setAdding(false)
   }
 
@@ -117,18 +155,27 @@ export default function Host() {
     if (!meeting) return
     const preset = STAGE_PRESETS.find((p) => p.key === presetKey)
     if (!preset) return
-    await sb.from('stages').insert({
-      meeting_id: meeting.id,
-      kind: preset.kind,
-      title: preset.title,
-      order_index: nextOrder(),
-      config: preset.config,
-    })
+    const { data, error } = await sb
+      .from('stages')
+      .insert({
+        meeting_id: meeting.id,
+        kind: preset.kind,
+        title: preset.title,
+        order_index: nextOrder(),
+        config: preset.config,
+      })
+      .select('id')
+      .single()
+    if (error) setHostError('Durak eklenemedi — tekrar dene.')
     setAdding(false)
+    // land on what you just made, so adding and configuring are one motion
+    if (data?.id) {
+      setSelectedId(data.id as string)
+      setPane('stop')
+    }
   }
 
   async function move(stage: Stage, dir: -1 | 1) {
-    const sorted = [...stages].sort((a, b) => a.order_index - b.order_index)
     const i = sorted.findIndex((s) => s.id === stage.id)
     const j = i + dir
     if (j < 0 || j >= sorted.length) return
@@ -143,8 +190,12 @@ export default function Host() {
     if (!meeting) return
     await sb.from('meetings').update({ active_stage_id: stage.id }).eq('id', meeting.id)
     if (stage.state === 'pending') {
-      await sb.from('stages').update({ state: 'open', opened_at: new Date().toISOString() }).eq('id', stage.id)
+      await sb
+        .from('stages')
+        .update({ state: 'open', opened_at: new Date().toISOString() })
+        .eq('id', stage.id)
     }
+    setSelectedId(stage.id)
   }
 
   async function setState(stage: Stage, state: Stage['state']) {
@@ -163,19 +214,29 @@ export default function Host() {
   }
 
   async function removeStage(stage: Stage) {
-    await sb.from('stages').delete().eq('id', stage.id)
+    const { error } = await sb.from('stages').delete().eq('id', stage.id)
+    if (error) setHostError('Durak silinemedi — tekrar dene.')
   }
 
   // --- shared countdown controls (on the active stage) ---
   async function timerStart(seconds: number) {
     if (!activeStage) return
     const ends = new Date(Date.now() + seconds * 1000).toISOString()
-    await sb.from('stages').update({ timer_ends_at: ends, timer_remaining_s: null }).eq('id', activeStage.id)
+    await sb
+      .from('stages')
+      .update({ timer_ends_at: ends, timer_remaining_s: null })
+      .eq('id', activeStage.id)
   }
   async function timerPause() {
     if (!activeStage?.timer_ends_at) return
-    const left = Math.max(0, Math.round((new Date(activeStage.timer_ends_at).getTime() - Date.now()) / 1000))
-    await sb.from('stages').update({ timer_ends_at: null, timer_remaining_s: left }).eq('id', activeStage.id)
+    const left = Math.max(
+      0,
+      Math.round((new Date(activeStage.timer_ends_at).getTime() - Date.now()) / 1000),
+    )
+    await sb
+      .from('stages')
+      .update({ timer_ends_at: null, timer_remaining_s: left })
+      .eq('id', activeStage.id)
   }
   async function timerResume() {
     if (!activeStage || activeStage.timer_remaining_s == null) return
@@ -193,287 +254,269 @@ export default function Host() {
     if (error) setHostError('Süre uzatılamadı — tekrar dene.')
   }
 
-  if (loading) return <main className="min-h-dvh grid place-items-center text-ink-soft">{S.loading}</main>
+  if (loading) {
+    return (
+      <AppShell title={S.hostConsole} width="full">
+        <p className="text-subhead text-label-2">{S.loading}</p>
+      </AppShell>
+    )
+  }
+
+  // No live meeting: the console's whole job is to start one.
+  if (!meeting) {
+    return (
+      <AppShell title={S.hostConsole} width="reading">
+        {hostError && <Alert>{hostError}</Alert>}
+        <div className="card-lg mt-2">
+          <Empty
+            icon="🚌"
+            title={S.newMeeting}
+            body="Bir isim ver ve başlat. Rotayı sonra kurarsın."
+            action={
+              <div className="flex flex-col gap-3 w-full max-w-sm">
+                <Field
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && void createMeeting()}
+                  placeholder={S.meetingTitlePlaceholder}
+                  autoFocus
+                />
+                <Button variant="filled" block onClick={createMeeting} disabled={!newTitle.trim()}>
+                  {S.goLive}
+                </Button>
+              </div>
+            }
+          />
+        </div>
+      </AppShell>
+    )
+  }
 
   return (
-    <AppShell title={S.hostConsole} subtitle={meeting?.title} width="full">
+    <AppShell
+      title={S.hostConsole}
+      subtitle={meeting.title}
+      width="full"
+      actions={
+        <Link to="/sunum" className="btn-gray btn-md">
+          Sunum ekranı
+        </Link>
+      }
+    >
+      <div className="flex flex-col gap-5">
+        {hostError && <Alert>{hostError}</Alert>}
 
-      {hostError && (
-        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 font-bold">
-          {hostError}
-        </p>
-      )}
+        <NowBar
+          meeting={meeting}
+          stages={stages}
+          activeStage={activeStage}
+          todo={readiness}
+          onActivate={activate}
+          onSetState={setState}
+          onTimerStart={timerStart}
+          onTimerPause={timerPause}
+          onTimerResume={timerResume}
+          onTimerPlus={timerPlus}
+          onFixSetup={(s) => {
+            setSelectedId(s.id)
+            setPane('stop')
+          }}
+        />
 
-      {loading ? (
-        <p className="text-ink-soft">{S.loading}</p>
-      ) : !meeting ? (
-        <section className="card flex flex-col gap-3">
-          <h2 className="font-bold text-lg">{S.newMeeting}</h2>
-          <input
-            className="input-blob"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder={S.meetingTitlePlaceholder}
-          />
-          <button className="btn-coral self-start" onClick={createMeeting} disabled={!newTitle.trim()}>
-            {S.goLive}
-          </button>
-        </section>
-      ) : (
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] xl:items-start">
-          {/* sol kolon: şoförün kontrolleri */}
-          <div className="flex flex-col gap-5 min-w-0">
-          <NowNext
-            meeting={meeting}
-            stages={stages}
-            activeStage={activeStage}
-            todo={readiness}
-            onActivate={activate}
-            onSetState={setState}
-            onTimerStart={timerStart}
-            onTimerPause={timerPause}
-            onTimerResume={timerResume}
-            onTimerPlus={timerPlus}
-            onFixSetup={fixSetup}
-          />
-
-          <PresenceBar here={here} />
-
-          {/* the code the room joins with, right under who is already here */}
-          <JoinPanel meeting={meeting} compact />
-
-          <details className="card">
-            <summary className="font-bold cursor-pointer flex items-center gap-2">
-              Karşılama mesajı
-              {!meeting.welcome_note && (
-                <span className="text-xs font-semibold text-ink-soft">(boş — kimseye gösterilmiyor)</span>
-              )}
-            </summary>
-            <div className="flex flex-col gap-2 mt-3">
-              <p className="text-xs text-ink-soft font-semibold">
-                Herkese giriş yaptıktan sonra bir kez gösterilir. Senin sözlerin.
-              </p>
-              <textarea
-                className="input-blob resize-none"
-                rows={4}
-                defaultValue={meeting.welcome_note ?? ''}
-                placeholder={'örn. Hoş geldiniz! Bugün 3 saat boyunca hem konuşacağız hem oynayacağız.\nTelefonunu yanında tut, sırayla ilerleyeceğiz.'}
-                maxLength={1000}
-                onBlur={async (e) => {
-                  const v = e.target.value.trim()
-                  await sb.from('meetings').update({ welcome_note: v || null }).eq('id', meeting.id)
-                }}
-              />
-              <p className="text-xs text-ink-soft">Yazıp başka bir yere tıkla — otomatik kaydedilir.</p>
-            </div>
-          </details>
-
-          <section
-            className={[
-              'card flex items-center gap-3 flex-wrap py-3',
-              meeting.frozen ? 'border-coral bg-rose-soft' : '',
-            ].join(' ')}
-          >
-            <button
-              className={meeting.frozen ? 'btn-coral' : 'btn-ghost'}
-              onClick={toggleFreeze}
-            >
-              {meeting.frozen ? `▶ ${S.unfreeze}` : `⏸ ${S.freeze}`}
-            </button>
-            {!meeting.frozen && (
-              <input
-                className="input-blob flex-1 min-w-40 py-2 text-sm"
-                value={freezeNote}
-                onChange={(e) => setFreezeNote(e.target.value)}
-                placeholder="Dondurunca gösterilecek not (isteğe bağlı)"
-                maxLength={200}
-              />
-            )}
-            {meeting.frozen && (
-              <span className="text-sm font-bold text-coral-deep">
-                Tüm ekranlar donduruldu.
-              </span>
-            )}
-          </section>
-
-          {/* End of the night. Without this the console could never leave a
-              meeting, so a dry run permanently became the real one. */}
-          <section className="card flex items-center justify-between gap-3 flex-wrap">
-            <div className="min-w-0">
-              <h3 className="font-bold text-sm">Toplantıyı bitir</h3>
-              <p className="text-xs text-ink-soft font-semibold">
-                Arşive kaldırır. Yıllık okunmaya devam eder, konsol yeni bir toplantıya hazır olur.
-              </p>
-            </div>
-            <button
-              className={confirmEnd === meeting.id ? 'btn-coral text-sm' : 'btn-ghost text-sm'}
-              onClick={endMeeting}
-              onBlur={() => setConfirmEnd(null)}
-            >
-              {confirmEnd === meeting.id ? 'Emin misin? Bas' : 'Bitir ve arşivle'}
-            </button>
-          </section>
-
-          {activeStage && (
-            <div ref={setupRef}>
-              <StageControls
-                stage={activeStage}
-                needsSetup={!!readiness[activeStage.id]?.todo}
-                forceOpen={forceSetup}
-              />
-            </div>
-          )}
-
-          </div>
-
-          {/* sağ kolon: rota — geniş ekranda kendi içinde kayar */}
-          <section className="flex flex-col gap-2 min-w-0 xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto xl:pr-1">
-            {[...stages]
-              .sort((a, b) => a.order_index - b.order_index)
-              .map((stage, i, arr) => {
-                const isActive = stage.id === meeting.active_stage_id
-                const done = stage.state === 'closed'
-                const accent = stageTheme(stage.kind).accent
-                return (
-                  <div
-                    key={stage.id}
-                    className={[
-                      'flex items-center gap-2 rounded-2xl border-2 px-3 py-2 bg-card border-l-[6px] transition',
-                      isActive
-                        ? 'border-coral bg-rose-soft shadow-[0_3px_0_0_var(--color-coral)]'
-                        : done
-                          ? 'border-line opacity-55'
-                          : 'border-line',
-                    ].join(' ')}
-                    style={isActive ? undefined : { borderLeftColor: accent }}
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      <button
-                        className="text-ink-soft disabled:opacity-20"
-                        disabled={i === 0}
-                        onClick={() => move(stage, -1)}
-                        aria-label="Yukarı"
-                      >
-                        ▲
-                      </button>
-                      <button
-                        className="text-ink-soft disabled:opacity-20"
-                        disabled={i === arr.length - 1}
-                        onClick={() => move(stage, 1)}
-                        aria-label="Aşağı"
-                      >
-                        ▼
-                      </button>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold truncate">
-                        {i + 1}. {stage.title}
-                      </div>
-                      <div className="text-xs text-ink-soft font-semibold">
-                        {/* several presets name a stop after its kind, so the row
-                            printed the same words twice: "Lean Coffee" then
-                            "Lean Coffee · Hazırlanıyor" */}
-                        {S.kind[stage.kind].toLocaleLowerCase('tr') !==
-                          stage.title.trim().toLocaleLowerCase('tr') && `${S.kind[stage.kind]} · `}
-                        {stage.state === 'pending' ? S.stagePending : stage.state === 'open' ? S.stageOpen : stage.state === 'revealed' ? S.stageRevealed : S.stageClosed}
-                      </div>
-                      {readiness[stage.id]?.todo && (
-                        <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-soft border border-amber/50 px-2.5 py-0.5 text-xs font-bold">
-                          {readiness[stage.id].todo}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-wrap justify-end">
-                      {!isActive && (
-                        <button className="btn-ghost text-xs px-3 py-1.5" onClick={() => activate(stage)}>
-                          {S.makeActive}
-                        </button>
-                      )}
-                      {isActive && stage.state === 'open' && (
-                        <button className="btn-coral text-xs px-3 py-1.5" onClick={() => setState(stage, 'revealed')}>
-                          {S.revealStage}
-                        </button>
-                      )}
-                      {isActive && stage.state === 'revealed' && (
-                        <button className="btn-coral text-xs px-3 py-1.5" onClick={() => setState(stage, 'closed')}>
-                          {S.closeStage}
-                        </button>
-                      )}
-                      {/* One way back. Revealing a board closes writing for
-                          good, and on the night somebody is always still
-                          typing when the host presses it — without this there
-                          was no undo anywhere in the run of show. */}
-                      {isActive && (stage.state === 'revealed' || stage.state === 'closed') && (
-                        <button
-                          className="btn-ghost text-xs px-3 py-1.5"
-                          onClick={() => setState(stage, stage.state === 'closed' ? 'revealed' : 'open')}
-                          title="Bir adım geri al"
-                        >
-                          Geri
-                        </button>
-                      )}
-                      {!isActive && stage.state === 'pending' && (
-                        <button
-                          className={[
-                            'text-xs px-2 py-1 rounded-full font-bold transition',
-                            confirmDelete === stage.id
-                              ? 'bg-coral text-white'
-                              : 'text-ink-soft underline hover:text-coral',
-                          ].join(' ')}
-                          onClick={() => {
-                            // it sat 8px from the biggest target on the row and
-                            // destroyed an agenda stop on a single click
-                            if (confirmDelete !== stage.id) {
-                              setConfirmDelete(stage.id)
-                              setArmedAt(Date.now())
-                              return
-                            }
-                            if (Date.now() - armedAt < 700) return
-                            setConfirmDelete(null)
-                            void removeStage(stage)
-                          }}
-                          onBlur={() => setConfirmDelete((c) => (c === stage.id ? null : c))}
-                        >
-                          {confirmDelete === stage.id ? 'Emin misin?' : S.delete}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-
-            {/* An empty route is where "hard to start" actually lived: the one
-                thing a new host should press was a small link inside a picker
-                they had to open first. It is now the thing they land on. */}
-            {stages.length === 0 && !adding ? (
-              <div className="card flex flex-col items-center text-center py-10 px-6">
-                <h3 className="text-lg font-semibold tracking-tight">Rota boş</h3>
-                <p className="text-sm text-ink-soft mt-2 max-w-sm leading-relaxed">
-                  Hazır rota {DEFAULT_AGENDA.length} durak, ~{Math.round(AGENDA_MINUTES / 60)} saat
-                  ({AGENDA_MINUTES} dk): yaklaşık bir saat tartışma, iki saat oyun. İstemediğin
-                  durağı sonra silersin.
-                </p>
-                <div className="flex items-center gap-2 mt-6 flex-wrap justify-center">
-                  <button className="btn-coral" onClick={seedAgenda}>
+        {sorted.length === 0 ? (
+          /* An empty route is where "hard to start" actually lived: the one
+             thing a new host should press was a small link inside a picker
+             they had to open first. It is now the thing they land on. */
+          <div className="card-lg">
+            <Empty
+              size="lg"
+              icon="🗺️"
+              title="Rota boş"
+              body={`Hazır rota ${DEFAULT_AGENDA.length} durak, ~${Math.round(
+                AGENDA_MINUTES / 60,
+              )} saat (${AGENDA_MINUTES} dk): yaklaşık bir saat tartışma, iki saat oyun. İstemediğin durağı sonra silersin.`}
+              action={
+                <>
+                  <Button variant="filled" size="lg" onClick={seedAgenda}>
                     Hazır rotayı kur
-                  </button>
-                  <button className="btn-ghost" onClick={() => setAdding(true)}>
+                  </Button>
+                  <Button size="lg" onClick={() => setAdding(true)}>
                     Kendim seçeyim
-                  </button>
-                </div>
+                  </Button>
+                </>
+              }
+            />
+          </div>
+        ) : (
+          <div className="grid gap-5 xl:grid-cols-[minmax(320px,400px)_minmax(0,1fr)] xl:items-start">
+            {/* rota */}
+            <section className="flex flex-col gap-3 min-w-0 xl:sticky xl:top-20">
+              <div className="flex items-center justify-between gap-3 px-1">
+                <h2 className="text-overline uppercase text-label-3">
+                  Rota <span className="text-label-3 nums">{sorted.length}</span>
+                </h2>
+                <Button size="sm" variant="plain" onClick={() => setAdding(true)}>
+                  ＋ {S.addStop}
+                </Button>
               </div>
-            ) : adding ? (
-              <div className="card">
-                <StopPicker onPick={(k) => void addPreset(k)} onCancel={() => setAdding(false)} />
+              <div className="xl:max-h-[calc(100dvh-13rem)] xl:overflow-y-auto xl:-mr-1 xl:pr-1">
+                <RunOfShow
+                  stages={sorted}
+                  activeId={meeting.active_stage_id}
+                  selectedId={selectedId}
+                  readiness={readiness}
+                  onSelect={(s) => {
+                    setSelectedId(s.id)
+                    setPane('stop')
+                  }}
+                  onActivate={activate}
+                  onMove={move}
+                />
               </div>
-            ) : (
-              <button className="btn-ghost self-start" onClick={() => setAdding(true)}>
-                ＋ {S.addStop}
-              </button>
-            )}
-          </section>
-        </div>
-      )}
+            </section>
+
+            {/* müfettiş */}
+            <section className="min-w-0 flex flex-col gap-4">
+              <Segmented
+                aria-label="Panel"
+                value={pane}
+                onChange={setPane}
+                options={[
+                  { value: 'stop', label: 'Durak' },
+                  { value: 'room', label: 'Oda' },
+                ]}
+              />
+
+              <div className="card-lg min-h-[24rem]">
+                {pane === 'stop' ? (
+                  selected ? (
+                    <StopInspector
+                      key={selected.id}
+                      stage={selected}
+                      live={selected.id === meeting.active_stage_id}
+                      needsSetup={readiness[selected.id]?.todo ?? null}
+                      onActivate={() => activate(selected)}
+                      onSetState={(st) => setState(selected, st)}
+                      onDelete={() => void removeStage(selected)}
+                    />
+                  ) : (
+                    <Empty title="Bir durak seç" body="Soldaki rotadan bir durağa tıkla." />
+                  )
+                ) : (
+                  <RoomPane
+                    meeting={meeting}
+                    here={here}
+                    freezeNote={freezeNote}
+                    onFreezeNote={setFreezeNote}
+                    onToggleFreeze={toggleFreeze}
+                    confirmEnd={confirmEnd}
+                    onEnd={endMeeting}
+                    onClearConfirm={() => setConfirmEnd(false)}
+                  />
+                )}
+              </div>
+            </section>
+          </div>
+        )}
+      </div>
+
+      <Sheet
+        open={adding}
+        onClose={() => setAdding(false)}
+        title={S.addStop}
+        subtitle="Akşamın hangi bölümüne ait olduğuna göre gruplandı."
+        size="lg"
+      >
+        <StopPicker onPick={(k) => void addPreset(k)} onCancel={() => setAdding(false)} />
+      </Sheet>
     </AppShell>
+  )
+}
+
+/**
+ * What belongs to the MEETING rather than to a stop: who is here, how they get
+ * in, what greets them, and the two switches that stop the night.
+ */
+function RoomPane({
+  meeting,
+  here,
+  freezeNote,
+  onFreezeNote,
+  onToggleFreeze,
+  confirmEnd,
+  onEnd,
+  onClearConfirm,
+}: {
+  meeting: NonNullable<ReturnType<typeof useMeeting>['meeting']>
+  here: Set<string>
+  freezeNote: string
+  onFreezeNote: (v: string) => void
+  onToggleFreeze: () => void
+  confirmEnd: boolean
+  onEnd: () => void
+  onClearConfirm: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-6">
+      <PresenceBar here={here} />
+      <JoinPanel meeting={meeting} compact />
+
+      <TextArea
+        label="Karşılama mesajı"
+        defaultValue={meeting.welcome_note ?? ''}
+        placeholder={
+          'örn. Hoş geldiniz! Bugün 3 saat boyunca hem konuşacağız hem oynayacağız.\nTelefonunu yanında tut, sırayla ilerleyeceğiz.'
+        }
+        maxLength={1000}
+        rows={4}
+        hint={
+          meeting.welcome_note
+            ? 'Herkese giriş yaptıktan sonra bir kez gösterilir. Yazıp başka bir yere tıkla — otomatik kaydedilir.'
+            : 'Boş — kimseye gösterilmiyor. Herkese giriş yaptıktan sonra bir kez gösterilir.'
+        }
+        onBlur={async (e) => {
+          const v = e.target.value.trim()
+          await supabase
+            .from('meetings')
+            .update({ welcome_note: v || null })
+            .eq('id', meeting.id)
+        }}
+      />
+
+      <div className="flex flex-col gap-3 pt-5 border-t border-sep">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <div className="text-subhead">Ekranları dondur</div>
+            <p className="text-footnote text-label-3">
+              Herkesin ekranı bir nota döner. Ara vermek ya da dikkat toplamak için.
+            </p>
+          </div>
+          <Button variant={meeting.frozen ? 'filled' : 'gray'} onClick={onToggleFreeze}>
+            {meeting.frozen ? S.unfreeze : S.freeze}
+          </Button>
+        </div>
+        {!meeting.frozen && (
+          <Field
+            value={freezeNote}
+            onChange={(e) => onFreezeNote(e.target.value)}
+            placeholder="Dondurunca gösterilecek not (isteğe bağlı)"
+            maxLength={200}
+          />
+        )}
+        {meeting.frozen && <Alert tone="warn">Tüm ekranlar donduruldu.</Alert>}
+      </div>
+
+      <div className="flex items-center justify-between gap-3 flex-wrap pt-5 border-t border-sep">
+        <div className="min-w-0">
+          <div className="text-subhead">Toplantıyı bitir</div>
+          <p className="text-footnote text-label-3">
+            Arşive kaldırır. Yıllık okunmaya devam eder, konsol yeni bir toplantıya hazır olur.
+          </p>
+        </div>
+        <Button variant="danger" onClick={onEnd} onBlur={onClearConfirm}>
+          {confirmEnd ? 'Emin misin? Bas' : 'Bitir ve arşivle'}
+        </Button>
+      </div>
+    </div>
   )
 }

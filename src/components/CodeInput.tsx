@@ -100,11 +100,13 @@ export default function CodeInput({
             aria-label={`${i + 1}. hane`}
             className={[
               // generous touch target: 48x56 minimum
-              'w-12 h-14 sm:w-14 sm:h-16 rounded-2xl border-2 text-center',
-              'text-2xl sm:text-3xl font-extrabold tabular-nums outline-none transition',
-              'bg-card text-ink',
-              filled ? 'border-coral' : 'border-line',
-              focused === i ? 'border-coral ring-4 ring-coral/20 scale-105' : '',
+              'w-12 h-14 sm:w-14 sm:h-16 rounded-md text-center',
+              'text-title-2 nums outline-none bg-fill-3 text-label',
+              'transition-[background-color,box-shadow,transform] duration-150',
+              filled ? 'shadow-[inset_0_0_0_1px_var(--color-sep)]' : '',
+              focused === i
+                ? 'shadow-[inset_0_0_0_2px_var(--tint)] scale-105 bg-fill-2'
+                : '',
               disabled ? 'opacity-50' : '',
             ].join(' ')}
           />

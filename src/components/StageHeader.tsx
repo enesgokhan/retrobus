@@ -16,12 +16,17 @@ export interface StageHeaderProps {
 }
 
 /**
- * Her durağın tepesindeki "şu an ne oluyor" şeridi.
+ * "Şu an ne oluyor" — the status line at the top of every stop.
  *
- * Jackbox'ın çalışan tarafı, oyuncuya sürekli bir sunucunun konuştuğu hissini
- * vermek: hiçbir ekran "burada ne yapmam gerekiyor?" sorusunu bırakmıyor.
- * Uygulamanın en zayıf yeri buydu — duraklar durum gösteriyordu ama ne
- * yapılacağını söylemiyordu. Bu şerit her durağa aynı cevabı verir.
+ * Jackbox's working insight is that a player never has to ask what they are
+ * supposed to be doing. This line gives every stop the same answer.
+ *
+ * It is deliberately NOT a card. It used to be one — a rounded rect on the
+ * `bg-1` surface with a hairline — which put it at exactly the same visual
+ * weight as the composer below it and the room's actual words below that.
+ * Three different kinds of thing, one treatment, and the eye had nowhere to
+ * go. Status is chrome: it gets a tint dot, the type ramp and a hairline
+ * meter, and it gets no surface of its own.
  */
 export default function StageHeader({
   phase,
@@ -41,60 +46,59 @@ export default function StageHeader({
   })()
 
   return (
-    <div
-      className={[
-        // A raised surface with a 3px accent rail on the leading edge. It used
-        // to be a filled, 2px-outlined wash of the stage colour, which made the
-        // instruction the loudest object on the screen — louder than the
-        // content it was describing.
-        'w-full card relative overflow-hidden pl-5',
-        presenter ? 'py-4' : 'py-3',
-      ].join(' ')}
-    >
-      {!waiting && (
+    <div className="w-full flex flex-col gap-1.5">
+      <div className="flex items-center gap-2.5 flex-wrap">
+        {/* Codenames names its phase "🔴 Kırmızı sırası", so the state dot
+            landed immediately left of a red circle emoji and the line opened
+            with two bullets. If the phase already carries its own mark, that
+            IS the dot. */}
+        {!/^\p{Extended_Pictographic}/u.test(phase.trim()) && (
+          <span
+            className={[
+              'shrink-0 size-2 rounded-full',
+              waiting ? 'bg-label-4' : 'bg-[--tint]',
+            ].join(' ')}
+            aria-hidden
+          />
+        )}
         <span
-          aria-hidden
-          className="absolute inset-y-0 left-0 w-[3px] [background:var(--stage-accent)]"
-        />
-      )}
-      <div className="flex-1 min-w-0">
-        <div
           className={[
-            'font-bold uppercase tracking-widest text-ink-soft',
-            presenter ? 'text-sm' : 'text-[11px]',
+            'uppercase text-label-3',
+            presenter ? 'text-subhead tracking-widest font-semibold' : 'text-overline',
           ].join(' ')}
         >
           {phase}
-        </div>
-        <div
-          className={[
-            'font-semibold leading-snug text-ink',
-            presenter ? 'text-3xl' : 'text-lg',
-          ].join(' ')}
-        >
-          {instruction}
-        </div>
-      </div>
-      {progress && (
-        <span
-          className={[
-            'shrink-0 rounded-[--radius-control] font-medium tabular-nums text-ink-soft',
-            'shadow-[inset_0_0_0_1px_var(--color-line)]',
-            presenter ? 'px-4 py-2 text-xl' : 'px-2.5 py-1 text-xs',
-          ].join(' ')}
-        >
-          {progress}
         </span>
-      )}
-      {aside}
+        <span className="flex-1" />
+        {progress && (
+          <span
+            className={[
+              'shrink-0 nums text-label-2',
+              presenter ? 'text-title-3' : 'text-footnote',
+            ].join(' ')}
+          >
+            {progress}
+          </span>
+        )}
+        {aside}
+      </div>
 
-      {/* A bar under the band, filled to done/total. The pill alone is 14px at
-          the far right of a 1600px screen; this reads from across a call and
+      <p
+        className={[
+          waiting ? 'text-label-2' : 'text-label',
+          presenter ? 'text-title-2' : 'text-headline',
+        ].join(' ')}
+      >
+        {instruction}
+      </p>
+
+      {/* A meter under the line, filled to done/total. The count alone is 13px
+          at the far right of a 1500px screen; this reads from across a call and
           turns "is everyone finished?" into something you glance at. */}
       {ratio != null && (
-        <div className="basis-full h-[3px] rounded-full overflow-hidden [background:var(--color-line)]">
+        <div className="mt-1 h-[3px] w-full rounded-full overflow-hidden bg-fill-3">
           <div
-            className="h-full rounded-full transition-[width] duration-500 [background:var(--stage-accent)]"
+            className="h-full rounded-full bg-[--tint] transition-[width] duration-500"
             style={{ width: `${Math.round(ratio * 100)}%` }}
           />
         </div>

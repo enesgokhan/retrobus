@@ -119,7 +119,11 @@ for (const c of CAST) {
   await addBtn.click()
   await host.waitForTimeout(1400)
   // now give them a code, which is what actually lets them in
-  const row = host.locator('section > div, .card').filter({ hasText: c.name }).first()
+  // A passenger is a .list-row in the roster's list group. This used to match
+  // `section > div, .card` because every passenger was their own card; when
+  // that stopped being true the whole rehearsal failed downstream — nobody got
+  // a code, so nobody could log in, so all seventeen stops rendered empty.
+  const row = host.locator('.list-row').filter({ hasText: c.name }).first()
   const setCode = row.getByRole('button', { name: /Kod ata|Kodu değiştir/ })
   if (!(await setCode.count())) { bad('yolcular', `no code button for ${c.name}`); continue }
   await setCode.click()
@@ -196,7 +200,10 @@ if (!(await addMore.count())) {
   else {
     await search.fill('yalan')
     await host.waitForTimeout(600)
-    const hits = await host.locator('section h3').count()
+    // Count the results themselves rather than their group headings: the
+    // headings used to be h3 and are now h2, and "did the search work" is a
+    // question about rows, not about markup.
+    const hits = await host.locator('.list-row, .list-row-tappable').count()
     if (!hits) bad('konsol', 'searching the stop picker returns nothing for a real word')
     else ok('the stop picker filters')
     const close = host.getByRole('button', { name: 'Kapat', exact: true })
@@ -436,10 +443,10 @@ for (let i = 0; i < (builtStages ?? []).length; i++) {
   // 1. make it the active stop — via that row's own jump button
   const { data: mNow } = await api.from('meetings').select('active_stage_id').eq('id', meeting.id).single()
   if (mNow?.active_stage_id !== stage.id) {
-    const row = host
-      .locator('div.rounded-2xl')
-      .filter({ hasText: `${i + 1}. ${stage.title}` })
-      .last()
+    // The run of show is one list group; a row is a .list-row carrying the
+    // stop's title. It used to be an individually-rounded card whose text
+    // began "1. Title", which is why this matched on `div.rounded-2xl`.
+    const row = host.locator('.list-row').filter({ hasText: stage.title }).last()
     const jump = row.getByRole('button', { name: 'Bu durağa geç' })
     if (await jump.count()) { await jump.first().click(); await host.waitForTimeout(1900) }
     else note(`stop ${i + 1} (${stage.kind}) has no jump button`)

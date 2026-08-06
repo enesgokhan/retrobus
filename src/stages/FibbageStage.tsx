@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import StageHeader from '../components/StageHeader'
-import StageEmpty from '../components/StageEmpty'
+import Empty from '../components/ui/Empty'
+import Alert from '../components/ui/Alert'
 import type { Member, Stage } from '../lib/types'
 
 interface Round {
@@ -226,42 +227,42 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
 
   const hostPanel = isHost && !presenter && (
     <section className="card flex flex-col gap-3">
-      <h4 className="font-bold text-sm">Yönetim</h4>
+      <h4 className="font-bold text-subhead">Yönetim</h4>
       {round && (
         <div className="flex flex-wrap gap-2">
           {round.phase === 'lie' && (
-            <button className="btn-coral text-sm" onClick={() => setPhase('guess')}>
+            <button className="btn-filled text-subhead" onClick={() => setPhase('guess')}>
               Tahmine geç ({lieCount} yalan)
             </button>
           )}
           {round.phase === 'guess' && (
-            <button className="btn-coral text-sm" onClick={reveal}>
+            <button className="btn-filled text-subhead" onClick={reveal}>
               Gerçeği aç ve puanla ({state.picked_count} seçim)
             </button>
           )}
         </div>
       )}
-      <details className="rounded-2xl border-2 border-line p-3">
-        <summary className="font-bold text-sm cursor-pointer">Yeni tur ekle</summary>
+      <details className="rounded-2xl border-2 border-sep p-3">
+        <summary className="font-bold text-subhead cursor-pointer">Yeni tur ekle</summary>
         <div className="flex flex-col gap-2 mt-3">
           <input
-            className="input-blob"
+            className="field"
             value={newRound.prompt}
             onChange={(e) => setNewRound((n) => ({ ...n, prompt: e.target.value }))}
             placeholder="Soru… (örn. Enes’in ilk işi neydi?)"
             maxLength={400}
           />
           <input
-            className="input-blob"
+            className="field"
             value={newRound.truth}
             onChange={(e) => setNewRound((n) => ({ ...n, truth: e.target.value }))}
             placeholder="Gerçek cevap"
             maxLength={200}
           />
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-ink-soft">Puan çarpanı (Jackbox: son turlar daha değerli)</span>
+            <span className="text-footnote font-semibold text-label-2">Puan çarpanı (Jackbox: son turlar daha değerli)</span>
             <select
-              className="input-blob"
+              className="field"
               value={newRound.multiplier}
               onChange={(e) => setNewRound((n) => ({ ...n, multiplier: Number(e.target.value) }))}
             >
@@ -270,7 +271,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
               <option value={3}>×3 — final turu</option>
             </select>
           </label>
-          <button className="btn-coral self-start text-sm" onClick={addRound}>
+          <button className="btn-filled self-start text-subhead" onClick={addRound}>
             Ekle ve başlat
           </button>
         </div>
@@ -286,7 +287,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
           looking at, and lets the host remove one. */}
       {rounds.length > 0 && (
         <div className="flex flex-col gap-1 pt-1">
-          <h5 className="text-xs uppercase tracking-widest text-ink-faint font-medium">
+          <h5 className="text-footnote uppercase tracking-widest text-label-3 font-medium">
             Sorular ({rounds.length})
           </h5>
           {rounds.map((r) => {
@@ -295,8 +296,8 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
               <div
                 key={r.id}
                 className={[
-                  'flex items-center gap-3 rounded-[--radius-control] px-3 py-2 transition-colors duration-150',
-                  current ? 'bg-[--color-raised] shadow-[inset_0_0_0_1px_var(--stage-accent)]' : 'hover:bg-[--color-raised]',
+                  'flex items-center gap-3 rounded-sm px-3 py-2 transition-colors duration-150',
+                  current ? 'bg-[--color-bg-2] shadow-[inset_0_0_0_1px_var(--tint)]' : 'hover:bg-[--color-bg-2]',
                 ].join(' ')}
               >
                 <button
@@ -304,10 +305,10 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                   onClick={() => void showRound(r.id)}
                   title={current ? 'Şu an bu gösteriliyor' : 'Bu soruya geç'}
                 >
-                  <span className={['text-sm truncate block', r.phase === 'revealed' ? 'text-ink-faint' : ''].join(' ')}>
+                  <span className={['text-subhead truncate block', r.phase === 'revealed' ? 'text-label-3' : ''].join(' ')}>
                     {r.prompt}
                   </span>
-                  <span className="text-[11px] text-ink-faint">
+                  <span className="text-[11px] text-label-3">
                     {current && 'şu an · '}
                     {r.phase === 'lie' ? 'yalan yazılıyor'
                       : r.phase === 'guess' ? 'tahmin ediliyor'
@@ -316,7 +317,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                   </span>
                 </button>
                 <button
-                  className="btn-danger text-xs shrink-0 px-2 py-1"
+                  className="btn-danger text-footnote shrink-0 px-2 py-1"
                   onClick={() => {
                     if (confirmRound !== r.id) { setConfirmRound(r.id); setRoundArmed(Date.now()); return }
                     if (Date.now() - roundArmed < 700) return
@@ -337,8 +338,8 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
 
   if (!round) {
     return (
-      <div className="w-full max-w-3xl flex flex-col gap-6">
-        <StageEmpty
+      <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col gap-6">
+        <Empty
           icon="🤫"
           title={isHost ? 'Henüz bir tur yok' : 'Tur hazırlanıyor'}
           body={
@@ -367,7 +368,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
   })()
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-4">
+    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
       <StageHeader
         {...header}
         presenter={presenter}
@@ -379,18 +380,16 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
       />
 
       {error && (
-        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
-          {error}
-        </p>
+        <Alert>{error}</Alert>
       )}
 
       <section className="card flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
-          <h3 className={presenter ? 'text-6xl font-extrabold leading-tight' : 'text-4xl font-extrabold leading-tight'}>
+          <h3 className={presenter ? 'text-display' : 'text-title-1'}>
             {round.prompt}
           </h3>
           {round.multiplier > 1 && (
-            <span className="shrink-0 rounded-full bg-grape text-white px-3 py-1 text-sm font-extrabold">
+            <span className="shrink-0 rounded-full bg-grape text-[#160421] px-3 py-1 text-subhead font-semibold">
               ×{round.multiplier}
             </span>
           )}
@@ -406,14 +405,14 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
               !presenter && (
                 <div className="flex items-center gap-2">
                   <input
-                    className="input-blob flex-1"
+                    className="field flex-1"
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
                     placeholder="İnandırıcı bir yalan yaz…"
                     maxLength={200}
                     onKeyDown={(e) => e.key === 'Enter' && submitLie()}
                   />
-                  <button className="btn-coral" onClick={submitLie} disabled={!draft.trim()}>
+                  <button className="btn-filled" onClick={submitLie} disabled={!draft.trim()}>
                     Gönder
                   </button>
                 </div>
@@ -446,11 +445,11 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                       'rounded-2xl border-2 px-4 py-3 text-left font-bold transition',
                       revealed
                         ? isTruth
-                          ? 'bg-teal text-white border-teal'
-                          : 'border-line opacity-70'
+                          ? 'bg-teal text-[#04141a] border-teal'
+                          : 'border-sep opacity-70'
                         : picked
                           ? 'bg-rose-soft border-coral'
-                          : 'border-line',
+                          : 'border-sep',
                       canPick ? 'hover:border-coral cursor-pointer' : 'cursor-default',
                       isMine && !revealed ? 'opacity-60' : '',
                     ].join(' ')}
@@ -458,16 +457,16 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                     disabled={!canPick}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <span className={presenter ? 'text-xl' : ''}>
+                      <span className={presenter ? 'text-title-3' : ''}>
                         {revealed && (isTruth ? '✅ ' : '🤥 ')}
                         {opt.body}
                       </span>
                       {isMine && !revealed && (
-                        <span className="text-xs shrink-0 opacity-70">senin yalanın</span>
+                        <span className="text-footnote shrink-0 opacity-70">senin yalanın</span>
                       )}
                     </div>
                     {revealed && (
-                      <p className="text-xs font-semibold mt-1.5 opacity-80">
+                      <p className="text-footnote font-semibold mt-1.5 opacity-80">
                         {!isTruth && opt.author && `${opt.author} yazdı. `}
                         {takers.length > 0
                           ? `Seçenler: ${takers.join(', ')}`
@@ -478,7 +477,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                 )
               })}
             {myPick && round.phase === 'guess' && (
-              <p className="text-sm font-bold text-teal text-center">Seçimin kaydedildi.</p>
+              <p className="text-subhead font-bold text-teal text-center">Seçimin kaydedildi.</p>
             )}
           </div>
         )}

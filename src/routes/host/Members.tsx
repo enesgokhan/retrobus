@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { S } from '../../lib/strings'
 import AppShell from '../../components/AppShell'
+import Button from '../../components/ui/Button'
+import Alert from '../../components/ui/Alert'
 
 interface MemberRow {
   id: string
   display_name: string
   is_host: boolean
   code_set: boolean
+  avatar: string | null
 }
 
 /** Yolcu yönetimi — ekle, 6 haneli kod ata, yanlış eklediğini çıkar. */
@@ -24,7 +27,7 @@ export default function Members() {
   async function load() {
     const { data } = await supabase
       .from('members')
-      .select('id, display_name, is_host, code_set')
+      .select('id, display_name, is_host, code_set, avatar')
       .order('display_name')
     setMembers((data as MemberRow[]) ?? [])
   }
@@ -92,56 +95,56 @@ export default function Members() {
   return (
     <AppShell title={S.members} width="reading">
 
-      {note && (
-        <p
-          className={[
-            'rounded-2xl px-4 py-2.5 text-sm font-semibold',
-            isError ? 'bg-rose-soft text-coral-deep' : 'bg-teal-soft',
-          ].join(' ')}
-        >
-          {note}
-        </p>
-      )}
+      {note && <Alert tone={isError ? 'bad' : 'info'}>{note}</Alert>}
 
-      <section className="flex flex-col gap-2">
+      {/* A roster is a list, not five stacked panels. The host role was a red
+          parenthetical at footnote size beside the name — the one piece of
+          status on the row, styled as an aside. */}
+      <div className="list-group">
         {members.map((m) => (
-          <div key={m.id} className="card flex items-center gap-3 py-3 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <div className="font-bold truncate">
-                {m.display_name}
-                {m.is_host && <span className="ml-2 text-xs text-coral font-bold">({S.isHost})</span>}
-              </div>
-              <div className="text-xs text-ink-soft font-semibold">
+          <div key={m.id} className="list-row list-row-inset flex-wrap gap-y-2">
+            <span className="shrink-0 size-8 grid place-items-center text-xl" aria-hidden>
+              {m.avatar || '🙂'}
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="flex items-center gap-2">
+                <span className="text-headline truncate">{m.display_name}</span>
+                {m.is_host && <span className="badge-tinted shrink-0">{S.isHost}</span>}
+              </span>
+              <span className="block text-footnote text-label-3 mt-0.5">
                 {m.code_set ? 'kod atanmış' : 'kod bekliyor'}
-              </div>
-            </div>
+              </span>
+            </span>
+
             {codeFor === m.id ? (
-              <div className="flex items-center gap-2">
+              <span className="flex items-center gap-2">
                 <input
-                  className="input-blob w-32 text-center tracking-widest"
+                  className="field w-32 text-center tracking-widest nums"
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   placeholder={S.codePlaceholder}
                   inputMode="numeric"
+                  aria-label={`${m.display_name} için kod`}
                   autoFocus
                 />
-                <button className="btn-coral text-xs px-3 py-1.5" onClick={() => saveCode(m.id)}>
+                <Button variant="filled" size="sm" onClick={() => saveCode(m.id)}>
                   {S.save}
-                </button>
-                <button
-                  className="text-ink-soft text-xs underline"
+                </Button>
+                <Button
+                  variant="plain"
+                  size="sm"
                   onClick={() => {
                     setCodeFor(null)
                     setCode('')
                   }}
                 >
                   {S.cancel}
-                </button>
-              </div>
+                </Button>
+              </span>
             ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  className="btn-ghost text-xs px-3 py-1.5"
+              <span className="flex items-center gap-2">
+                <Button
+                  size="sm"
                   onClick={() => {
                     setCodeFor(m.id)
                     setCode('')
@@ -150,38 +153,31 @@ export default function Members() {
                   }}
                 >
                   {m.code_set ? 'Kodu değiştir' : S.setCode}
-                </button>
+                </Button>
                 {!m.is_host && (
-                  <button
-                    className={[
-                      'text-xs px-3 py-1.5 rounded-full font-bold border-2 transition',
-                      confirmId === m.id
-                        ? 'bg-coral text-white border-coral-deep'
-                        : 'border-line text-ink-soft hover:border-coral',
-                    ].join(' ')}
-                    onClick={() => removeMember(m)}
-                  >
+                  <Button variant="danger" size="sm" onClick={() => removeMember(m)}>
                     {confirmId === m.id ? 'Emin misin? Bas' : 'Çıkar'}
-                  </button>
+                  </Button>
                 )}
-              </div>
+              </span>
             )}
           </div>
         ))}
-      </section>
+      </div>
 
-      <section className="card flex items-center gap-2">
+      <section className="flex items-center gap-2 mt-4">
         <input
-          className="input-blob flex-1"
+          className="field flex-1"
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder={S.memberNamePlaceholder}
+          aria-label={S.addMember}
           maxLength={40}
           onKeyDown={(e) => e.key === 'Enter' && addMember()}
         />
-        <button className="btn-coral" onClick={addMember} disabled={!newName.trim()}>
+        <Button variant="filled" onClick={addMember} disabled={!newName.trim()}>
           {S.addMember}
-        </button>
+        </Button>
       </section>
     </AppShell>
   )

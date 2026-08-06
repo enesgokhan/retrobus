@@ -4,6 +4,9 @@ import { useAuth } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { S } from '../lib/strings'
 import CodeInput from '../components/CodeInput'
+import Button from '../components/ui/Button'
+import Alert from '../components/ui/Alert'
+import { Field } from '../components/ui/Field'
 
 const LAST_NAME_KEY = 'retrobus.lastName'
 
@@ -92,23 +95,28 @@ export default function Login() {
   // ---------- avatar step ----------
   if (step === 'avatar') {
     return (
-      <main className="min-h-dvh flex flex-col items-center justify-center px-6 py-10 gap-6">
-        <div className="text-center">
-          <div className="text-6xl mb-2 animate-bounce" aria-hidden>
+      <main className="min-h-dvh flex flex-col items-center justify-center px-6 py-10 gap-8">
+        <div className="text-center animate-pop">
+          <div className="text-6xl mb-3 leading-none" aria-hidden>
             🎉
           </div>
-          <h1 className="text-3xl font-extrabold">Hoş geldin{member ? `, ${member.display_name}` : ''}!</h1>
-          <p className="text-ink-soft font-semibold mt-1">Kendine bir avatar seç.</p>
+          <h1 className="text-title-1">
+            Hoş geldin{member ? `, ${member.display_name}` : ''}
+          </h1>
+          <p className="text-body text-label-2 mt-1.5">Kendine bir avatar seç.</p>
         </div>
-        <div className="grid grid-cols-6 gap-3 max-w-lg w-full">
+        <div className="grid grid-cols-6 gap-2.5 max-w-lg w-full stagger">
           {AVATARS.map((a, i) => (
             <button
               key={`${a}-${i}`}
               onClick={() => chooseAvatar(a)}
               aria-label={a}
               className={[
-                'aspect-square rounded-2xl border-2 text-2xl transition min-h-11',
-                picked === a ? 'border-coral bg-rose-soft scale-110' : 'border-line hover:border-coral hover:scale-105',
+                'aspect-square rounded-md text-2xl min-h-11 grid place-items-center',
+                'transition-[background-color,transform,box-shadow] duration-150',
+                picked === a
+                  ? 'bg-[color-mix(in_srgb,var(--tint)_22%,transparent)] scale-110 shadow-[inset_0_0_0_1px_var(--tint)]'
+                  : 'bg-fill-3 hover:bg-fill-2 hover:scale-105',
               ].join(' ')}
             >
               {a}
@@ -116,7 +124,7 @@ export default function Login() {
           ))}
         </div>
         <button
-          className="text-ink-soft underline text-sm min-h-11"
+          className="btn-plain btn-md !text-label-2"
           onClick={() => navigate(member?.is_host ? '/host' : '/oda', { replace: true })}
         >
           Şimdilik geç
@@ -127,22 +135,30 @@ export default function Login() {
 
   // ---------- credentials step ----------
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center px-6 py-10">
-      {/* This is the surprise. It was a 380px phone form on a 1600px canvas
-          with nothing focused and nothing moving. */}
-      <div className="text-8xl mb-3 animate-bus-in" aria-hidden>
-        🚌
-      </div>
-      <h1 className="text-6xl font-extrabold tracking-tight animate-rise-1">{S.appName}</h1>
-      <p className="text-ink-soft mt-2 mb-8 text-center max-w-sm text-lg animate-rise-2">{S.tagline}</p>
+    <main className="tint-brand min-h-dvh flex flex-col items-center justify-center px-6 py-10 relative overflow-hidden">
+      {/* This is the surprise — the moment the app is first seen. A wash
+          behind it so the screen is not a black rectangle with a form on it. */}
+      <div
+        className="absolute inset-x-0 top-0 h-[70vh] pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(70% 60% at 50% 0%, color-mix(in srgb, var(--color-brand) 13%, transparent), transparent 70%)',
+        }}
+        aria-hidden
+      />
 
-      <form onSubmit={onSubmitForm} className="card w-full max-w-md flex flex-col gap-5 animate-rise-3">
-        <h2 className="text-xl font-bold">{S.loginTitle}</h2>
+      <div className="relative w-full max-w-md flex flex-col items-center stagger">
+        <div className="text-7xl mb-4 leading-none" aria-hidden>
+          🚌
+        </div>
+        <h1 className="text-display text-center">{S.appName}</h1>
+        <p className="text-body text-label-2 mt-3 mb-9 text-center text-balance">{S.tagline}</p>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-semibold text-ink-soft">{S.loginName}</span>
-          <input
-            className="input-blob"
+        <form onSubmit={onSubmitForm} className="card-lg w-full flex flex-col gap-5">
+          <h2 className="text-title-3">{S.loginTitle}</h2>
+
+          <Field
+            label={S.loginName}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={S.loginNamePlaceholder}
@@ -152,29 +168,32 @@ export default function Login() {
             required
             maxLength={40}
           />
-        </label>
 
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-ink-soft">{S.loginCode}</span>
-          <CodeInput
-            value={code}
-            onChange={setCode}
-            onComplete={(full) => void submit(full)}
-            disabled={busy}
-            autoFocus={!!name}
-          />
-        </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-subhead text-label-2">{S.loginCode}</span>
+            <CodeInput
+              value={code}
+              onChange={setCode}
+              onComplete={(full) => void submit(full)}
+              disabled={busy}
+              autoFocus={!!name}
+            />
+          </div>
 
-        {error && (
-          <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
-            {error}
-          </p>
-        )}
+          {error && <Alert>{error}</Alert>}
 
-        <button type="submit" className="btn-coral text-lg" disabled={busy || !name.trim() || code.length !== 6}>
-          {busy ? (slow ? S.loginWaiting : S.loading) : S.loginButton}
-        </button>
-      </form>
+          <Button
+            type="submit"
+            variant="filled"
+            size="lg"
+            block
+            busy={busy}
+            disabled={!name.trim() || code.length !== 6}
+          >
+            {busy ? (slow ? S.loginWaiting : S.loading) : S.loginButton}
+          </Button>
+        </form>
+      </div>
     </main>
   )
 }

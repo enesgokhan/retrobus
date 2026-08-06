@@ -13,7 +13,7 @@ export default function Sunum() {
       <ConnStatus />
       {loading ? (
         <div className="flex-1 grid place-items-center">
-          <p className="text-ink-soft text-2xl">{S.loading}</p>
+          <p className="text-title-2 text-label-2">{S.loading}</p>
         </div>
       ) : meeting?.frozen ? (
         <div className="flex-1 grid place-items-center px-10">
@@ -22,13 +22,32 @@ export default function Sunum() {
       ) : activeStage ? (
         <StageView stage={activeStage} presenter />
       ) : (
-        <div className="flex-1 grid place-items-center text-center px-10">
-          <div>
-            <div className="text-9xl mb-6" aria-hidden>
+        /* The holding screen, shown on a shared call before anything starts.
+           It is the room's wallpaper for however long it takes everyone to
+           arrive, so it carries the code they need rather than only a bus. */
+        <div className="flex-1 grid place-items-center text-center px-10 relative">
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'radial-gradient(60% 50% at 50% 30%, color-mix(in srgb, var(--color-brand) 12%, transparent), transparent 70%)',
+            }}
+            aria-hidden
+          />
+          <div className="relative">
+            <div className="text-8xl mb-6 leading-none" aria-hidden>
               🚌
             </div>
-            <h1 className="text-6xl font-extrabold">{S.appName}</h1>
-            <p className="text-2xl text-ink-soft mt-3">{S.waitingTitle}</p>
+            <h1 className="text-display">{S.appName}</h1>
+            <p className="text-title-2 text-label-2 mt-4">{S.waitingTitle}</p>
+            {meeting?.join_code && meeting.join_open && (
+              <p className="mt-10 text-label-3 text-title-3">
+                Katılmak için:{' '}
+                <span className="text-display nums tracking-[0.18em] text-label align-middle ml-2">
+                  {meeting.join_code}
+                </span>
+              </p>
+            )}
           </div>
         </div>
       )}

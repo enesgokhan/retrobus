@@ -87,7 +87,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
   }
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-4">
+    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
       <StageHeader
         phase={anyRevealed ? 'Görevler açıldı' : 'Görev sende'}
         instruction={
@@ -99,35 +99,35 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
         waiting={!anyRevealed && !mine}
         presenter={presenter}
       />
-      {note && <p className="rounded-2xl bg-teal-soft px-4 py-2.5 text-sm font-semibold">{note}</p>}
+      {note && <p className="rounded-2xl bg-teal-soft px-4 py-2.5 text-subhead font-semibold">{note}</p>}
 
       {!anyRevealed ? (
         <>
           {mine && !presenter ? (
             <section className="card flex flex-col gap-2 border-grape bg-grape-soft">
-              <span className="text-xs font-bold uppercase tracking-widest text-grape">
+              <span className="text-footnote font-bold uppercase tracking-widest text-grape">
                 Gizli görevin — kimseye söyleme
               </span>
-              <p className={presenter ? 'text-3xl font-extrabold' : 'text-xl font-extrabold'}>{mine.body}</p>
-              <p className="text-xs font-semibold text-ink-soft">
+              <p className={presenter ? 'text-title-1' : 'text-title-3'}>{mine.body}</p>
+              <p className="text-footnote font-semibold text-label-2">
                 Toplantı boyunca fırsat kolla. Finalde herkesin görevi açılacak.
               </p>
             </section>
           ) : (
-            <p className="text-center text-ink-soft">
+            <p className="text-center text-label-2">
               {isHost ? 'Görevler henüz dağıtılmadı.' : 'Sana görev atanmamış.'}
             </p>
           )}
           {isHost && !presenter && (
             <section className="card flex flex-col gap-2">
-              <h4 className="font-bold text-sm">Yönetim</h4>
-              <p className="text-xs text-ink-soft">
+              <h4 className="font-bold text-subhead">Yönetim</h4>
+              <p className="text-footnote text-label-2">
                 Görevleri toplantının BAŞINDA dağıt, bu durağı finale koy. Kimin hangi görevi aldığını
                 sen de göremezsin — bilseydin farkında olmadan yönlendirirdin.
               </p>
               <div className="flex gap-2 flex-wrap">
                 <button
-                  className={armed ? 'btn-coral text-sm' : 'btn-ghost text-sm'}
+                  className={armed ? 'btn-filled text-subhead' : 'btn-gray text-subhead'}
                   onClick={() => {
                     // assign_missions deletes every unrevealed mission first, so
                     // pressing this at the finale silently re-rolls three hours
@@ -146,7 +146,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
                     : `Görevleri dağıt (${missions.length || 0} atanmış)`}
                 </button>
                 {missions.length > 0 && (
-                  <button className="btn-ghost text-sm" onClick={reveal}>
+                  <button className="btn-gray text-subhead" onClick={reveal}>
                     Hepsini aç (final)
                   </button>
                 )}
@@ -156,7 +156,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
         </>
       ) : (
         <>
-          <h3 className={['text-center font-extrabold', presenter ? 'text-4xl' : 'text-2xl'].join(' ')}>
+          <h3 className={['text-center', presenter ? 'text-display' : 'text-title-2'].join(' ')}>
             Gizli görevler
           </h3>
           <div className="flex flex-col gap-2">
@@ -173,15 +173,15 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
                   {avatarOf(m.member_id)}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="font-extrabold">{nameOf(m.member_id)}</div>
-                  <p className={presenter ? 'text-xl' : ''}>{m.body}</p>
+                  <div className="font-semibold">{nameOf(m.member_id)}</div>
+                  <p className={presenter ? 'text-title-3' : ''}>{m.body}</p>
                 </div>
                 {isHost && !presenter ? (
                   <div className="flex flex-col gap-1 shrink-0">
                     <button
                       className={[
-                        'rounded-full px-2.5 py-1 text-xs font-bold border-2',
-                        m.completed === true ? 'bg-teal text-white border-teal' : 'border-line',
+                        'rounded-full px-2.5 py-1 text-footnote font-bold border-2',
+                        m.completed === true ? 'bg-teal text-[#04141a] border-teal' : 'border-sep',
                       ].join(' ')}
                       onClick={() => toggleDone(m.id, true)}
                     >
@@ -189,8 +189,8 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
                     </button>
                     <button
                       className={[
-                        'rounded-full px-2.5 py-1 text-xs font-bold border-2',
-                        m.completed === false ? 'bg-ink text-white border-ink' : 'border-line',
+                        'rounded-full px-2.5 py-1 text-footnote font-bold border-2',
+                        m.completed === false ? 'bg-fill text-label' : 'border-sep',
                       ].join(' ')}
                       onClick={() => toggleDone(m.id, false)}
                     >
@@ -206,7 +206,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
             ))}
           </div>
           {isHost && !presenter && (
-            <button className="btn-coral self-center" onClick={reveal}>
+            <button className="btn-filled self-center" onClick={reveal}>
               Başarılanları puanla (+800)
             </button>
           )}

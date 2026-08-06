@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Button from './ui/Button'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import type { Member } from '../lib/types'
@@ -69,32 +70,35 @@ export default function ActionsPanel({ meetingId }: { meetingId: string }) {
   if (!actions.length && !isHost) return null
 
   return (
-    <section className="card w-full max-w-2xl flex flex-col gap-3">
-      <h3 className="font-extrabold flex items-center gap-2">
-        <span aria-hidden>✅</span> Kararlar
-        {actions.length > 0 && <span className="text-ink-soft font-semibold">({actions.length})</span>}
-      </h3>
+    <section className="card-lg w-full max-w-3xl flex flex-col gap-4">
+      <div className="flex items-center gap-2">
+        <h3 className="text-overline uppercase text-label-3">Kararlar</h3>
+        {actions.length > 0 && <span className="badge nums">{actions.length}</span>}
+      </div>
 
       {actions.length === 0 ? (
-        <p className="text-sm text-ink-soft">Henüz karar yok. Konuşurken buraya ekle.</p>
+        <p className="text-subhead text-label-3">Henüz karar yok. Konuşurken buraya ekle.</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="list-group">
           {actions.map((a) => (
-            <li key={a.id} className="flex items-start gap-2 rounded-2xl border-2 border-line p-3">
+            <li key={a.id} className="list-row items-start py-3">
               <input
                 type="checkbox"
-                className="mt-1 size-5 accent-teal shrink-0"
+                className="mt-1 size-5 accent-[var(--tint)] shrink-0"
                 checked={a.done}
                 disabled={!isHost}
                 onChange={(e) => toggleDone(a.id, e.target.checked)}
                 aria-label="Tamamlandı"
               />
-              <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                <span className={a.done ? 'line-through text-ink-soft' : ''}>{a.body}</span>
+              <div className="flex-1 min-w-0 flex flex-col gap-2">
+                <span className={['text-body', a.done ? 'line-through text-label-3' : ''].join(' ')}>
+                  {a.body}
+                </span>
                 {isHost ? (
                   <select
-                    className="input-blob py-1.5 text-sm max-w-52"
+                    className="field py-1.5 max-w-52 text-subhead min-h-9"
                     value={a.owner_member_id ?? ''}
+                    aria-label="Sahibi"
                     onChange={(e) => setOwner(a.id, e.target.value || null)}
                   >
                     <option value="">— sahibi yok —</option>
@@ -105,16 +109,16 @@ export default function ActionsPanel({ meetingId }: { meetingId: string }) {
                     ))}
                   </select>
                 ) : (
-                  <span className="text-xs font-semibold text-ink-soft">
+                  <span className="text-footnote text-label-3">
                     {a.owner_member_id
-                      ? `👤 ${members.find((m) => m.id === a.owner_member_id)?.display_name ?? '—'}`
+                      ? members.find((m) => m.id === a.owner_member_id)?.display_name ?? 'sahibi yok'
                       : 'sahibi yok'}
                   </span>
                 )}
               </div>
               {isHost && (
-                <button className="text-xs text-ink-soft underline shrink-0" onClick={() => remove(a.id)}>
-                  sil
+                <button className="btn-plain btn-sm !text-label-3 shrink-0" onClick={() => remove(a.id)}>
+                  Sil
                 </button>
               )}
             </li>
@@ -125,16 +129,17 @@ export default function ActionsPanel({ meetingId }: { meetingId: string }) {
       {isHost && (
         <div className="flex items-center gap-2">
           <input
-            className="input-blob flex-1"
+            className="field flex-1"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Yeni karar…"
+            aria-label="Yeni karar"
             maxLength={500}
             onKeyDown={(e) => e.key === 'Enter' && add()}
           />
-          <button className="btn-coral" onClick={add} disabled={!draft.trim()}>
+          <Button variant="filled" onClick={add} disabled={!draft.trim()}>
             Ekle
-          </button>
+          </Button>
         </div>
       )}
     </section>

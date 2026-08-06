@@ -137,7 +137,7 @@ const t = await addStage('two_truths', 'İki Doğru')
 await activate(t)
 for (const [pg, who] of [[p1, 'a'], [p2, 'b']]) {
   await room(pg)
-  const ins = pg.locator('input.input-blob')
+  const ins = pg.locator('input.field')
   if ((await ins.count()) >= 3) {
     for (let i = 0; i < 3; i++) await ins.nth(i).fill(`${who} cümle ${i + 1}`)
     const lb = pg.getByRole('button', { name: '2. cümle yalan' })

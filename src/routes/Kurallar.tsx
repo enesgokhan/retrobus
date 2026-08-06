@@ -187,36 +187,53 @@ export default function Kurallar() {
       width="reading"
     >
 
-      <div className="flex flex-col gap-2">
+      {/* One group, not eleven cards. A set of things you open one at a time is
+          a list; rendering each as its own surface made the page read as
+          eleven unrelated panels that happen to be stacked. */}
+      <div className="list-group">
         {RULES.map((r) => {
           const isOpen = open === r.key
           return (
-            <section key={r.key} className="card">
+            <section key={r.key}>
               <button
-                className="w-full flex items-start gap-3 text-left"
+                className="list-row-tappable list-row-inset w-full"
                 onClick={() => setOpen(isOpen ? null : r.key)}
                 aria-expanded={isOpen}
               >
-                <span className="text-3xl shrink-0" aria-hidden>
+                <span className="shrink-0 size-8 grid place-items-center text-2xl" aria-hidden>
                   {r.emoji}
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block font-extrabold text-lg">{r.title}</span>
-                  <span className="block text-sm text-ink-soft">{r.oneLine}</span>
+                  <span className="block text-headline">{r.title}</span>
+                  <span className="block text-footnote text-label-2 mt-0.5">{r.oneLine}</span>
                 </span>
-                <span className="text-ink-soft shrink-0">{isOpen ? '▲' : '▼'}</span>
+                <svg
+                  className={[
+                    'shrink-0 size-4 text-label-3 transition-transform duration-200',
+                    isOpen ? 'rotate-90' : '',
+                  ].join(' ')}
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden
+                >
+                  <path
+                    d="M6 3.5L10.5 8L6 12.5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
 
               {isOpen && (
-                <div className="flex flex-col gap-4 mt-4 pt-4 border-t-2 border-line">
+                <div className="flex flex-col gap-5 px-4 pb-5 pt-1 animate-fade">
                   <div>
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-ink-soft mb-1.5">
-                      Nasıl oynanır
-                    </h3>
-                    <ol className="flex flex-col gap-1.5 text-sm">
+                    <h3 className="text-overline uppercase text-label-3 mb-2">Nasıl oynanır</h3>
+                    <ol className="flex flex-col gap-2 text-callout">
                       {r.steps.map((step, i) => (
-                        <li key={i} className="flex gap-2">
-                          <span className="font-extrabold text-coral shrink-0">{i + 1}.</span>
+                        <li key={i} className="flex gap-2.5">
+                          <span className="nums text-label-3 shrink-0 tabular-nums">{i + 1}.</span>
                           <span>{step}</span>
                         </li>
                       ))}
@@ -224,13 +241,11 @@ export default function Kurallar() {
                   </div>
 
                   <div>
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-ink-soft mb-1.5">
-                      Puanlama
-                    </h3>
-                    <ul className="flex flex-col gap-1 text-sm">
+                    <h3 className="text-overline uppercase text-label-3 mb-2">Puanlama</h3>
+                    <ul className="flex flex-col gap-1.5 text-callout">
                       {r.scoring.map((sc, i) => (
-                        <li key={i} className="flex gap-2">
-                          <span aria-hidden className="shrink-0">
+                        <li key={i} className="flex gap-2.5">
+                          <span aria-hidden className="shrink-0 text-label-4">
                             •
                           </span>
                           <span>{sc}</span>
@@ -240,14 +255,21 @@ export default function Kurallar() {
                   </div>
 
                   {r.gotchas && (
-                    <div className="rounded-2xl bg-amber-soft border-2 border-amber/50 p-3">
-                      <h3 className="text-xs font-bold uppercase tracking-widest mb-1.5">
+                    <div
+                      className="rounded-md p-3.5"
+                      style={{
+                        background: 'color-mix(in srgb, var(--color-warn) 10%, transparent)',
+                      }}
+                    >
+                      <h3 className="text-overline uppercase text-warn mb-2">
                         Sık karıştırılanlar
                       </h3>
-                      <ul className="flex flex-col gap-1.5 text-sm">
+                      <ul className="flex flex-col gap-1.5 text-callout">
                         {r.gotchas.map((g, i) => (
-                          <li key={i} className="flex gap-2">
-                            <span aria-hidden className="shrink-0 text-ink-faint">·</span>
+                          <li key={i} className="flex gap-2.5">
+                            <span aria-hidden className="shrink-0 text-label-4">
+                              ·
+                            </span>
                             <span>{g}</span>
                           </li>
                         ))}
@@ -256,7 +278,7 @@ export default function Kurallar() {
                   )}
 
                   {r.source && (
-                    <p className="text-xs text-ink-soft font-semibold">Kaynak: {r.source}</p>
+                    <p className="text-footnote text-label-3">Kaynak: {r.source}</p>
                   )}
                 </div>
               )}

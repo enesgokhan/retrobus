@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { submitPollResponse, type Poll, type SubmitError } from '../lib/anon'
 import StageHeader from '../components/StageHeader'
-import StageEmpty from '../components/StageEmpty'
+import Empty from '../components/ui/Empty'
+import Alert from '../components/ui/Alert'
 import type { Stage } from '../lib/types'
 
 const ERR: Record<SubmitError, string> = {
@@ -73,7 +74,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
 
   if (!polls.length) {
     return (
-      <StageEmpty
+      <Empty
         icon="📊"
         title={isHost ? 'Henüz anket yok' : 'Anket bekleniyor'}
         body={
@@ -89,7 +90,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
   const allAnswered = openPolls.length > 0 && openPolls.every((x) => answered[x.id])
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-4">
+    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
       <StageHeader
         phase={openPolls.length ? 'Oylama' : 'Sonuçlar'}
         instruction={
@@ -103,9 +104,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
       />
 
       {error && (
-        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
-          {error}
-        </p>
+        <Alert>{error}</Alert>
       )}
       {polls.map((poll) => {
         const tally = responses[poll.id] ?? []
@@ -125,7 +124,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
 
         return (
           <section key={poll.id} className="card flex flex-col gap-3">
-            <h3 className={presenter ? 'text-3xl font-extrabold' : 'text-lg font-extrabold'}>{poll.question}</h3>
+            <h3 className={presenter ? 'text-title-1' : 'text-headline'}>{poll.question}</h3>
 
             <div className={scaleMax ? 'flex flex-wrap gap-2' : 'flex flex-col gap-2'}>
               {labels.map((label, i) => {
@@ -138,7 +137,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
                   <button
                     key={choice}
                     className={[
-                      'relative overflow-hidden rounded-2xl border-2 border-line text-left font-semibold',
+                      'relative overflow-hidden rounded-2xl border-2 border-sep text-left font-semibold',
                       scaleMax ? 'px-5 py-3 min-w-14 text-center' : 'px-4 py-3',
                       canAnswer ? 'hover:border-coral' : 'cursor-default',
                     ].join(' ')}
@@ -155,7 +154,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
                     <span className="relative flex items-center justify-between gap-3">
                       <span>{label}</span>
                       {showResults && (
-                        <span className="text-sm text-ink-soft tabular-nums">
+                        <span className="text-subhead text-label-2 tabular-nums">
                           {count} · {pct}%
                         </span>
                       )}
@@ -165,7 +164,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
               })}
             </div>
 
-            <p className="text-xs font-semibold text-ink-soft">
+            <p className="text-footnote font-semibold text-label-2">
               {poll.state === 'open'
                 ? isDone
                   ? 'Cevabın kaydedildi.'

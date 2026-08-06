@@ -32,7 +32,7 @@ export default function BreakStage({ stage, presenter = false }: { stage: Stage;
   const s = left == null ? null : left % 60
 
   return (
-    <div className="w-full flex flex-col items-center justify-center gap-6 py-10 text-center">
+    <div className="w-full flex-1 flex flex-col items-center justify-center gap-6 py-10 text-center">
       <div className={presenter ? 'text-[9rem] leading-none' : 'text-8xl leading-none'} aria-hidden>
         {over ? '👋' : '☕'}
       </div>
@@ -40,7 +40,7 @@ export default function BreakStage({ stage, presenter = false }: { stage: Stage;
       {left != null ? (
         <div
           className={[
-            'font-extrabold tabular-nums leading-none accent-text',
+            'nums leading-none text-[--tint]',
             presenter ? 'text-[10rem]' : 'text-7xl',
             over ? 'animate-pulse' : '',
           ].join(' ')}
@@ -53,7 +53,7 @@ export default function BreakStage({ stage, presenter = false }: { stage: Stage;
         // because it has not started counting yet.
         <div
           className={[
-            'font-extrabold tabular-nums leading-none text-ink-soft/50',
+            'font-semibold tabular-nums leading-none text-label-2/50',
             presenter ? 'text-[10rem]' : 'text-7xl',
           ].join(' ')}
         >
@@ -61,7 +61,7 @@ export default function BreakStage({ stage, presenter = false }: { stage: Stage;
         </div>
       ) : null}
 
-      <p className={presenter ? 'text-3xl text-ink-soft font-semibold' : 'text-lg text-ink-soft font-semibold'}>
+      <p className={presenter ? 'text-title-1 text-label-2' : 'text-headline text-label-2'}>
         {over
           ? 'Süre doldu — geri dönüyoruz.'
           : left == null && planned

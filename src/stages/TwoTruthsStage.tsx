@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import StageHeader from '../components/StageHeader'
+import Alert from '../components/ui/Alert'
 import type { Member, Stage } from '../lib/types'
 
 interface Entry {
@@ -135,15 +136,15 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
   // --- authoring phase ---
   const authoringCard = (
       <div className="card w-full max-w-2xl flex flex-col gap-3">
-        <h3 className="font-extrabold">Üç cümle yaz — biri yalan olsun</h3>
+        <h3 className="font-semibold">Üç cümle yaz — biri yalan olsun</h3>
         {([1, 2, 3] as const).map((n) => (
           <label key={n} className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setForm((f) => ({ ...f, lie: n }))}
               className={[
-                'shrink-0 size-9 rounded-full border-2 font-bold text-sm transition',
-                form.lie === n ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line text-ink-soft',
+                'shrink-0 size-9 rounded-full border-2 font-bold text-subhead transition',
+                form.lie === n ? 'bg-[--tint] text-[--tint-ink]' : 'border-sep text-label-2',
               ].join(' ')}
               title="Yalan bu"
               aria-label={`${n}. cümle yalan`}
@@ -151,7 +152,7 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
               {form.lie === n ? '🤥' : n}
             </button>
             <input
-              className="input-blob flex-1"
+              className="field flex-1"
               value={form[`s${n}` as 's1' | 's2' | 's3']}
               onChange={(e) => setForm((f) => ({ ...f, [`s${n}`]: e.target.value }))}
               placeholder={`${n}. cümle`}
@@ -159,11 +160,11 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
             />
           </label>
         ))}
-        <p className="text-xs font-semibold text-ink-soft">
+        <p className="text-footnote font-semibold text-label-2">
           Soldaki yuvarlağa basarak hangisinin yalan olduğunu işaretle. Kimse göremez.
         </p>
-        {error && <p className="text-sm font-semibold text-coral-deep">{error}</p>}
-        <button className="btn-coral self-start" onClick={submitMine} disabled={busy}>
+        {error && <p className="text-subhead font-semibold text-bad">{error}</p>}
+        <button className="btn-filled self-start" onClick={submitMine} disabled={busy}>
           Gönder
         </button>
       </div>
@@ -192,7 +193,7 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
   })()
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-4">
+    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
       <StageHeader
         {...header}
         presenter={presenter}
@@ -204,13 +205,11 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
         }
       />
       {error && (
-        <p role="alert" className="rounded-2xl bg-rose-soft text-coral-deep px-4 py-2.5 text-sm font-semibold">
-          {error}
-        </p>
+        <Alert>{error}</Alert>
       )}
 
       {isOpen && mine && !current && (
-        <p className="text-center text-ink-soft font-semibold">
+        <p className="text-center text-label-2 font-semibold">
           Cümlelerin kayıtlı. {entries.length}/{members.length} kişi yazdı — şoförü bekliyoruz.
         </p>
       )}
@@ -228,21 +227,21 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
           onGuess={(i) => guess(current.id, i)}
         />
       ) : (
-        !isOpen && <p className="text-center text-ink-soft">Kart seçilmesini bekliyoruz.</p>
+        !isOpen && <p className="text-center text-label-2">Kart seçilmesini bekliyoruz.</p>
       )}
 
       {isOpen && !presenter && !mine && isHost && authoringCard}
 
       {isHost && !presenter && (
         <section className="card flex flex-col gap-2">
-          <h4 className="font-bold text-sm">Kart seç</h4>
+          <h4 className="font-bold text-subhead">Kart seç</h4>
           <div className="flex flex-wrap gap-2">
             {entries.map((e) => (
               <button
                 key={e.id}
                 className={[
-                  'rounded-full px-3 py-1.5 text-sm font-bold border-2',
-                  e.id === currentId ? '[background:var(--stage-accent)] text-[var(--stage-accent-ink)] [border-color:var(--stage-accent-deep)]' : 'border-line',
+                  'rounded-full px-3 py-1.5 text-subhead font-bold border-2',
+                  e.id === currentId ? 'bg-[--tint] text-[--tint-ink]' : 'border-sep',
                   e.revealed ? 'opacity-50' : '',
                 ].join(' ')}
                 onClick={() => setCurrent(e.id)}
@@ -251,13 +250,13 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
               </button>
             ))}
             {currentId && (
-              <button className="btn-ghost text-sm" onClick={() => setCurrent(null)}>
+              <button className="btn-gray text-subhead" onClick={() => setCurrent(null)}>
                 Kartı kaldır
               </button>
             )}
           </div>
           {current && !current.revealed && (
-            <button className="btn-coral self-start" onClick={() => reveal(current.id)}>
+            <button className="btn-filled self-start" onClick={() => reveal(current.id)}>
               🤥 Yalanı aç ve puanla ({guesses.filter((g) => g.entry_id === current.id).length} tahmin)
             </button>
           )}
@@ -293,7 +292,7 @@ function EntryCard({
 
   return (
     <section className="card flex flex-col gap-3">
-      <h3 className={presenter ? 'text-3xl font-extrabold' : 'text-xl font-extrabold'}>
+      <h3 className={presenter ? 'text-title-1' : 'text-title-3'}>
         {name} — hangisi yalan?
       </h3>
       {statements.map((s, i) => {
@@ -308,7 +307,7 @@ function EntryCard({
             key={n}
             className={[
               'text-left rounded-2xl border-2 px-4 py-3 transition',
-              isLie ? 'bg-rose-soft border-coral' : revealed ? 'bg-teal-soft/50 border-teal' : 'border-line',
+              isLie ? 'bg-rose-soft border-coral' : revealed ? 'bg-teal-soft/50 border-teal' : 'border-sep',
               picked && !revealed ? 'border-coral' : '',
               canGuess ? 'hover:border-coral cursor-pointer' : 'cursor-default',
             ].join(' ')}
@@ -316,14 +315,14 @@ function EntryCard({
             disabled={!canGuess}
           >
             <div className="flex items-start justify-between gap-3">
-              <span className={presenter ? 'text-xl' : ''}>
+              <span className={presenter ? 'text-title-3' : ''}>
                 {revealed && (isLie ? '🤥 ' : '✅ ')}
                 {s}
               </span>
-              {picked && !revealed && <span className="text-xs font-bold text-coral shrink-0">senin tahminin</span>}
+              {picked && !revealed && <span className="text-footnote font-bold text-coral shrink-0">senin tahminin</span>}
             </div>
             {revealed && votes.length > 0 && (
-              <p className="text-xs font-semibold text-ink-soft mt-1.5">
+              <p className="text-footnote font-semibold text-label-2 mt-1.5">
                 {votes.map((v) => nameOf(v.guesser_member_id)).join(', ')}
               </p>
             )}
@@ -331,10 +330,10 @@ function EntryCard({
         )
       })}
       {isMine && !revealed && (
-        <p className="text-xs font-semibold text-ink-soft">Bu senin kartın — tahmin edemezsin.</p>
+        <p className="text-footnote font-semibold text-label-2">Bu senin kartın — tahmin edemezsin.</p>
       )}
       {!revealed && !isMine && !myGuess && !presenter && (
-        <p className="text-xs font-semibold text-ink-soft">Bir cümleye bas.</p>
+        <p className="text-footnote font-semibold text-label-2">Bir cümleye bas.</p>
       )}
     </section>
   )
