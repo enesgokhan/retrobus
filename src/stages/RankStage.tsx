@@ -122,7 +122,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
 
   if (!items.length) {
     return (
-      <div className="w-full max-w-2xl mx-auto flex-1 flex flex-col gap-3">
+      <div className="w-full max-w-2xl flex-1 flex flex-col gap-3">
         <Empty
           icon="🔢"
           title={isHost ? 'Sıralanacak bir şey yok' : 'Liste hazırlanıyor'}
@@ -152,7 +152,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto flex-1 flex flex-col gap-4">
+    <div className="w-full max-w-2xl flex-1 flex flex-col gap-4">
       {error && (
         <Alert>{error}</Alert>
       )}
@@ -200,7 +200,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
           )}
         </section>
       ) : mySubmitted ? (
-        <p className="text-center font-bold text-teal">
+        <p className="font-bold text-teal">
           Sıralaman kaydedildi.
         </p>
       ) : isOpen && !presenter ? (
@@ -241,14 +241,14 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
 
         </section>
       ) : (
-        <p className="text-center text-label-2">
+        <p className="text-label-2">
           {presenter ? `${subs.length} kişi sıraladı…` : 'Bu durak henüz açılmadı.'}
         </p>
       )}
 
       {isHost && !presenter && !revealed && (
         <button
-          className="btn-filled self-center"
+          className="btn-filled self-start"
           onClick={async () => {
             const { error: e } = await supabase.rpc('reveal_ranking', { p_stage_id: stage.id })
             if (e) setError('Açılamadı.')

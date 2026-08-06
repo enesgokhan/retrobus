@@ -31,10 +31,35 @@ interface Snap {
  * Buradaki her satır, bir sorun yaşandığında bana gönderilebilecek somut bir
  * gerçek. Hiçbiri sır değil: oturum jetonu gösterilmiyor, yalnızca geçerliliği.
  */
+type Probe = 'deneniyor…' | 'ok' | 'engelli'
+
 export default function Tani() {
   const { member } = useAuth()
   const [snap, setSnap] = useState<Snap | null>(null)
   const [rpcOk, setRpcOk] = useState<string>('deneniyor…')
+  const [probe, setProbe] = useState<Probe>('deneniyor…')
+
+  // The active websocket test. 10s is generous: a working socket joins in well
+  // under a second, and a blocked one usually fails fast — the wait is for the
+  // network that neither connects nor refuses.
+  useEffect(() => {
+    let done = false
+    const ch = supabase.channel(`tani-probe-${Math.round(performance.now())}`)
+    const finish = (r: Probe) => {
+      if (done) return
+      done = true
+      setProbe(r)
+      supabase.removeChannel(ch)
+    }
+    const timer = setTimeout(() => finish('engelli'), 5000)
+    ch.subscribe((st) => {
+      if (st === 'SUBSCRIBED') { clearTimeout(timer); finish('ok') }
+      else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED') {
+        clearTimeout(timer); finish('engelli')
+      }
+    })
+    return () => { done = true; clearTimeout(timer); supabase.removeChannel(ch) }
+  }, [])
 
   useEffect(() => {
     async function read() {
@@ -112,18 +137,24 @@ export default function Tani() {
             {/* This page opens no channels of its own, so the registry has
                 nothing to report here. Saying "canlı" in that case would be a
                 guess — and this is the one screen that must never guess. */}
+            {/* This page opens no channels of its own, and the Realtime client
+                does not connect a socket until something subscribes. Treating
+                "not connected" as a fault here meant the diagnostics screen —
+                the one place you go to find out whether anything is wrong —
+                reported a red HAYIR and blamed your proxy while the app was
+                perfectly healthy. A screen that cries wolf is worse than no
+                screen. Nothing here is red unless something is actually
+                broken. */}
             <Row
               k="mod"
               v={
                 snap.channels.length === 0
-                  ? snap.socketConnected
-                    ? 'bu sayfada kanal yok (websocket açık)'
-                    : 'bu sayfada kanal yok (websocket KAPALI)'
+                  ? 'bu sayfada canlı bağlantı gerekmiyor'
                   : snap.mode === 'live'
                     ? 'canlı (websocket)'
                     : 'yoklama (websocket yok)'
               }
-              bad={snap.channels.length === 0 ? !snap.socketConnected : snap.mode !== 'live'}
+              bad={snap.channels.length > 0 && snap.mode !== 'live'}
             />
             {snap.channels.length > 0 && (
               <Row
@@ -132,11 +163,26 @@ export default function Tani() {
                 bad={snap.staleMs > 20000}
               />
             )}
-            <Row k="websocket bağlı" v={snap.socketConnected ? 'evet' : 'HAYIR'} bad={!snap.socketConnected} />
+            <Row
+              k="websocket testi"
+              v={
+                probe === 'ok'
+                  ? 'başarılı — bu ağ websocket destekliyor'
+                  : probe === 'engelli'
+                    ? 'BAŞARISIZ — websocket KAPALI'
+                    : 'deneniyor…'
+              }
+              bad={probe === 'engelli'}
+            />
+            <Row
+              k="websocket bağlı"
+              v={snap.socketConnected ? 'evet' : 'HAYIR'}
+              bad={probe === 'engelli'}
+            />
             <Row k="websocket durumu" v={snap.socketState} />
             <Row k="tarayıcı çevrimiçi" v={snap.online ? 'evet' : 'HAYIR'} bad={!snap.online} />
             <Row k="veritabanı (düz HTTP)" v={rpcOk} bad={rpcOk.startsWith('HATA')} />
-            {!snap.socketConnected && (
+            {probe === 'engelli' && (
               <p className="text-footnote text-label-2 mt-3 leading-relaxed">
                 Websocket kurulamıyor — büyük olasılıkla ağdaki bir proxy engelliyor. Uygulama bu
                 durumda da çalışır: ekranlar birkaç saniyede bir kendini yeniler.

@@ -98,7 +98,7 @@ export default function Profil() {
         <section className="flex flex-col gap-3">
           <h2 className="text-overline uppercase text-label-3 px-1">Kodunu değiştir</h2>
           <input
-            className="field text-center tracking-widest nums"
+            className="field text-center tracking-widest nums placeholder:tracking-normal"
             value={current}
             onChange={(e) => setCurrent(e.target.value.replace(/\D/g, '').slice(0, 6))}
             placeholder="Mevcut kod"
@@ -106,7 +106,7 @@ export default function Profil() {
             inputMode="numeric"
           />
           <input
-            className="field text-center tracking-widest nums"
+            className="field text-center tracking-widest nums placeholder:tracking-normal"
             value={next}
             onChange={(e) => setNext(e.target.value.replace(/\D/g, '').slice(0, 6))}
             placeholder="Yeni 6 haneli kod"

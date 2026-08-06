@@ -4,6 +4,7 @@ import { submitCard } from '../lib/anon'
 import { useStageData } from '../lib/useStageData'
 import StageHeader from '../components/StageHeader'
 import Alert from '../components/ui/Alert'
+import Empty from '../components/ui/Empty'
 import type { Stage } from '../lib/types'
 
 const SIZES = ['text-headline', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl']
@@ -53,7 +54,7 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col items-center gap-5">
+    <div className="w-full max-w-5xl flex-1 flex flex-col gap-5">
       <StageHeader
         phase={isOpen ? 'Yazma zamanı' : 'Kapandı'}
         instruction={
@@ -91,9 +92,11 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
       )}
 
       {words.length === 0 ? (
-        <p className="text-label-2">
-          {isOpen ? 'Kelimeler toplanıyor…' : 'Henüz kelime yok.'}
-        </p>
+        <Empty
+          icon="☁️"
+          title={isOpen ? 'Kelimeler toplanıyor' : 'Henüz kelime yok'}
+          body={isOpen ? 'Herkes yazdıkça bulut burada büyüyecek.' : 'Bu durakta kimse kelime yazmamış.'}
+        />
       ) : (
         <div
           className={[

@@ -64,7 +64,7 @@ interface FeedbackRow {
 export default function Yearbook() {
   const { member } = useAuth()
   // the keepsake outlives the meeting it describes
-  const { meeting, stages } = useMeeting(undefined, { includeArchived: true })
+  const { meeting, stages, loading: meetingLoading } = useMeeting(undefined, { includeArchived: true })
   // A keepsake with no date on it is minutes. It must be the date of the
   // MEETING, not of the day it happens to be opened — this page is explicitly
   // built to outlive its meeting, so "today" would be wrong every time after.
@@ -92,10 +92,18 @@ export default function Yearbook() {
   const stageKey = stageIds.join(',')
 
   useEffect(() => {
+    // Only stop loading once we KNOW there is nothing to load. Bailing out
+    // while the meeting and its stages are merely still in flight painted a
+    // complete but entirely empty keepsake — "Retro Yıllığı" with no people,
+    // no cards, nothing — and then popped the real contents in a second or two
+    // later. A reader sees a broken memento; the rehearsal, which waits for
+    // the loading state to clear, saw an empty page and believed it.
+    if (meetingLoading) return
     if (!meeting || !stageIds.length) {
       setLoading(false)
       return
     }
+    setLoading(true)
     let cancelled = false
     ;(async () => {
       const [aw, lb, cd, vt, ac, pl, hl, ms, fb, mem] = await Promise.all([
@@ -149,7 +157,7 @@ export default function Yearbook() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on stageKey
     // deliberately: `stages` gets a new array identity on every realtime
     // refetch, which would re-run this whole ten-query load continuously.
-  }, [meeting?.id, stageKey])
+  }, [meeting?.id, stageKey, meetingLoading])
 
   const nameOf = (id: string | null) =>
     id ? (members.find((m) => m.id === id)?.display_name ?? '—') : 'sahibi yok'
@@ -309,13 +317,11 @@ export default function Yearbook() {
     <AppShell title="Retro Yıllığı" subtitle={`${meeting.title} · ${meetingDate}`} width="reading">
       <div className="flex flex-col gap-10">
 
-      <section className="card flex flex-wrap items-center gap-3 print:hidden">
-        <Button variant="filled" onClick={download}>
-          Markdown indir
-        </Button>
+      <section className="flex flex-wrap items-center gap-3 print:hidden">
+        <Button onClick={download}>Markdown indir</Button>
         <Button onClick={() => window.print()}>Yazdır / PDF</Button>
         {isHost && (
-          <label className="flex items-center gap-2 text-subhead text-label-2 ml-auto">
+          <label className="flex items-center gap-2 text-subhead text-label-2">
             <input
               type="checkbox"
               className="size-4 accent-[var(--tint)]"
@@ -420,7 +426,7 @@ export default function Yearbook() {
         if (!mine.length) return null
         return (
           <section key={st.id} className="flex flex-col gap-2">
-            <h2 className="text-title-3">📌 {st.title}</h2>
+            <h2 className="text-title-3">{st.title}</h2>
             <ul className="flex flex-col gap-1">
               {mine.map((c) => (
                 <li key={c.id} className="flex items-start gap-2 border-b border-sep py-1.5">

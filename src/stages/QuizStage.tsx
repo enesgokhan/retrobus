@@ -176,7 +176,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
   })()
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
+    <div className="w-full max-w-4xl flex-1 flex flex-col gap-4">
       <StageHeader
         {...header}
         presenter={presenter}
@@ -276,7 +276,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
           )}
 
           {myAnswer && !revealed && (
-            <p className="text-subhead font-bold text-teal text-center">Cevabın kaydedildi — hız da sayılıyor.</p>
+            <p className="text-subhead font-bold text-teal">Cevabın kaydedildi — hız da sayılıyor.</p>
           )}
 
           {isHost && !presenter && (

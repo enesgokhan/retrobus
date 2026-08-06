@@ -130,7 +130,7 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
   const allDone = dims.every((d) => done.has(d.key))
 
   return (
-    <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col gap-6">
+    <div className="w-full max-w-3xl flex-1 flex flex-col gap-6">
       <StageHeader
         phase={showResults ? 'Sonuçlar' : 'Nabız zamanı'}
         instruction={

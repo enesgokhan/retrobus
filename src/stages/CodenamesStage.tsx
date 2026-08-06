@@ -213,7 +213,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
   // ---------- no game ----------
   if (!game) {
     return (
-      <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
+      <div className="w-full max-w-4xl flex-1 flex flex-col gap-4">
         <StageHeader
           phase="Kelime Ajanları"
           instruction={isHost ? 'Oyunu kur, sonra herkes takımını seçsin.' : 'Oyun kuruluyor.'}
@@ -221,7 +221,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
           presenter={presenter}
         />
         {isHost && !presenter && (
-          <button className="btn-filled self-center text-headline" onClick={newGame}>
+          <button className="btn-filled btn-lg self-start" onClick={newGame}>
             Yeni oyun kur
           </button>
         )}
@@ -245,7 +245,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       : !blueOp ? 'Mavi takıma en az bir operatör lazım'
       : null
     return (
-      <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
+      <div className="w-full max-w-4xl flex-1 flex flex-col gap-4">
         <StageHeader
           phase="Takım seçimi"
           instruction={
@@ -308,11 +308,11 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
             )
           })}
         </div>
-        <p className="text-footnote font-semibold text-label-2 text-center">
+        <p className="text-footnote font-semibold text-label-2">
           {canDeal ? 'Takımlar hazır — dağıtabilirsin.' : `${missing}.`}
         </p>
         {isHost && !presenter && (
-          <button className="btn-filled self-center text-headline" onClick={deal} disabled={!canDeal}>
+          <button className="btn-filled btn-lg self-start" onClick={deal} disabled={!canDeal}>
             Tahtayı dağıt
           </button>
         )}
@@ -363,7 +363,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
   })()
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col gap-3">
+    <div className="w-full max-w-5xl flex-1 flex flex-col gap-3">
       <StageHeader
         {...header}
         presenter={presenter}
@@ -618,7 +618,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
       )}
 
       {seeingKey && !presenter && (
-        <p className="text-footnote font-semibold text-grape text-center">
+        <p className="text-footnote font-semibold text-grape">
           Anahtarı görüyorsun. Takımının ne gördüğünü kontrol etmek için “Takım görünümü”ne bas.
         </p>
       )}

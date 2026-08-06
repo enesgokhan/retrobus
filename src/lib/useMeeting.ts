@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from './auth'
 import { supabase } from './supabase'
 import { liveChannel } from './realtime'
@@ -29,6 +29,11 @@ export function useMeeting(meetingId?: string, opts?: { includeArchived?: boolea
   const [ended, setEnded] = useState(false)
   const [stages, setStages] = useState<Stage[]>([])
   const [loading, setLoading] = useState(true)
+  /**
+   * Have we ever completed a read? Until we have, "no meeting" is not a fact
+   * about the world, it is just something we have not learned yet.
+   */
+  const settled = useRef(false)
 
   useEffect(() => {
     if (!member) return
@@ -54,7 +59,14 @@ export function useMeeting(meetingId?: string, opts?: { includeArchived?: boolea
       // "waiting for the driver" screen mid-sentence. Keep what we had and try
       // again on the next tick; the polling fallback guarantees there is one.
       if (mErr) {
-        if (!cancelled) setLoading(false)
+        // Keeping the data was only half the fix. Dropping `loading` here let
+        // every screen commit to the empty answer: the console rendered "no
+        // meeting — create one" while a meeting was live, the room fell back
+        // to the waiting screen, and the yearbook painted an empty keepsake.
+        // One blipped read on first paint was enough. Until a read actually
+        // succeeds we stay loading, and the realtime/polling retry gets
+        // another go.
+        if (!cancelled && settled.current) setLoading(false)
         return
       }
       setMeeting((m as Meeting) ?? null)
@@ -80,7 +92,10 @@ export function useMeeting(meetingId?: string, opts?: { includeArchived?: boolea
       } else {
         setStages([])
       }
-      if (!cancelled) setLoading(false)
+      if (!cancelled) {
+        settled.current = true
+        setLoading(false)
+      }
     }
 
     load()

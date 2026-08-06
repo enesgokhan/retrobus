@@ -338,7 +338,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
 
   if (!round) {
     return (
-      <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col gap-6">
+      <div className="w-full max-w-3xl flex-1 flex flex-col gap-6">
         <Empty
           icon="🤫"
           title={isHost ? 'Henüz bir tur yok' : 'Tur hazırlanıyor'}
@@ -368,7 +368,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
   })()
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
+    <div className="w-full max-w-4xl flex-1 flex flex-col gap-4">
       <StageHeader
         {...header}
         presenter={presenter}
@@ -477,7 +477,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                 )
               })}
             {myPick && round.phase === 'guess' && (
-              <p className="text-subhead font-bold text-teal text-center">Seçimin kaydedildi.</p>
+              <p className="text-subhead font-bold text-teal">Seçimin kaydedildi.</p>
             )}
           </div>
         )}

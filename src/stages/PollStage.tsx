@@ -90,7 +90,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
   const allAnswered = openPolls.length > 0 && openPolls.every((x) => answered[x.id])
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
+    <div className="w-full max-w-4xl flex-1 flex flex-col gap-4">
       <StageHeader
         phase={openPolls.length ? 'Oylama' : 'Sonuçlar'}
         instruction={

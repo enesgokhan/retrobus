@@ -136,7 +136,6 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
   // --- authoring phase ---
   const authoringCard = (
       <div className="card w-full max-w-2xl flex flex-col gap-3">
-        <h3 className="font-semibold">Üç cümle yaz — biri yalan olsun</h3>
         {([1, 2, 3] as const).map((n) => (
           <label key={n} className="flex items-center gap-2">
             <button
@@ -174,10 +173,14 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
   // form AND their controls: the card picker used to live past this early return,
   // so the host could not start the round until they had played themselves —
   // and if they chose not to play, the stage could not be run at all.
-  if (isOpen && !presenter && !mine && !isHost) return authoringCard
+  /** everyone still writing sees the form — host included, see above */
+  const authoring = isOpen && !presenter && !mine
 
   // --- waiting / guessing / reveal ---
   const header = (() => {
+    if (authoring) {
+      return { phase: 'Yazma zamanı', instruction: 'Üç cümle yaz — biri yalan olsun.', waiting: false }
+    }
     if (!current) {
       return isOpen && mine
         ? { phase: 'Cümlelerin kayıtlı', instruction: 'Kart seçilmesini bekliyoruz.', waiting: true }
@@ -193,7 +196,7 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
   })()
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
+    <div className="w-full max-w-4xl flex-1 flex flex-col gap-4">
       <StageHeader
         {...header}
         presenter={presenter}
@@ -209,7 +212,7 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
       )}
 
       {isOpen && mine && !current && (
-        <p className="text-center text-label-2 font-semibold">
+        <p className="text-label-2 font-semibold">
           Cümlelerin kayıtlı. {entries.length}/{members.length} kişi yazdı — şoförü bekliyoruz.
         </p>
       )}
@@ -227,10 +230,10 @@ export default function TwoTruthsStage({ stage, presenter = false }: { stage: St
           onGuess={(i) => guess(current.id, i)}
         />
       ) : (
-        !isOpen && <p className="text-center text-label-2">Kart seçilmesini bekliyoruz.</p>
+        !isOpen && <p className="text-label-2">Kart seçilmesini bekliyoruz.</p>
       )}
 
-      {isOpen && !presenter && !mine && isHost && authoringCard}
+      {authoring && authoringCard}
 
       {isHost && !presenter && (
         <section className="card flex flex-col gap-2">

@@ -87,7 +87,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
+    <div className="w-full max-w-4xl flex-1 flex flex-col gap-4">
       <StageHeader
         phase={anyRevealed ? 'Görevler açıldı' : 'Görev sende'}
         instruction={
@@ -114,7 +114,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
               </p>
             </section>
           ) : (
-            <p className="text-center text-label-2">
+            <p className="text-label-2">
               {isHost ? 'Görevler henüz dağıtılmadı.' : 'Sana görev atanmamış.'}
             </p>
           )}
@@ -206,7 +206,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
             ))}
           </div>
           {isHost && !presenter && (
-            <button className="btn-filled self-center" onClick={reveal}>
+            <button className="btn-filled self-start" onClick={reveal}>
               Başarılanları puanla (+800)
             </button>
           )}

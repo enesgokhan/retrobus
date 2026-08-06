@@ -120,7 +120,7 @@ export default function FeedbackWallStage({
   // --- toplama aşaması ---
   if (isOpen) {
     return (
-      <div className="w-full max-w-2xl mx-auto flex-1 flex flex-col gap-4">
+      <div className="w-full max-w-2xl flex-1 flex flex-col gap-4">
         <StageHeader
           phase="Yazma zamanı"
           instruction={
@@ -132,10 +132,7 @@ export default function FeedbackWallStage({
           presenter={presenter}
         />
         {!presenter && (
-          <div className="card flex flex-col gap-3">
-            <h3 className="font-semibold">
-              {kudosOnly ? 'Kime teşekkür etmek istersin?' : 'Kim hakkında yazıyorsun?'}
-            </h3>
+          <div className="card w-full max-w-2xl flex flex-col gap-3">
             {/* Was a native <select>: the one OS-drawn control in an app made
                 entirely of rounded blobs, on the most personal screen of the
                 night. For nine known names, chips are also simply faster. */}
@@ -218,7 +215,7 @@ export default function FeedbackWallStage({
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex-1 flex flex-col gap-4">
+    <div className="w-full max-w-5xl flex-1 flex flex-col gap-4">
       {isHost && !presenter && (
         <section className="card flex flex-col gap-2">
           <h4 className="font-bold text-subhead">Sırayla göster</h4>
@@ -259,7 +256,7 @@ export default function FeedbackWallStage({
           body="Yazdıkların hep birlikte, karışık sırayla açılacak — kimin ne zaman yazdığı görünmeyecek."
         />
       ) : byTarget.size === 0 ? (
-        <p className="text-center text-label-2">Gösterilecek bir şey yok.</p>
+        <p className="text-label-2">Gösterilecek bir şey yok.</p>
       ) : (
         [...byTarget.entries()].map(([memberId, list]) => (
           <section key={memberId} className="flex flex-col gap-2">

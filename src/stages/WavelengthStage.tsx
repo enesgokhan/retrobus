@@ -323,7 +323,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
 
   if (!round) {
     return (
-      <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
+      <div className="w-full max-w-4xl flex-1 flex flex-col gap-4">
         <StageHeader
           phase="Frekans"
           instruction={isHost ? 'Takımları kur ve ilk turu başlat.' : 'Tur hazırlanıyor.'}
@@ -379,7 +379,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     : null
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col gap-4">
+    <div className="w-full max-w-4xl flex-1 flex flex-col gap-4">
       <StageHeader
         {...header}
         presenter={presenter}
@@ -517,7 +517,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
               onChange={(e) => setDial(Number(e.target.value))}
               className="w-full accent-coral h-6"
             />
-            <button className="btn-filled self-center text-headline" onClick={sendGuess}>
+            <button className="btn-filled btn-lg self-start" onClick={sendGuess}>
               {dial} olarak gönder
             </button>
           </div>
