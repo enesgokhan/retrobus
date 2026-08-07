@@ -120,7 +120,7 @@ export default function LeaderboardStage({ stage, presenter = false }: { stage: 
               : champion.display_name}
           </div>
           <div
-            className={['nums text-[--tint] leading-none', presenter ? 'text-[7rem]' : 'text-display'].join(
+            className={['nums text-(--tint) leading-none', presenter ? 'text-[7rem]' : 'text-display'].join(
               ' ',
             )}
           >

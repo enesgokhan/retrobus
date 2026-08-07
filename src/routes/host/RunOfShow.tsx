@@ -128,7 +128,7 @@ export default function RunOfShow({
 
             <span className="min-w-0 flex-1">
               <span
-                className={['block text-headline truncate', live ? 'text-[--tint]' : ''].join(' ')}
+                className={['block text-headline truncate', live ? 'text-(--tint)' : ''].join(' ')}
               >
                 {stage.title}
               </span>
@@ -157,7 +157,7 @@ export default function RunOfShow({
             {!live && (
               <button
                 className="shrink-0 size-8 grid place-items-center rounded-full text-label-3
-                  hover:text-[--tint] hover:bg-fill-2 active:scale-90
+                  hover:text-(--tint) hover:bg-fill-2 active:scale-90
                   transition-[color,background-color,transform] duration-150"
                 onClick={(e) => {
                   e.stopPropagation()

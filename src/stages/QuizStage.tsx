@@ -331,8 +331,8 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
               className={[
                 'flex items-center gap-3 rounded-sm px-3 py-2 transition-colors duration-150',
                 q.state === 'open'
-                  ? 'bg-[--color-bg-2] shadow-[inset_0_0_0_1px_var(--tint)]'
-                  : 'hover:bg-[--color-bg-2]',
+                  ? 'bg-(--color-bg-2) shadow-[inset_0_0_0_1px_var(--tint)]'
+                  : 'hover:bg-(--color-bg-2)',
               ].join(' ')}
             >
               <span className="flex-1 min-w-0">

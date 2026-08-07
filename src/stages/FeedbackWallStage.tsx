@@ -224,7 +224,7 @@ export default function FeedbackWallStage({
             <button
               className={[
                 'rounded-full px-3 py-1.5 text-subhead font-bold border-2',
-                focus === null ? 'bg-[--tint] text-[--tint-ink]' : 'border-sep',
+                focus === null ? 'bg-(--tint) text-(--tint-ink)' : 'border-sep',
               ].join(' ')}
               onClick={() => setFocus(null)}
             >
@@ -237,7 +237,7 @@ export default function FeedbackWallStage({
                   key={m.id}
                   className={[
                     'rounded-full px-3 py-1.5 text-subhead font-bold border-2',
-                    focus === m.id ? 'bg-[--tint] text-[--tint-ink]' : 'border-sep',
+                    focus === m.id ? 'bg-(--tint) text-(--tint-ink)' : 'border-sep',
                     n === 0 ? 'opacity-40' : '',
                   ].join(' ')}
                   onClick={() => setFocus(m.id)}

@@ -416,7 +416,7 @@ function CardTile({
             'shrink-0 min-w-12 h-12 px-2.5 rounded-full flex flex-col items-center justify-center',
             'leading-none nums transition-[background-color,color,transform] duration-150',
             canVote
-              ? 'cursor-pointer bg-fill-2 text-label hover:bg-[color-mix(in_srgb,var(--tint)_22%,transparent)] hover:text-[--tint] active:scale-95'
+              ? 'cursor-pointer bg-fill-2 text-label hover:bg-[color-mix(in_srgb,var(--tint)_22%,transparent)] hover:text-(--tint) active:scale-95'
               : 'bg-fill-3 text-label-2',
           ].join(' ')}
           onClick={onVote}

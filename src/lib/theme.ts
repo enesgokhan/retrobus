@@ -25,7 +25,14 @@ import type { StageKind } from './types'
 export interface StageTheme {
   /** short human label for the mood — documentation, rendered nowhere */
   mood: string
-  /** the one colour this world is allowed */
+  /**
+   * The one colour this world is allowed — as a TOKEN REFERENCE, never a hex.
+   *
+   * These used to be literal hexes copied from the dark theme, written onto
+   * `--tint` as an inline style, which beats every stylesheet rule. So the
+   * light theme's re-picked tints were unreachable inside a stop, and the
+   * finale ran #ffd60a as text on white: 1.41:1.
+   */
   tint: string
   /** text placed ON the tint; dark, because every tint is vivid */
   tintInk: string
@@ -39,17 +46,17 @@ export interface StageTheme {
 
 const T = {
   /** Tartışma: sakin, nötr. Konuşmak için, oynamak için değil. */
-  discussion: { mood: 'calm', tint: '#3d95ff', tintInk: '#03101f', weight: 'work' },
+  discussion: { mood: 'calm', tint: 'var(--color-blue)', tintInk: 'var(--ink-on-blue)', weight: 'work' },
   /** Buz kırıcı: sıcak, samimi, düşük risk. */
-  icebreaker: { mood: 'warm', tint: '#ff9f0a', tintInk: '#1a1000', weight: 'work' },
+  icebreaker: { mood: 'warm', tint: 'var(--color-orange)', tintInk: 'var(--ink-on-orange)', weight: 'work' },
   /** Oyun: canlı. Vites değişimi burada hissedilir. */
-  game: { mood: 'vivid', tint: '#bf5af2', tintInk: '#160421', weight: 'work' },
+  game: { mood: 'vivid', tint: 'var(--color-purple)', tintInk: 'var(--ink-on-purple)', weight: 'work' },
   /** Geri bildirim: bilinçli olarak yumuşak. Burası parti değil. */
-  feedback: { mood: 'soft', tint: '#ff6482', tintInk: '#1e050c', weight: 'work' },
+  feedback: { mood: 'soft', tint: 'var(--color-pink)', tintInk: 'var(--ink-on-pink)', weight: 'work' },
   /** Final: kutlama. Altın, ve bakılacak bir an. */
-  finale: { mood: 'gold', tint: '#ffd60a', tintInk: '#1a1500', weight: 'moment' },
+  finale: { mood: 'gold', tint: 'var(--color-yellow)', tintInk: 'var(--ink-on-yellow)', weight: 'moment' },
   /** Mola: sessiz, neredeyse boş. */
-  pause: { mood: 'quiet', tint: '#98989f', tintInk: '#0d0d0f', weight: 'moment' },
+  pause: { mood: 'quiet', tint: 'var(--color-gray)', tintInk: 'var(--ink-on-gray)', weight: 'moment' },
 } satisfies Record<string, StageTheme>
 
 const BY_KIND: Record<StageKind, StageTheme> = {

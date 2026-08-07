@@ -83,7 +83,7 @@ export default function StopInspector({
       <div className="flex flex-wrap items-start gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-overline uppercase text-label-3">
-            {live && <span className="size-2 rounded-full bg-[--tint]" aria-hidden />}
+            {live && <span className="size-2 rounded-full bg-(--tint)" aria-hidden />}
             {S.kind[stage.kind]}
             <span className="text-label-3">· {stateLabel}</span>
           </div>
@@ -240,7 +240,7 @@ export default function StopInspector({
 
       {!SETUP_IN_PANEL.has(stage.kind) && (
         <p className="text-footnote text-label-3 leading-relaxed">
-          Bu durağın içeriği <Link to="/oda" className="text-[--tint] underline">oda ekranında</Link>,
+          Bu durağın içeriği <Link to="/oda" className="text-(--tint) underline">oda ekranında</Link>,
           durağın kendi üzerinde kurulur — tur eklemek, öğe yazmak, takım kurmak için oraya geç.
         </p>
       )}

@@ -148,15 +148,34 @@ for (const [theme, bgHex, inkHex] of [
   console.log(`  ${pass ? 'ok  ' : 'FAIL'} ${theme.padEnd(5)} ${inkHex} on ${bgHex}  ${r.toFixed(2)}:1`)
 }
 
-// Text placed ON a stage tint (the few tinted fills that remain).
+// Text placed ON a stage tint, per theme.
+//
+// theme.ts used to store literal hexes here and this loop parsed them out with
+// a regex. Two problems: the hexes were the DARK values, so the light theme's
+// re-picked tints were unreachable inside a stop (the finale ran #ffd60a as
+// text on white, 1.41:1) — and once that was fixed to token references the
+// regex would have matched nothing and this check would have passed by
+// measuring zero pairs. It resolves tokens now, in both themes.
 console.log('\n################ tint-ink on tint ################')
 const themeSrc = readFileSync(new URL('../src/lib/theme.ts', import.meta.url), 'utf8')
-for (const m of themeSrc.matchAll(/tint:\s*'(#[0-9a-f]{6})',\s*tintInk:\s*'(#[0-9a-f]{6})'/gi)) {
-  const [, tint, ink] = m
-  const r = ratio(parse(ink), parse(tint))
-  const pass = r >= 4.5
-  if (!pass) fails++
-  console.log(`  ${pass ? 'ok  ' : 'FAIL'} ${ink} on ${tint}  ${r.toFixed(2)}:1`)
+const pairs = [...themeSrc.matchAll(
+  /tint:\s*'var\(--color-([a-z]+)\)',\s*tintInk:\s*'var\(--ink-on-([a-z]+)\)'/g,
+)]
+if (!pairs.length) {
+  console.log('  FAIL  no tint/ink pairs found in theme.ts — this check is measuring nothing')
+  fails++
+}
+for (const theme of ['dark', 'light']) {
+  for (const [, tintTok, inkTok] of pairs) {
+    const tint = parse(token(`--color-${tintTok}`, theme))
+    const ink = parse(token(`--ink-on-${inkTok}`, theme))
+    const r = ratio(ink, tint)
+    const pass = r >= 4.5
+    if (!pass) fails++
+    console.log(
+      `  ${pass ? 'ok  ' : 'FAIL'} ${theme.padEnd(5)} ink-on-${inkTok.padEnd(7)} ${r.toFixed(2)}:1`,
+    )
+  }
 }
 
 console.log(`\n${fails} failure(s), ${warns} warning(s)`)

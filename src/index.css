@@ -194,6 +194,18 @@
   --color-warn: #ff9f0a;
   --color-bad: #ff453a;
 
+  /* Ink for text placed ON each tint. It has to be a token rather than a
+     constant in theme.ts, because the light theme re-picks every tint: the
+     dark tints are vivid and take near-black ink, the light ones are dark and
+     take white. Baking the dark pair into TS meant the light theme's tints
+     were never reachable at all. */
+  --ink-on-blue: #03101f;
+  --ink-on-orange: #1a1000;
+  --ink-on-purple: #160421;
+  --ink-on-pink: #1e050c;
+  --ink-on-yellow: #1a1500;
+  --ink-on-gray: #0d0d0f;
+
   /* ---------------------------------------------------------------- radii */
   /* Nested, not uniform.
      
@@ -392,6 +404,14 @@ body {
   --color-ok: #146c34;
   --color-warn: #8a5000;
   --color-bad: #bd2417;
+
+  /* every light tint is dark enough to need white on it */
+  --ink-on-blue: #ffffff;
+  --ink-on-orange: #ffffff;
+  --ink-on-purple: #ffffff;
+  --ink-on-pink: #ffffff;
+  --ink-on-yellow: #ffffff;
+  --ink-on-gray: #ffffff;
 }
 
 ::selection {

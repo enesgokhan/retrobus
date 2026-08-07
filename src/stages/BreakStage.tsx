@@ -40,7 +40,7 @@ export default function BreakStage({ stage, presenter = false }: { stage: Stage;
       {left != null ? (
         <div
           className={[
-            'nums leading-none text-[--tint]',
+            'nums leading-none text-(--tint)',
             presenter ? 'text-[10rem]' : 'text-7xl',
             over ? 'animate-pulse' : '',
           ].join(' ')}

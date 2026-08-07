@@ -215,7 +215,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
                 <button
                   className="size-9 rounded-full bg-fill-3 text-label-2 grid place-items-center
                     transition-[background-color,color] duration-150
-                    hover:bg-fill-2 hover:text-[--tint] disabled:opacity-25 disabled:hover:bg-fill-3"
+                    hover:bg-fill-2 hover:text-(--tint) disabled:opacity-25 disabled:hover:bg-fill-3"
                   disabled={i === 0}
                   onClick={() => move(i, -1)}
                   aria-label="Yukarı"
@@ -225,7 +225,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
                 <button
                   className="size-9 rounded-full bg-fill-3 text-label-2 grid place-items-center
                     transition-[background-color,color] duration-150
-                    hover:bg-fill-2 hover:text-[--tint] disabled:opacity-25 disabled:hover:bg-fill-3"
+                    hover:bg-fill-2 hover:text-(--tint) disabled:opacity-25 disabled:hover:bg-fill-3"
                   disabled={i === order.length - 1}
                   onClick={() => move(i, 1)}
                   aria-label="Aşağı"

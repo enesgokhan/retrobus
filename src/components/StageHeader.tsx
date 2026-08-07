@@ -56,7 +56,7 @@ export default function StageHeader({
           <span
             className={[
               'shrink-0 size-2 rounded-full',
-              waiting ? 'bg-label-4' : 'bg-[--tint]',
+              waiting ? 'bg-label-4' : 'bg-(--tint)',
             ].join(' ')}
             aria-hidden
           />
@@ -98,7 +98,7 @@ export default function StageHeader({
       {ratio != null && (
         <div className="mt-1 h-[3px] w-full rounded-full overflow-hidden bg-fill-3">
           <div
-            className="h-full rounded-full bg-[--tint] transition-[width] duration-500"
+            className="h-full rounded-full bg-(--tint) transition-[width] duration-500"
             style={{ width: `${Math.round(ratio * 100)}%` }}
           />
         </div>

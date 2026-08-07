@@ -17,6 +17,17 @@ npm run build >/dev/null 2>&1 || { echo "build failed"; fails=$((fails + 1)); }
 # all — and `border-line` silently fell back to currentColor, painting a
 # near-white border on 25 elements. A class that does not exist fails silently,
 # which is the worst way for a class to fail. These names are banned outright.
+# Tailwind v3 wrapped a bare `[--var]` arbitrary value in var(); v4 does not.
+# `bg-[--tint]` therefore compiles to `background-color: --tint`, which every
+# browser discards — so the stage tint was silently absent from 22 places: the
+# readiness meter, the live dots, the Break countdown, the Leaderboard hero
+# number, and every selected-state control that spelled selection as a tint
+# fill. It typechecks, it lints, and it renders as "the tint is a bit subtle".
+echo "################ tailwind v3 syntax ################"
+v3=$(grep -rnE '\b(bg|text|border|ring|fill|stroke|shadow|from|to|via|accent|outline|decoration|caret)-\[--' src --include='*.tsx' || true)
+if [ -n "$v3" ]; then echo "$v3"; echo "V3 ARBITRARY-PROPERTY SYNTAX — use bg-(--tint), not bg-[--tint]"; fails=$((fails + 1)); else echo "ALL CHECKS PASSED"; fi
+
+# And the general form of the same failure: a utility that emits no CSS at all.
 echo "################ dead tokens ################"
 dead=$(grep -rnoE '\b(border-line|border-line-strong|bg-card|bg-surface|bg-raised|text-ink|text-ink-soft|text-ink-faint|bg-ink|border-ink|input-blob|btn-coral|btn-ghost)\b' src --include='*.tsx' || true)
 if [ -n "$dead" ]; then echo "$dead"; echo "DEAD TOKENS IN USE"; fails=$((fails + 1)); else echo "ALL CHECKS PASSED"; fi

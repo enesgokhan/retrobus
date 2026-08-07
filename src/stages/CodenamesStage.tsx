@@ -268,11 +268,12 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
                 key={team}
                 className="card flex flex-col gap-2"
                 style={{
-                  // The team's own colour, as a wash and a leading rail rather
-                  // than a 2px saturated outline around the whole panel. The
-                  // teams still read instantly; they just stop shouting.
+                  // The team's own colour as a wash and a lit top edge — not a
+                  // leading rail. The heading already carries the team colour
+                  // and a dot beside it, so the identity is stated twice
+                  // without the one device this design system treats as a tell.
                   background: `color-mix(in srgb, var(--color-${team === 'red' ? 'coral' : 'sky'}) 8%, var(--color-bg-1))`,
-                  boxShadow: `inset 3px 0 0 0 var(--color-${team === 'red' ? 'coral' : 'sky'})`,
+                  boxShadow: `inset 0 1px 0 color-mix(in srgb, var(--color-${team === 'red' ? 'coral' : 'sky'}) 45%, transparent), var(--shadow-1)`,
                 }}
               >
                 <h3 className={['font-semibold flex items-center gap-2', team === 'red' ? 'text-coral' : 'text-sky'].join(' ')}>
@@ -409,7 +410,12 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
               team === game.turn && game.phase === 'playing'
                 ? {
                     background: `color-mix(in srgb, var(--color-${team === 'red' ? 'coral' : 'sky'}) 16%, var(--color-bg-1))`,
-                    boxShadow: `inset 3px 0 0 0 var(--color-${team === 'red' ? 'coral' : 'sky'})`,
+                    // No leading rail. That 3px coloured bar is the tell this
+                    // codebase deliberately removed from every list row, and
+                    // leaving it here meant the rule had been applied locally
+                    // rather than adopted. The wash plus the team's own dot
+                    // already say whose turn it is.
+                    boxShadow: `inset 0 1px 0 color-mix(in srgb, var(--color-${team === 'red' ? 'coral' : 'sky'}) 40%, transparent)`,
                   }
                 : undefined
             }
@@ -447,7 +453,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
           </span>
           <span
             className={[
-              'shrink-0 rounded-full grid place-items-center nums bg-[--tint] text-[--tint-ink]',
+              'shrink-0 rounded-full grid place-items-center nums bg-(--tint) text-(--tint-ink)',
               presenter ? 'size-16 text-title-2' : 'size-11 text-title-3',
             ].join(' ')}
           >

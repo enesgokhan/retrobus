@@ -149,7 +149,7 @@ export default function Login() {
       />
 
       <div className="relative w-full max-w-md flex flex-col items-center stagger">
-        <div className="mb-5 text-[--tint]">
+        <div className="mb-5 text-(--tint)">
           <Icon name="bus" size={64} strokeWidth={1.3} />
         </div>
         <h1 className="text-display text-center">{S.appName}</h1>

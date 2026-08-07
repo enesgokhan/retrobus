@@ -298,7 +298,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                 key={r.id}
                 className={[
                   'flex items-center gap-3 rounded-sm px-3 py-2 transition-colors duration-150',
-                  current ? 'bg-[--color-bg-2] shadow-[inset_0_0_0_1px_var(--tint)]' : 'hover:bg-[--color-bg-2]',
+                  current ? 'bg-(--color-bg-2) shadow-[inset_0_0_0_1px_var(--tint)]' : 'hover:bg-(--color-bg-2)',
                 ].join(' ')}
               >
                 <button
