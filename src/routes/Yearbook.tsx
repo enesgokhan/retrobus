@@ -359,6 +359,29 @@ export default function Yearbook() {
         </section>
       )}
 
+      {/* The evening in numbers.
+          
+          A keepsake opens with what the night WAS, not with a table of
+          contents. These are the four counts that mean something afterwards —
+          who came, how far the bus got, how much the room wrote, how much of
+          it turned into a decision — and they are the one place in the app
+          where a number is allowed to be the biggest thing on screen. Not a
+          chart: four headline figures are a KPI row, and drawing four bars of
+          unrelated units would be worse than printing them. */}
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { n: members.length, label: 'kişi' },
+          { n: stages.filter((st) => st.state === 'closed').length, label: 'durak' },
+          { n: cards.length, label: 'kart' },
+          { n: actions.length, label: 'karar' },
+        ].map((k) => (
+          <div key={k.label} className="card flex flex-col gap-0.5">
+            <span className="text-title-1 nums leading-none">{k.n}</span>
+            <span className="text-footnote text-label-3">{k.label}</span>
+          </div>
+        ))}
+      </section>
+
       {/* who was on the bus — the class photo */}
       {members.length > 0 && (
         <section className="flex flex-col gap-3">

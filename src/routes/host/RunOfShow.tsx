@@ -41,6 +41,9 @@ export default function RunOfShow({
         const live = stage.id === activeId
         const selected = stage.id === selectedId
         const done = stage.state === 'closed'
+        /** already behind us: the track is solid up to here */
+        const liveIndex = sorted.findIndex((x) => x.id === activeId)
+        const passed = done || (liveIndex >= 0 && i < liveIndex)
         const todo = readiness[stage.id]?.todo
         const tint = stageTheme(stage.kind).tint
 
@@ -71,22 +74,55 @@ export default function RunOfShow({
             onClick={() => onSelect(stage)}
             aria-current={selected || undefined}
           >
-            {/* position, or the live marker in its place — same slot, so the
-                list never shifts when the meeting moves on */}
-            <span className="shrink-0 size-8 grid place-items-center" aria-hidden>
+            {/* The route, drawn as a line.
+                
+                The application is called Retrobüs and the agenda is seventeen
+                stops, and none of that was anywhere on the screen — the run of
+                show was a numbered list, which is the same information with
+                the metaphor thrown away. A transit diagram carries something a
+                list cannot: how far through a three-hour evening the room
+                actually is, at a glance, without reading a single label.
+                
+                The track behind each station is solid where the evening has
+                already been and hairline where it has not, so the boundary
+                between them IS the progress bar. */}
+            <span className="relative shrink-0 size-8 grid place-items-center" aria-hidden>
+              <span
+                className="absolute left-1/2 -translate-x-1/2 w-[2px]"
+                style={{
+                  top: i === 0 ? '50%' : 0,
+                  bottom: i === sorted.length - 1 ? '50%' : 0,
+                  background: passed ? 'var(--color-label-4)' : 'var(--color-sep)',
+                }}
+              />
               {live ? (
-                <span className="relative flex size-2.5">
+                <span className="relative flex size-3">
                   <span
                     className="absolute inline-flex size-full rounded-full opacity-60 animate-ping"
                     style={{ background: tint }}
                   />
                   <span
-                    className="relative inline-flex size-2.5 rounded-full"
-                    style={{ background: tint }}
+                    className="relative inline-flex size-3 rounded-full"
+                    style={{ background: tint, boxShadow: '0 0 0 3px var(--color-bg-1)' }}
                   />
                 </span>
               ) : (
-                <span className="text-footnote text-label-3 nums">{i + 1}</span>
+                <span
+                  className={[
+                    'relative grid place-items-center rounded-full',
+                    passed ? 'size-2.5' : 'size-4',
+                  ].join(' ')}
+                  style={{
+                    background: passed ? 'var(--color-label-3)' : 'var(--color-bg-2)',
+                    boxShadow: passed
+                      ? '0 0 0 3px var(--color-bg-1)'
+                      : '0 0 0 3px var(--color-bg-1), inset 0 0 0 1.5px var(--color-sep)',
+                  }}
+                >
+                  {!passed && (
+                    <span className="text-[9px] text-label-3 nums leading-none">{i + 1}</span>
+                  )}
+                </span>
               )}
             </span>
 

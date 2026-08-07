@@ -4,6 +4,7 @@ import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
 import StageHeader from '../components/StageHeader'
 import Alert from '../components/ui/Alert'
+import LikertBar from '../components/ui/LikertBar'
 import type { Stage } from '../lib/types'
 
 export interface Dimension {
@@ -139,22 +140,39 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
           : `Her boyut için birini seç (${done.size}/${dims.length}). Tamamen anonim.`
         }
         waiting={showResults ? false : allDone}
-        progress={`${done.size}/${dims.length}`}
+        /* While voting, this is YOUR progress through the six questions. Once
+           the results are up it was still counting the reader's own answers,
+           so a host who had not voted saw "0/6" over a chart full of data. */
+        progress={showResults ? null : `${done.size}/${dims.length}`}
         presenter={presenter}
       />
 
       {error && <Alert>{error}</Alert>}
 
+      {/* One chart, all six dimensions, diverging from the neutral answer — so
+          "which of these is the team unhappy about" is a glance rather than six
+          comparisons. */}
+      {showResults && (
+        <LikertBar
+          rows={dims.map((d) => {
+            const forDim = rows.filter((r) => r.dimension_key === d.key)
+            return {
+              key: d.key,
+              label: d.label,
+              bad: forDim.filter((r) => r.rating === 1).length,
+              mid: forDim.filter((r) => r.rating === 2).length,
+              good: forDim.filter((r) => r.rating === 3).length,
+            }
+          })}
+        />
+      )}
+
       {/* Six dimensions is a list, not six stacked panels. Each was its own
           rounded card with a gap, so the eye counted six objects before it
           read one label. */}
+      {!showResults && (
       <div className="list-group">
       {dims.map((d) => {
-        const forDim = rows.filter((r) => r.dimension_key === d.key)
-        const total = forDim.length
-        const green = forDim.filter((r) => r.rating === 3).length
-        const yellow = forDim.filter((r) => r.rating === 2).length
-        const red = forDim.filter((r) => r.rating === 1).length
         const answered = done.has(d.key)
 
         return (
@@ -162,7 +180,6 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
             <h3 className={['flex-1 min-w-40', presenter ? 'text-title-3' : 'text-headline'].join(' ')}>
               {d.label}
             </h3>
-            {showResults && <span className="text-footnote text-label-3 nums">{total} oy</span>}
 
             {isOpen && !presenter && (
               <div className="flex gap-2 shrink-0">
@@ -194,38 +211,11 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
             )}
 
 
-            {showResults && total > 0 && (
-              <div className="flex h-7 w-full overflow-hidden rounded-full bg-fill-3">
-                {red > 0 && (
-                  <div className="bg-coral grid place-items-center text-caption font-semibold text-[#1a0806]"
-                       style={{ width: `${(red / total) * 100}%` }}
-                       title={`Kötü: ${red}`}>
-                    ▼︎{red}
-                  </div>
-                )}
-                {yellow > 0 && (
-                  <div className="bg-amber grid place-items-center text-caption font-semibold text-[#1a1000]"
-                       style={{ width: `${(yellow / total) * 100}%` }}
-                       title={`Orta: ${yellow}`}>
-                    ●︎{yellow}
-                  </div>
-                )}
-                {green > 0 && (
-                  <div className="bg-teal grid place-items-center text-caption font-semibold text-[#04141a]"
-                       style={{ width: `${(green / total) * 100}%` }}
-                       title={`İyi: ${green}`}>
-                    ▲︎{green}
-                  </div>
-                )}
-              </div>
-            )}
-            {showResults && total === 0 && (
-              <p className="text-subhead text-label-2">Oy yok.</p>
-            )}
           </section>
         )
       })}
       </div>
+      )}
     </div>
   )
 }
