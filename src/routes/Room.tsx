@@ -8,6 +8,7 @@ import AppShell from '../components/AppShell'
 import WelcomeNote from '../components/WelcomeNote'
 import Empty from '../components/ui/Empty'
 import { stageTheme, themeVars } from '../lib/theme'
+import Icon from '../components/ui/Icon'
 
 /** Yolcu görünümü — şoför nereye sürerse ekran oraya gider. */
 export default function Room() {
@@ -52,7 +53,7 @@ export default function Room() {
           <div className="flex-1 grid place-items-center px-5">
             <Empty
               size="lg"
-              icon="🚌"
+              icon={<Icon name="bus" size={44} />}
               title={S.endedTitle}
               body={S.endedBody}
               action={
@@ -66,7 +67,7 @@ export default function Room() {
           <div className="flex-1 grid place-items-center px-5">
             <Empty
               size="lg"
-              icon="🚏"
+              icon={<Icon name="route" size={44} />}
               title={S.waitingTitle}
               body={S.waitingBody}
               hint={`${here.size} kişi burada bekliyor.`}

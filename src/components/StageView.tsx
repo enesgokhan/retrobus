@@ -3,6 +3,7 @@ import type { Stage } from '../lib/types'
 import { S } from '../lib/strings'
 import { stageTheme, themeVars } from '../lib/theme'
 import TimerStrip from './TimerStrip'
+import Icon from './ui/Icon'
 import BoardStage from '../stages/BoardStage'
 import PollStage from '../stages/PollStage'
 import WordCloudStage from '../stages/WordCloudStage'
@@ -18,24 +19,6 @@ import WavelengthStage from '../stages/WavelengthStage'
 import MissionStage from '../stages/MissionStage'
 import BreakStage from '../stages/BreakStage'
 
-const KIND_EMOJI: Record<string, string> = {
-  wordcloud: '☁️',
-  two_truths: '🤥',
-  health_check: '🩺',
-  lean_coffee: '☕',
-  board: '📌',
-  poll: '📊',
-  feedback_wall: '💌',
-  suggestions: '💡',
-  quiz: '🏆',
-  codenames: '🕵️',
-  wavelength: '📻',
-  leaderboard: '🥇',
-  break: '🧃',
-  fibbage: '🤫',
-  rank: '🔢',
-  secret_mission: '🕶️',
-}
 
 /**
  * Card-and-dot-vote kinds all share BoardStage. AMA rides on it too: anonymous
@@ -87,7 +70,6 @@ export default function StageView({
   stage: Stage
   presenter?: boolean
 }) {
-  const emoji = KIND_EMOJI[stage.kind] ?? '🚏'
   const kindLabel = S.kind[stage.kind] ?? stage.kind
   const theme = stageTheme(stage.kind)
 
@@ -159,9 +141,7 @@ export default function StageView({
                   moment ? 'justify-center' : '',
                 ].join(' ')}
               >
-                <span aria-hidden className="text-subhead leading-none opacity-70">
-                  {emoji}
-                </span>
+                <Icon name={stage.kind} size={14} className="opacity-85" />
                 {kindLabel}
               </div>
             )}

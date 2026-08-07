@@ -7,6 +7,7 @@ import StageHeader from '../components/StageHeader'
 import Empty from '../components/ui/Empty'
 import Alert from '../components/ui/Alert'
 import type { Member, Stage } from '../lib/types'
+import Icon from '../components/ui/Icon'
 
 interface Question {
   id: string
@@ -153,7 +154,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
   if (!questions.length) {
     return (
       <Empty
-        icon="🏆"
+        icon={<Icon name="quiz" size={44} />}
         title={isHost ? 'Soru listesi boş' : 'Sorular hazırlanıyor'}
         body={
           isHost
@@ -220,7 +221,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
                     </span>
                     <span className={presenter ? 'text-title-3' : ''}>{opt}</span>
                     {revealed && <span className="ml-auto text-subhead opacity-80">{count}</span>}
-                    {isCorrect && <span aria-hidden>✅</span>}
+                    {isCorrect && <Icon name="check" size={18} />}
                   </button>
                 )
               })}
@@ -291,7 +292,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
         </section>
       ) : (
         <Empty
-          icon="🏆"
+          icon={<Icon name="quiz" size={44} />}
           title={isHost ? 'Henüz soru açmadın' : 'Soru bekleniyor'}
           body={
             isHost

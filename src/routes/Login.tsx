@@ -7,6 +7,7 @@ import CodeInput from '../components/CodeInput'
 import Button from '../components/ui/Button'
 import Alert from '../components/ui/Alert'
 import { Field } from '../components/ui/Field'
+import Icon from '../components/ui/Icon'
 
 const LAST_NAME_KEY = 'retrobus.lastName'
 
@@ -148,8 +149,8 @@ export default function Login() {
       />
 
       <div className="relative w-full max-w-md flex flex-col items-center stagger">
-        <div className="text-7xl mb-4 leading-none" aria-hidden>
-          🚌
+        <div className="mb-5 text-[--tint]">
+          <Icon name="bus" size={64} strokeWidth={1.3} />
         </div>
         <h1 className="text-display text-center">{S.appName}</h1>
         <p className="text-body text-label-2 mt-3 mb-9 text-center text-balance">{S.tagline}</p>

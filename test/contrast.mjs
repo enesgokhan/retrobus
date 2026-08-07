@@ -11,8 +11,18 @@ import { readFileSync } from 'node:fs'
 
 const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8')
 
-/** pull `--name: value;` out of the @theme block */
-function token(name) {
+/**
+ * Pull a token's value. The light theme redefines a subset inside
+ * `:root[data-theme='light'] { … }`, so read that block first and fall back to
+ * the @theme default — which is exactly how the cascade resolves it at runtime.
+ */
+const LIGHT_BLOCK = (/:root\[data-theme='light'\]\s*\{([\s\S]*?)\n\}/.exec(css) ?? [, ''])[1]
+
+function token(name, theme = 'dark') {
+  if (theme === 'light') {
+    const m = new RegExp(`\\s${name}:\\s*([^;]+);`).exec(LIGHT_BLOCK)
+    if (m) return m[1].trim()
+  }
   const m = new RegExp(`\\s${name}:\\s*([^;]+);`).exec(css)
   if (!m) throw new Error(`token not found: ${name}`)
   return m[1].trim()
@@ -52,19 +62,18 @@ function ratio(fg, bg) {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
 }
 
-const SURFACES = {
-  bg: parse(token('--color-bg')),
-  'bg-1': parse(token('--color-bg-1')),
-  'bg-2': parse(token('--color-bg-2')),
-  'bg-3': parse(token('--color-bg-3')),
-}
-
-const LABELS = {
-  label: parse(token('--color-label')),
-  'label-2': parse(token('--color-label-2')),
-  'label-3': parse(token('--color-label-3')),
-  'label-4': parse(token('--color-label-4')),
-}
+const surfaces = (t) => ({
+  bg: parse(token('--color-bg', t)),
+  'bg-1': parse(token('--color-bg-1', t)),
+  'bg-2': parse(token('--color-bg-2', t)),
+  'bg-3': parse(token('--color-bg-3', t)),
+})
+const labels = (t) => ({
+  label: parse(token('--color-label', t)),
+  'label-2': parse(token('--color-label-2', t)),
+  'label-3': parse(token('--color-label-3', t)),
+  'label-4': parse(token('--color-label-4', t)),
+})
 
 const TINTS = ['blue', 'teal', 'purple', 'pink', 'orange', 'yellow', 'green', 'gray', 'brand']
 
@@ -80,56 +89,74 @@ const ROLE = {
 let fails = 0
 let warns = 0
 
-console.log('=== label on surface ===')
-for (const [ln, lc] of Object.entries(LABELS)) {
-  for (const [sn, sc] of Object.entries(SURFACES)) {
-    const r = ratio(over(lc, sc), sc)
-    const min = ROLE[ln].min
-    const pass = r >= min
-    if (!pass) fails++
-    console.log(
-      `  ${pass ? 'ok  ' : 'FAIL'} ${ln.padEnd(8)} on ${sn.padEnd(5)} ${r.toFixed(2)}:1  (needs ${min})  ${ROLE[ln].note}`,
-    )
-  }
-}
+const TINT_ROLES = ['blue', 'teal', 'purple', 'pink', 'orange', 'yellow', 'green', 'gray', 'brand']
+const STATUS = ['ok', 'warn', 'bad']
 
-console.log('\n=== tint as text on surface (btn-tinted, chip-on, links) ===')
-for (const t of TINTS) {
-  const tc = parse(token(`--color-${t}`))
-  for (const sn of ['bg', 'bg-1']) {
-    const sc = SURFACES[sn]
-    const r = ratio(tc, sc)
-    // tint text is >=15px semibold; 4.5 is the honest bar
-    const pass = r >= 4.5
-    if (!pass) {
-      warns++
-      console.log(`  WARN ${t.padEnd(7)} on ${sn.padEnd(4)} ${r.toFixed(2)}:1  (want 4.5)`)
-    } else {
-      console.log(`  ok   ${t.padEnd(7)} on ${sn.padEnd(4)} ${r.toFixed(2)}:1`)
+// Both themes are measured. Shipping a light theme whose tints were picked for
+// a black ground is how #ffd60a ends up as body text on white.
+for (const theme of ['dark', 'light']) {
+  const SURFACES = surfaces(theme)
+  const LABELS = labels(theme)
+  console.log(`\n################ ${theme} ################`)
+
+  console.log('=== label on surface ===')
+  for (const [ln, lc] of Object.entries(LABELS)) {
+    for (const [sn, sc] of Object.entries(SURFACES)) {
+      const r = ratio(over(lc, sc), sc)
+      const min = ROLE[ln].min
+      const pass = r >= min
+      if (!pass) fails++
+      console.log(
+        `  ${pass ? 'ok  ' : 'FAIL'} ${ln.padEnd(8)} on ${sn.padEnd(5)} ${r.toFixed(2)}:1  (needs ${min})  ${ROLE[ln].note}`,
+      )
+    }
+  }
+
+  console.log('=== tint as text on surface ===')
+  for (const t of TINT_ROLES) {
+    const tc = parse(token(`--color-${t}`, theme))
+    for (const sn of ['bg', 'bg-1']) {
+      const r = ratio(tc, SURFACES[sn])
+      const pass = r >= 4.5
+      if (!pass) fails++
+      console.log(`  ${pass ? 'ok  ' : 'FAIL'} ${t.padEnd(7)} on ${sn.padEnd(4)} ${r.toFixed(2)}:1`)
+    }
+  }
+
+  console.log('=== status colours as text ===')
+  for (const st of STATUS) {
+    const c = parse(token(`--color-${st}`, theme))
+    for (const sn of ['bg', 'bg-1']) {
+      const r = ratio(c, SURFACES[sn])
+      const pass = r >= 4.5
+      if (!pass) fails++
+      console.log(`  ${pass ? 'ok  ' : 'FAIL'} ${st.padEnd(5)} on ${sn.padEnd(4)} ${r.toFixed(2)}:1`)
     }
   }
 }
 
-console.log('\n=== tint-ink on tint (btn-filled: text ON the accent) ===')
-// these live in lib/theme.ts, paired with each world
-const theme = readFileSync(new URL('../src/lib/theme.ts', import.meta.url), 'utf8')
-for (const m of theme.matchAll(/tint:\s*'(#[0-9a-f]{6})',\s*tintInk:\s*'(#[0-9a-f]{6})'/gi)) {
+// The primary action is near-white on dark / near-black on light, so it is the
+// one fill whose contrast is set by the button tokens rather than by a tint.
+console.log('\n################ primary action ################')
+for (const [theme, bgHex, inkHex] of [
+  ['dark', '#e8e8ee', '#0c0c10'],
+  ['light', '#1c1c22', '#ffffff'],
+]) {
+  const r = ratio(parse(inkHex), parse(bgHex))
+  const pass = r >= 4.5
+  if (!pass) fails++
+  console.log(`  ${pass ? 'ok  ' : 'FAIL'} ${theme.padEnd(5)} ${inkHex} on ${bgHex}  ${r.toFixed(2)}:1`)
+}
+
+// Text placed ON a stage tint (the few tinted fills that remain).
+console.log('\n################ tint-ink on tint ################')
+const themeSrc = readFileSync(new URL('../src/lib/theme.ts', import.meta.url), 'utf8')
+for (const m of themeSrc.matchAll(/tint:\s*'(#[0-9a-f]{6})',\s*tintInk:\s*'(#[0-9a-f]{6})'/gi)) {
   const [, tint, ink] = m
   const r = ratio(parse(ink), parse(tint))
   const pass = r >= 4.5
   if (!pass) fails++
   console.log(`  ${pass ? 'ok  ' : 'FAIL'} ${ink} on ${tint}  ${r.toFixed(2)}:1`)
-}
-
-console.log('\n=== status colours as text ===')
-for (const s of ['ok', 'warn', 'bad']) {
-  const c = parse(token(`--color-${s}`))
-  for (const sn of ['bg', 'bg-1']) {
-    const r = ratio(c, SURFACES[sn])
-    const pass = r >= 4.5
-    if (!pass) warns++
-    console.log(`  ${pass ? 'ok  ' : 'WARN'} ${s.padEnd(5)} on ${sn.padEnd(4)} ${r.toFixed(2)}:1`)
-  }
 }
 
 console.log(`\n${fails} failure(s), ${warns} warning(s)`)

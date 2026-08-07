@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { liveStatus, onLiveStatusChange } from '../lib/realtime'
+import Icon from './ui/Icon'
 
 type Shown = 'none' | 'polling' | 'stale' | 'offline'
 
@@ -106,7 +107,7 @@ export default function ConnStatus() {
         className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 size-8 rounded-full
           material-raised shadow-2 grid place-items-center text-caption"
       >
-        <span aria-hidden>🔄</span>
+        <Icon name="refresh" size={15} />
       </button>
     )
   }

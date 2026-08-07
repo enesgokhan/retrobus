@@ -250,7 +250,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
           phase="Takım seçimi"
           instruction={
             me
-              ? `${me.team === 'red' ? '🔴 Kırmızı' : '🔵 Mavi'} takımdasın${me.is_spymaster ? ' — spymaster' : ''}.`
+              ? `${me.team === 'red' ? 'Kırmızı' : 'Mavi'} takımdasın${me.is_spymaster ? ' — spymaster' : ''}.`
               : 'Bir takım ve rol seç.'
           }
           progress={`${players.length}/${members.length}`}
@@ -276,7 +276,11 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
                 }}
               >
                 <h3 className={['font-semibold flex items-center gap-2', team === 'red' ? 'text-coral' : 'text-sky'].join(' ')}>
-                  <span aria-hidden>{team === 'red' ? '🔴' : '🔵'}</span>
+                  <span
+                aria-hidden
+                className="size-2.5 rounded-full shrink-0"
+                style={{ background: team === 'red' ? 'var(--color-coral)' : 'var(--color-sky)' }}
+              />
                   {team === 'red' ? 'Kırmızı' : 'Mavi'}
                   <span className="text-label-2 font-semibold">({roster.length})</span>
                 </h3>
@@ -350,13 +354,13 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
     }
     if (!game.clue_word) {
       return {
-        phase: `${game.turn === 'red' ? '🔴 Kırmızı' : '🔵 Mavi'} sırası`,
+        phase: `${game.turn === 'red' ? 'Kırmızı' : 'Mavi'} sırası`,
         instruction: 'Spymaster ipucu düşünüyor…',
         waiting: true,
       }
     }
     return {
-      phase: `${game.turn === 'red' ? '🔴 Kırmızı' : '🔵 Mavi'} tahmin ediyor`,
+      phase: `${game.turn === 'red' ? 'Kırmızı' : 'Mavi'} tahmin ediyor`,
       instruction: `“${game.clue_word}” ${unlimited ? '(sınırsız)' : game.clue_count}`,
       waiting: true,
     }
@@ -411,7 +415,11 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
             }
           >
             <span className="text-subhead flex items-center gap-2">
-              <span aria-hidden>{team === 'red' ? '🔴' : '🔵'}</span>
+              <span
+                aria-hidden
+                className="size-2.5 rounded-full shrink-0"
+                style={{ background: team === 'red' ? 'var(--color-coral)' : 'var(--color-sky)' }}
+              />
               {team === 'red' ? 'Kırmızı' : 'Mavi'}
               {team === game.turn && game.phase === 'playing' && (
                 <span className="text-footnote text-label-2">· sıra</span>

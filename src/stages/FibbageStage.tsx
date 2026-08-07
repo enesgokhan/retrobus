@@ -6,6 +6,7 @@ import StageHeader from '../components/StageHeader'
 import Empty from '../components/ui/Empty'
 import Alert from '../components/ui/Alert'
 import type { Member, Stage } from '../lib/types'
+import Icon from '../components/ui/Icon'
 
 interface Round {
   id: string
@@ -340,7 +341,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
     return (
       <div className="w-full max-w-3xl flex-1 flex flex-col gap-6">
         <Empty
-          icon="🤫"
+          icon={<Icon name="fibbage" size={44} />}
           title={isHost ? 'Henüz bir tur yok' : 'Tur hazırlanıyor'}
           body={
             isHost

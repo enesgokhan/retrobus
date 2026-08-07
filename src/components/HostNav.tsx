@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { S } from '../lib/strings'
 import Menu, { MenuItem, MenuSeparator } from './ui/Menu'
+import { applyTheme, currentTheme } from '../lib/theme-mode'
 
 /**
  * Navigation.
@@ -122,6 +123,16 @@ export default function HostNav() {
                 {i.label}
               </MenuItem>
             ))}
+            <MenuSeparator />
+            <MenuItem
+              onClick={() => {
+                applyTheme(currentTheme() === 'dark' ? 'light' : 'dark')
+                close()
+              }}
+              trailing={currentTheme() === 'dark' ? 'Koyu' : 'Açık'}
+            >
+              Görünüm
+            </MenuItem>
             <MenuSeparator />
             <MenuItem tone="danger" onClick={logout}>
               {S.logout}

@@ -13,13 +13,14 @@ import Yearbook from './routes/Yearbook'
 import Kurallar from './routes/Kurallar'
 import Tani from './routes/Tani'
 import Tasarim from './routes/Tasarim'
+import Icon from './components/ui/Icon'
 
 function Splash() {
   return (
     <main className="min-h-dvh grid place-items-center">
       <div className="text-center animate-fade">
-        <div className="text-5xl mb-4 leading-none" aria-hidden>
-          🚌
+        <div className="mb-4 text-label-3 grid place-items-center">
+          <Icon name="bus" size={40} />
         </div>
         <p className="text-subhead text-label-2">{S.loading}</p>
       </div>

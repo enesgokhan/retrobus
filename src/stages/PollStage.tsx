@@ -7,6 +7,7 @@ import StageHeader from '../components/StageHeader'
 import Empty from '../components/ui/Empty'
 import Alert from '../components/ui/Alert'
 import type { Stage } from '../lib/types'
+import Icon from '../components/ui/Icon'
 
 const ERR: Record<SubmitError, string> = {
   limit: 'Bu ankete zaten cevap verdin.',
@@ -75,7 +76,7 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
   if (!polls.length) {
     return (
       <Empty
-        icon="📊"
+        icon={<Icon name="poll" size={44} />}
         title={isHost ? 'Henüz anket yok' : 'Anket bekleniyor'}
         body={
           isHost

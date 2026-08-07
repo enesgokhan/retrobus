@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Stage } from '../lib/types'
+import Icon from './ui/Icon'
 
 function remainingSeconds(stage: Stage): number | null {
   if (stage.timer_ends_at) {
@@ -50,9 +51,7 @@ export default function TimerStrip({ stage, big = false }: { stage: Stage; big?:
       ].join(' ')}
       aria-label={paused ? 'Süre duraklatıldı' : 'Kalan süre'}
     >
-      <span aria-hidden className={big ? 'text-3xl' : 'text-subhead'}>
-        {paused ? '⏸' : '⏱'}
-      </span>
+      <Icon name="clock" size={big ? 30 : 16} className="opacity-70" />
       {m}:{s.toString().padStart(2, '0')}
     </div>
   )

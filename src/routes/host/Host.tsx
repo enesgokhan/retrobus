@@ -20,6 +20,7 @@ import Sheet from '../../components/ui/Sheet'
 import Empty from '../../components/ui/Empty'
 import Alert from '../../components/ui/Alert'
 import { Field, TextArea } from '../../components/ui/Field'
+import Icon from '../../components/ui/Icon'
 
 /**
  * Şoför konsolu.
@@ -269,7 +270,7 @@ export default function Host() {
         {hostError && <Alert>{hostError}</Alert>}
         <div className="card-lg mt-2">
           <Empty
-            icon="🚌"
+            icon={<Icon name="bus" size={44} />}
             title={S.newMeeting}
             body="Bir isim ver ve başlat. Rotayı sonra kurarsın."
             action={
@@ -330,7 +331,7 @@ export default function Host() {
           <div className="card-lg">
             <Empty
               size="lg"
-              icon="🗺️"
+              icon={<Icon name="route" size={44} />}
               title="Rota boş"
               body={`Hazır rota ${DEFAULT_AGENDA.length} durak, ~${Math.round(
                 AGENDA_MINUTES / 60,

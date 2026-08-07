@@ -12,6 +12,7 @@ import Button from '../components/ui/Button'
 import Segmented from '../components/ui/Segmented'
 import { S } from '../lib/strings'
 import type { Stage } from '../lib/types'
+import Icon from '../components/ui/Icon'
 
 const DEFAULT_COLUMNS = [{ key: 'all', label: 'Kartlar' }]
 
@@ -271,7 +272,7 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
           unfinished. */}
       {visible.length === 0 ? (
         <Empty
-          icon="📝"
+          icon={<Icon name="board" size={44} />}
           title={
             isOpen && stage.config.reveal !== 'live' ? 'Kartlar toplanıyor' : 'Henüz kart yok'
           }

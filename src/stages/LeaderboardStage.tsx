@@ -3,6 +3,7 @@ import { useLeaderboard } from '../lib/useLeaderboard'
 import { fireConfetti } from '../lib/celebrate'
 import Empty from '../components/ui/Empty'
 import type { Stage } from '../lib/types'
+import Icon from '../components/ui/Icon'
 
 const PODIUM = ['🥇', '🥈', '🥉']
 
@@ -59,7 +60,7 @@ export default function LeaderboardStage({ stage, presenter = false }: { stage: 
     return (
       <Empty
         size={presenter ? 'lg' : 'md'}
-        icon="🤫"
+        icon={<Icon name="leaderboard" size={44} />}
         title="Sıralama gizli"
         body={
           <>

@@ -3,25 +3,8 @@ import { PRESET_GROUPS, STAGE_PRESETS, type StagePreset } from '../../lib/preset
 import { List, Row } from '../../components/ui/List'
 import { Field } from '../../components/ui/Field'
 import Empty from '../../components/ui/Empty'
+import Icon from '../../components/ui/Icon'
 
-const KIND_EMOJI: Record<string, string> = {
-  wordcloud: '☁️',
-  two_truths: '🤥',
-  health_check: '🩺',
-  lean_coffee: '☕',
-  board: '📌',
-  poll: '📊',
-  feedback_wall: '💌',
-  suggestions: '💡',
-  quiz: '🏆',
-  codenames: '🕵️',
-  wavelength: '📻',
-  leaderboard: '🥇',
-  break: '🧃',
-  fibbage: '🤫',
-  rank: '🔢',
-  secret_mission: '🕶️',
-}
 
 /**
  * Choosing what to add to the route.
@@ -77,7 +60,7 @@ export default function StopPicker({
             {g.items.map((p) => (
               <Row
                 key={p.key}
-                leading={<span className="text-xl">{KIND_EMOJI[p.kind] ?? '🚏'}</span>}
+                leading={<Icon name={p.kind} size={20} className="text-label-2" />}
                 title={
                   <span className="flex items-center gap-2">
                     {p.label}

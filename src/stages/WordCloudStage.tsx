@@ -6,6 +6,7 @@ import StageHeader from '../components/StageHeader'
 import Alert from '../components/ui/Alert'
 import Empty from '../components/ui/Empty'
 import type { Stage } from '../lib/types'
+import Icon from '../components/ui/Icon'
 
 const SIZES = ['text-headline', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'text-6xl']
 const TINTS = ['text-coral', 'text-teal', 'text-grape', 'text-amber', 'text-sky', 'text-label']
@@ -93,7 +94,7 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
 
       {words.length === 0 ? (
         <Empty
-          icon="☁️"
+          icon={<Icon name="wordcloud" size={44} />}
           title={isOpen ? 'Kelimeler toplanıyor' : 'Henüz kelime yok'}
           body={isOpen ? 'Herkes yazdıkça bulut burada büyüyecek.' : 'Bu durakta kimse kelime yazmamış.'}
         />

@@ -1,4 +1,4 @@
-@import '@fontsource-variable/inter';
+@import '@fontsource-variable/inter/opsz.css';
 @import 'tailwindcss';
 
 /*
@@ -27,12 +27,35 @@
  *
  *   Roles, not colours.   A component asks for `label-2`, never `#9497a1`.
  *   One ramp.             11 sizes, each with a job. Body is 17px.
- *   Elevation forward.    Higher = lighter = closer. Never a drop shadow to
- *                         fake separation on a flat surface.
+ *   Elevation forward.    Higher = lighter = closer.
  *   One tint per screen.  Colour means "this is the thing". Nothing else.
  *   4px grid.             Nothing is ever "nearly" aligned.
  *   Motion is physics.    Springs for things that move, fades for things that
  *                         appear.
+ *
+ * ---------------------------------------------------------------------------
+ * Third pass: the app still read as generated, and that has a documented
+ * signature. Measured against it we matched eight of twelve tells. Three of
+ * them were load-bearing:
+ *
+ *   THERE WAS NO LIGHT. Every surface was one flat fill at one elevation —
+ *   nothing caught light, nothing cast anything. This is the single biggest
+ *   difference between this and the applications it was trying to resemble.
+ *   Surfaces now have a top specular edge and a real shadow, so the interface
+ *   implies a light source above the screen the way a physical keycap does.
+ *
+ *   THE ACCENT WAS THE BUTTON. A primary action flooded with the stage tint is
+ *   the most generated-looking object there is. Linear's brand colour is
+ *   indigo and its primary button is white. The tint now punctuates — a live
+ *   dot, a count, a link — and the action earns emphasis by contrast.
+ *
+ *   SELECTION WAS PAINTED ON. A 3px coloured rail down one edge of a row is,
+ *   per the people who catalogue this, the single most recognisable tell of
+ *   generated UI. A selected row now LIFTS.
+ *
+ * Also: the typeface does its own optical sizing (Inter carries an opsz axis
+ * from 6 to 72pt) and we were shipping the weight-only build and hand-writing
+ * per-step letter-spacing on top of it. The font is better at this than we are.
  */
 
 @theme {
@@ -42,44 +65,53 @@
 
   /* The ramp. Eleven sizes, each with a stated job — if a new piece of text
      doesn't fit one of these, the answer is to reconsider the text, not to add
-     a twelfth size. Optical letter-spacing: tighter as it grows, looser as it
-     shrinks, which is most of what separates typography that looks designed
-     from typography that looks defaulted. */
+     a twelfth size.
+
+     Tracking is now only set where it is a DISPLAY decision (tightening large
+     type). It used to be set on every step, including −0.01em on body, which
+     is a display trick applied to running text: it makes paragraphs feel tight
+     and airless, and Raycast sets body at POSITIVE tracking for exactly the
+     opposite reason. Inter carries an optical-size axis and adjusts spacing and
+     stroke weight per size on its own; `font-optical-sizing: auto` below hands
+     the job back to the typeface, which is better at it.
+
+     Weights are variable-font values, not the 400/600/700 a static family
+     forces you into. 510 and 590 are the two Linear reaches for, and the
+     half-steps are visible: 590 is a title, 600 is a shout. */
 
   /* projected to the room; read from across a video call */
   --text-display: 4rem; /* 64 */
   --text-display--line-height: 1.02;
   --text-display--letter-spacing: -0.035em;
-  --text-display--font-weight: 700;
+  --text-display--font-weight: 640;
 
   /* the biggest thing on a page — a score, a winner, a moment */
   --text-title-1: 2.5rem; /* 40 */
   --text-title-1--line-height: 1.1;
   --text-title-1--letter-spacing: -0.03em;
-  --text-title-1--font-weight: 700;
+  --text-title-1--font-weight: 620;
 
   /* screen titles (the large-title row) */
   --text-title-2: 1.75rem; /* 28 */
   --text-title-2--line-height: 1.15;
   --text-title-2--letter-spacing: -0.025em;
-  --text-title-2--font-weight: 700;
+  --text-title-2--font-weight: 600;
 
   /* section headings inside a screen */
   --text-title-3: 1.375rem; /* 22 */
   --text-title-3--line-height: 1.25;
   --text-title-3--letter-spacing: -0.02em;
-  --text-title-3--font-weight: 650;
+  --text-title-3--font-weight: 590;
 
   /* the emphasised line in a group — a row's title, a card's lead */
   --text-headline: 1.0625rem; /* 17 */
   --text-headline--line-height: 1.35;
-  --text-headline--letter-spacing: -0.01em;
-  --text-headline--font-weight: 600;
+  --text-headline--font-weight: 510;
 
   /* what the room actually wrote. The most important size in the app. */
   --text-body: 1.0625rem; /* 17 */
-  --text-body--line-height: 1.5;
-  --text-body--letter-spacing: -0.01em;
+  --text-body--line-height: 1.55;
+  --text-body--letter-spacing: 0.005em;
 
   /* secondary prose, dense lists */
   --text-callout: 1rem; /* 16 */
@@ -87,11 +119,13 @@
 
   /* supporting text under a title */
   --text-subhead: 0.9375rem; /* 15 */
-  --text-subhead--line-height: 1.4;
+  --text-subhead--line-height: 1.45;
+  --text-subhead--letter-spacing: 0.005em;
 
   /* metadata, timestamps, counts */
   --text-footnote: 0.8125rem; /* 13 */
-  --text-footnote--line-height: 1.35;
+  --text-footnote--line-height: 1.4;
+  --text-footnote--letter-spacing: 0.01em;
 
   /* the smallest readable size; labels under controls */
   --text-caption: 0.75rem; /* 12 */
@@ -161,21 +195,50 @@
   --color-bad: #ff453a;
 
   /* ---------------------------------------------------------------- radii */
-  /* Five steps. Larger than feels natural on the web, which is what makes a
-     surface read as a physical panel rather than a div. */
+  /* Nested, not uniform.
+     
+     Everything used to sit at 14px — cards, rows, fields, and cards inside
+     cards. When a rounded thing sits inside another rounded thing at the SAME
+     radius, the gap between the two curves reads as a mistake; physical
+     products keep them concentric by making the inner radius smaller by
+     roughly the padding between them. `md` is the inner step and `lg` the
+     outer one, and a card containing rows uses both. */
   --radius-xs: 6px; /* badges, tiny pills */
-  --radius-sm: 10px; /* buttons, fields */
-  --radius-md: 14px; /* cards, list groups */
-  --radius-lg: 20px; /* sheets, hero panels */
-  --radius-xl: 28px; /* the projected screen */
+  --radius-sm: 11px; /* buttons, fields */
+  --radius-md: 12px; /* INNER: a row inside a card */
+  --radius-lg: 18px; /* OUTER: the card itself */
+  --radius-xl: 24px; /* sheets */
+  --radius-2xl: 30px; /* the projected screen */
 
-  /* -------------------------------------------------------------- shadows */
-  /* Soft, large, low-opacity — the shape of light in a dark room. Shadow is
-     never used to separate two things at the SAME elevation; that's what
-     elevation is for. */
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-2: 0 4px 20px rgba(0, 0, 0, 0.45);
-  --shadow-3: 0 20px 60px rgba(0, 0, 0, 0.6);
+  /* ---------------------------------------------------------------- light */
+  /* There is a light above the screen.
+     
+     This is the thing the interface was missing. Every surface used to be one
+     flat fill, so nothing caught light and nothing cast anything — which reads
+     as printed-on rather than built. A raised object now does two things a
+     physical one does: it takes a specular highlight along its top edge, and
+     it drops a shadow. It is a 1px line and a blur radius, and it is most of
+     the difference between this and software that feels expensive.
+
+     The edge is brighter the further forward a thing is, because a nearer
+     surface catches more of the light. */
+  --edge: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  --edge-2: inset 0 1px 0 rgba(255, 255, 255, 0.085);
+  --edge-3: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+  /* Two-stop shadows: a tight contact shadow that anchors the object to the
+     surface below it, and a wide soft one that gives it height. A single blur
+     reads as a sticker. */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.5), 0 8px 24px -8px rgba(0, 0, 0, 0.55);
+  --shadow-3: 0 2px 6px rgba(0, 0, 0, 0.5), 0 28px 64px -16px rgba(0, 0, 0, 0.72);
+
+  /* Surfaces are a shallow vertical gradient, not a flat fill: the top of a
+     panel is fractionally nearer the light than its bottom. ~2% of lightness,
+     invisible as a gradient, unmistakable as a surface. */
+  --surface-1: linear-gradient(180deg, #17171b 0%, #131316 100%);
+  --surface-2: linear-gradient(180deg, #202026 0%, #1b1b20 100%);
+  --surface-3: linear-gradient(180deg, #2b2b32 0%, #25252b 100%);
 
   /* --------------------------------------------------------------- motion */
   --ease-out: cubic-bezier(0.22, 0.8, 0.28, 1); /* things settling */
@@ -214,6 +277,12 @@ body {
   font-size: 17px; /* the ramp is authored against this */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Inter carries an optical-size axis (6pt–72pt). Letting the browser drive
+     it from font-size means the face opens its spacing up at caption sizes and
+     tightens at display sizes on its own — which is what a dozen hand-written
+     per-step letter-spacing rules were badly approximating. */
+  font-optical-sizing: auto;
+  font-feature-settings: 'cv05' 1, 'ss03' 1; /* single-storey l, curved r */
 }
 
 body {
@@ -232,8 +301,21 @@ body {
    by the wordmark and the hero washes; the tint is what you can interact
    with, and it never collides with what has gone wrong. */
 :root {
+  color-scheme: dark;
   --tint: var(--color-blue);
   --tint-ink: #03101f; /* text ON the tint */
+
+  /* Focus is a SYSTEM state, not a brand expression — the same argument that
+     keeps errors off the stage tint. It gets its own colour so that a screen
+     which deliberately runs the brand tint (login, join) does not ring its
+     focused field in a coral that sits four degrees of hue from the error red:
+     an empty name field looked like a rejected one. */
+  --focus: var(--color-blue);
+
+  /* The primary action: near-white on the dark ground, NOT the tint. */
+  --btn-primary-bg: linear-gradient(180deg, #fbfbfd 0%, #e8e8ee 100%);
+  --btn-primary-ink: #0c0c10;
+  --btn-primary-edge: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 /* Where the brand IS the point: the login, the join screen, the console's
@@ -243,6 +325,75 @@ body {
   --tint-ink: #1a0806;
 }
 
+/* ==========================================================================
+ * Light
+ * ==========================================================================
+ * Shipping only a dark theme is the most common tell of a generated interface
+ * — not because dark is wrong (for a three-hour evening it is right, and it
+ * stays the default) but because having no alternative means it was a reflex
+ * rather than a decision.
+ *
+ * The token layer was already semantic, so this is a second set of values, not
+ * a second stylesheet. One inversion is deliberate: in the dark theme
+ * elevation gets LIGHTER as it comes forward; here it goes WHITER against a
+ * grey ground. That is the same rule — a nearer surface catches more light —
+ * expressed on a different ground.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --color-bg: #f2f2f5;
+  --color-bg-1: #ffffff;
+  --color-bg-2: #ffffff;
+  --color-bg-3: #ffffff;
+  --color-sep: #e5e5ea;
+  --color-sep-soft: rgba(0, 0, 0, 0.06);
+
+  --color-label: #17171c;
+  --color-label-2: rgba(23, 23, 28, 0.74);
+  --color-label-3: rgba(23, 23, 28, 0.63);
+  --color-label-4: rgba(23, 23, 28, 0.28);
+
+  --color-fill: rgba(118, 118, 128, 0.16);
+  --color-fill-2: rgba(118, 118, 128, 0.1);
+  --color-fill-3: rgba(118, 118, 128, 0.055);
+
+  --surface-1: linear-gradient(180deg, #ffffff 0%, #fdfdfe 100%);
+  --surface-2: linear-gradient(180deg, #ffffff 0%, #fafafc 100%);
+  --surface-3: #ffffff;
+
+  /* On a white ground a top highlight is invisible, so the job of saying where
+     an object's edge is falls to a hairline ring, and the shadow carries the
+     height instead. */
+  --edge: inset 0 0 0 1px rgba(0, 0, 0, 0.055);
+  --edge-2: inset 0 0 0 1px rgba(0, 0, 0, 0.075);
+  --edge-3: inset 0 0 0 1px rgba(0, 0, 0, 0.09);
+  --shadow-1: 0 1px 2px rgba(16, 16, 24, 0.07);
+  --shadow-2: 0 1px 2px rgba(16, 16, 24, 0.06), 0 8px 24px -8px rgba(16, 16, 24, 0.12);
+  --shadow-3: 0 2px 6px rgba(16, 16, 24, 0.08), 0 28px 64px -16px rgba(16, 16, 24, 0.22);
+
+  /* Inverted again: a dark action on a light ground. */
+  --btn-primary-bg: linear-gradient(180deg, #35353e 0%, #1c1c22 100%);
+  --btn-primary-ink: #ffffff;
+  --btn-primary-edge: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+  /* Tints have to be re-picked for a white ground: #ffd60a is a fine accent on
+     near-black and unreadable on white. Both themes are measured — see
+     test/contrast.mjs, which reads this block and the defaults separately. */
+  --color-brand: #c93a26;
+  --color-blue: #0a5fc4;
+  --color-teal: #076c7b;
+  --color-purple: #8226bf;
+  --color-pink: #b82a4e;
+  --color-orange: #8a5000;
+  --color-yellow: #6f5a00;
+  --color-green: #146c34;
+  --color-gray: #5c5c66;
+  --color-ok: #146c34;
+  --color-warn: #8a5000;
+  --color-bad: #bd2417;
+}
+
 ::selection {
   background: color-mix(in srgb, var(--tint) 32%, transparent);
   color: var(--color-label);
@@ -250,7 +401,7 @@ body {
 
 /* One focus ring, everywhere, keyboard-only. */
 :where(a, button, input, textarea, select, [tabindex]):focus-visible {
-  outline: 2px solid var(--tint);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
   border-radius: var(--radius-xs);
 }
@@ -308,6 +459,7 @@ body {
   background: color-mix(in srgb, var(--color-bg-3) 82%, transparent);
   backdrop-filter: saturate(180%) blur(32px);
   -webkit-backdrop-filter: saturate(180%) blur(32px);
+  box-shadow: var(--edge-3), var(--shadow-3);
 }
 
 /* ==========================================================================
@@ -318,12 +470,14 @@ body {
  */
 
 @utility surface {
-  background: var(--color-bg-1);
-  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--edge), var(--shadow-1);
 }
 @utility surface-raised {
-  background: var(--color-bg-2);
-  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--edge-2), var(--shadow-2);
 }
 @utility hairline {
   box-shadow: inset 0 0 0 1px var(--color-sep);
@@ -333,32 +487,44 @@ body {
    was p-4 forever, which is why a one-line hint and a twelve-row table had the
    same inset. */
 @utility card {
-  background: var(--color-bg-1);
-  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
   padding: 1rem;
+  box-shadow: var(--edge), var(--shadow-1);
 }
 @utility card-lg {
-  background: var(--color-bg-1);
-  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  border-radius: var(--radius-xl);
   padding: 1.5rem;
+  box-shadow: var(--edge), var(--shadow-2);
 }
 @utility card-tight {
-  background: var(--color-bg-1);
-  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
   padding: 0.75rem;
+  box-shadow: var(--edge), var(--shadow-1);
 }
 @utility card-raised {
-  background: var(--color-bg-2);
-  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  border-radius: var(--radius-lg);
   padding: 1rem;
+  box-shadow: var(--edge-2), var(--shadow-2);
 }
 /* A card that is the tinted one on the screen — the live stop, the thing you
    are being asked to do. Tint at 10% keeps the text contrast intact. */
 @utility card-tinted {
-  background: color-mix(in srgb, var(--tint) 10%, var(--color-bg-1));
-  border-radius: var(--radius-md);
+  /* Mixed against the SURFACE token, not a hardcoded dark hex — the first
+     version baked #17171b in, so on the light theme this rendered a dark
+     purple panel with dark text on it. */
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--tint) 13%, var(--color-bg-1)) 0%,
+      color-mix(in srgb, var(--tint) 8%, var(--color-bg-1)) 100%);
+  border-radius: var(--radius-lg);
   padding: 1rem;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint) 26%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--tint) 30%, rgba(255, 255, 255, 0.1)),
+    var(--shadow-2);
 }
 
 /* ==========================================================================
@@ -425,33 +591,59 @@ body {
   border-radius: var(--radius-xs);
 }
 
+/* The primary action is NOT the accent.
+   
+   It used to be a pill flooded with the stage tint, which is the most
+   generated-looking object an interface can contain — and on a game stop that
+   meant a large violet slab, violet being itself a catalogued tell. Linear's
+   brand colour is indigo and its primary button is white; the accent
+   punctuates instead, as a live dot or a count or a link, and the action earns
+   its emphasis from contrast. That also gives the tint a job again: when
+   everything primary is coloured, colour stops meaning anything. */
 @utility btn-filled {
   @apply btn;
-  background: var(--tint);
-  color: var(--tint-ink);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-ink);
+  box-shadow: var(--btn-primary-edge), var(--shadow-1);
   &:hover {
-    filter: brightness(1.1);
+    filter: brightness(1.04);
+  }
+  &:active {
+    filter: brightness(0.97);
   }
   &:disabled {
     background: var(--color-fill-2);
     color: var(--color-label-3);
+    box-shadow: none;
     opacity: 1;
   }
 }
+/* The one place the tint still fills something: an action that IS about the
+   stop's identity, used sparingly. */
 @utility btn-tinted {
   @apply btn;
   background: color-mix(in srgb, var(--tint) 16%, transparent);
   color: var(--tint);
+  box-shadow: var(--edge);
   &:hover {
     background: color-mix(in srgb, var(--tint) 24%, transparent);
   }
 }
 @utility btn-gray {
   @apply btn;
-  background: var(--color-fill-2);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.05)
+  );
   color: var(--color-label);
+  box-shadow: var(--edge-2), var(--shadow-1);
   &:hover {
-    background: var(--color-fill);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.14),
+      rgba(255, 255, 255, 0.075)
+    );
   }
 }
 @utility btn-plain {
@@ -483,16 +675,20 @@ body {
  * opposite of a button and reads instantly as "put something in here".
  */
 
+/* A field is RECESSED: it takes an inner shadow at the top where a raised
+   thing takes a highlight. Same light source, opposite geometry — which is
+   what makes a form legible at a glance, everything you press standing up and
+   everything you fill sinking in. */
 @utility field {
   width: 100%;
   background: var(--color-fill-3);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
   color: var(--color-label);
   border-radius: var(--radius-sm);
   padding: 0.625rem 0.875rem;
   font-size: var(--text-callout);
   min-height: 44px;
   outline: none;
-  box-shadow: inset 0 0 0 1px transparent;
   transition:
     background-color 160ms var(--ease-out),
     box-shadow 160ms var(--ease-out);
@@ -505,8 +701,9 @@ body {
   &:focus {
     background: var(--color-fill-3);
     box-shadow:
-      inset 0 0 0 1px var(--tint),
-      0 0 0 4px color-mix(in srgb, var(--tint) 18%, transparent);
+      inset 0 1px 2px rgba(0, 0, 0, 0.35),
+      inset 0 0 0 1px var(--focus),
+      0 0 0 4px color-mix(in srgb, var(--focus) 16%, transparent);
   }
   &:focus-visible {
     outline: none;
@@ -532,9 +729,12 @@ body {
  */
 
 @utility list-group {
-  background: var(--color-bg-1);
-  border-radius: var(--radius-md);
-  overflow: hidden;
+  background: var(--surface-1);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--edge), var(--shadow-1);
+  /* Padding so the inner rows can have their own smaller radius and stay
+     concentric with the group, instead of being clipped square by it. */
+  padding: 0.3125rem;
 }
 @utility list-row {
   display: flex;
@@ -542,19 +742,29 @@ body {
   gap: 0.75rem;
   width: 100%;
   text-align: left;
-  padding: 0.75rem 1rem;
+  padding: 0.6875rem 0.75rem;
   min-height: 52px;
   position: relative;
-  transition: background-color 120ms var(--ease-out);
-  /* the inset separator: starts at the text, not at the edge */
+  border-radius: var(--radius-md); /* inner radius, concentric with the group */
+  transition:
+    background 140ms var(--ease-out),
+    box-shadow 140ms var(--ease-out);
+  /* The separator fades out at both ends rather than butting into the group's
+     rounded corner, which is what a hard 1px line does at 18px radius. */
   &:not(:last-child)::after {
     content: '';
     position: absolute;
-    left: 1rem;
-    right: 0;
+    left: 0.75rem;
+    right: 0.75rem;
     bottom: 0;
     height: 1px;
-    background: var(--color-sep);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-sep) 8%,
+      var(--color-sep) 92%,
+      transparent
+    );
   }
 }
 @utility list-row-tappable {
@@ -565,29 +775,33 @@ body {
   }
   &:active {
     background: var(--color-fill-2);
+    transform: scale(0.995);
   }
 }
 /* A row that has a leading icon: the separator moves right to clear it. */
 @utility list-row-inset {
   &::after {
-    left: 3.25rem !important;
+    left: 3rem !important;
   }
 }
-/* The selected row. A grey fill was invisible against a grey surface, so
-   selection is stated in the tint — the same way selection is stated
-   everywhere else in the app — plus a bar on the leading edge that survives
-   being looked at quickly. */
+/* The selected row LIFTS.
+   
+   It used to grow a 3px coloured bar down its leading edge, which is — per the
+   people who catalogue generated interfaces — the single most recognisable
+   tell there is. It is also the wrong idea: a bar is a label stuck onto a row,
+   where selection is a state the row is IN. So the row comes forward instead,
+   catching more of the light, the way a pressed key stands proud of the ones
+   beside it. The tint survives as a single dot in the row's own content, where
+   it means "this one" rather than decorating an edge. */
 @utility list-row-selected {
-  background: color-mix(in srgb, var(--tint) 14%, transparent);
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 6px;
-    bottom: 6px;
-    width: 3px;
-    border-radius: 0 3px 3px 0;
-    background: var(--tint);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.075),
+    rgba(255, 255, 255, 0.035)
+  );
+  box-shadow: var(--edge-2), var(--shadow-1);
+  &::after {
+    display: none;
   }
 }
 
@@ -606,8 +820,9 @@ body {
   padding: 0.375rem 0.875rem;
   min-height: 34px;
   font-size: var(--text-subhead);
-  font-weight: 500;
+  font-weight: 510;
   background: var(--color-fill-3);
+  box-shadow: var(--edge);
   color: var(--color-label-2);
   transition:
     background-color 140ms var(--ease-out),
@@ -626,8 +841,10 @@ body {
   @apply chip;
   background: color-mix(in srgb, var(--tint) 18%, transparent);
   color: var(--tint);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint) 40%, transparent);
-  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--tint) 35%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--tint) 38%, transparent);
+  font-weight: 590;
 }
 
 @utility badge {
@@ -683,9 +900,10 @@ body {
 }
 @utility segmented-item-on {
   @apply segmented-item;
-  background: var(--color-bg-3);
+  background: var(--surface-3);
   color: var(--color-label);
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--edge-3), var(--shadow-1);
+  font-weight: 590;
 }
 
 /* ==========================================================================

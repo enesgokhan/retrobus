@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth'
 import StageHeader from '../components/StageHeader'
 import Empty from '../components/ui/Empty'
 import type { Member, Stage } from '../lib/types'
+import Icon from '../components/ui/Icon'
 
 interface FeedbackItem {
   id: string
@@ -251,7 +252,7 @@ export default function FeedbackWallStage({
 
       {!revealed ? (
         <Empty
-          icon="💌"
+          icon={<Icon name="feedback_wall" size={44} />}
           title="Duvar henüz açılmadı"
           body="Yazdıkların hep birlikte, karışık sırayla açılacak — kimin ne zaman yazdığı görünmeyecek."
         />

@@ -3,6 +3,7 @@ import { S } from '../lib/strings'
 import StageView from '../components/StageView'
 import FrozenScreen from '../components/FrozenScreen'
 import ConnStatus from '../components/ConnStatus'
+import Icon from '../components/ui/Icon'
 
 /** Sunum modu — ekran paylaşımı için büyük, kontrolsüz görünüm. */
 export default function Sunum() {
@@ -35,8 +36,8 @@ export default function Sunum() {
             aria-hidden
           />
           <div className="relative">
-            <div className="text-8xl mb-6 leading-none" aria-hidden>
-              🚌
+            <div className="mb-6 grid place-items-center text-label-2">
+              <Icon name="bus" size={96} strokeWidth={1.1} />
             </div>
             <h1 className="text-display">{S.appName}</h1>
             <p className="text-title-2 text-label-2 mt-4">{S.waitingTitle}</p>

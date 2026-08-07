@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth'
 import { S } from '../lib/strings'
 import Button from '../components/ui/Button'
 import { Field } from '../components/ui/Field'
+import Icon from '../components/ui/Icon'
 
 /**
  * Joining by room code — the screen behind the QR.
@@ -81,8 +82,8 @@ export default function Katil() {
       />
 
       <div className="relative w-full max-w-sm animate-rise">
-        <div className="text-5xl leading-none mb-5" aria-hidden>
-          🚌
+        <div className="mb-5 text-label-3">
+          <Icon name="bus" size={40} />
         </div>
         <p className="text-overline uppercase text-label-3">{S.appName}</p>
 

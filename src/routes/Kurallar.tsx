@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import AppShell from '../components/AppShell'
+import Icon from '../components/ui/Icon'
 
 interface RuleCard {
   key: string
-  emoji: string
+  /** the stop kind this rule belongs to, for the icon */
+  icon: string
   title: string
   oneLine: string
   /** how it actually works, in order */
@@ -19,7 +21,7 @@ interface RuleCard {
 const RULES: RuleCard[] = [
   {
     key: 'codenames',
-    emoji: '🕵️',
+    icon: 'codenames',
     title: 'Kelime Ajanları',
     oneLine: 'İki takım, 25 kelime. Spymaster tek kelimeyle kendi ajanlarını işaret eder.',
     steps: [
@@ -40,7 +42,7 @@ const RULES: RuleCard[] = [
   },
   {
     key: 'wavelength',
-    emoji: '📻',
+    icon: 'wavelength',
     title: 'Frekans',
     oneLine: 'Gizli bir nokta, tek kelimelik bir ipucu ve iki takım.',
     steps: [
@@ -64,7 +66,7 @@ const RULES: RuleCard[] = [
   },
   {
     key: 'fibbage',
-    emoji: '🤫',
+    icon: 'fibbage',
     title: 'Fibbage',
     oneLine: 'Gerçek cevabı bul, bu arada kendi yalanınla başkalarını kandır.',
     steps: [
@@ -86,7 +88,7 @@ const RULES: RuleCard[] = [
   },
   {
     key: 'quiz',
-    emoji: '🏆',
+    icon: 'quiz',
     title: 'Bilgi Yarışması',
     oneLine: 'Doğru cevap puan, hızlı doğru cevap daha çok puan.',
     steps: [
@@ -104,7 +106,7 @@ const RULES: RuleCard[] = [
   },
   {
     key: 'two_truths',
-    emoji: '🤥',
+    icon: 'two_truths',
     title: 'İki Doğru Bir Yalan',
     oneLine: 'Üç cümle yaz, biri yalan olsun.',
     steps: [
@@ -117,7 +119,7 @@ const RULES: RuleCard[] = [
   },
   {
     key: 'rank',
-    emoji: '🔢',
+    icon: 'rank',
     title: 'Sırala Bakalım',
     oneLine: 'Listeyi sırala — amaç haklı olmak değil, çoğunlukla aynı düşünmek.',
     steps: [
@@ -131,7 +133,7 @@ const RULES: RuleCard[] = [
   },
   {
     key: 'wordcloud',
-    emoji: '☁️',
+    icon: 'wordcloud',
     title: 'Kelime Bulutu',
     oneLine: 'Tek kelime yaz; aynı kelimeler büyür.',
     steps: ['Geçen dönemi anlatan tek kelimeyi yaz.', 'Aynı kelimeyi yazan ne kadar çoksa o kelime o kadar büyür.'],
@@ -139,7 +141,7 @@ const RULES: RuleCard[] = [
   },
   {
     key: 'health',
-    emoji: '🩺',
+    icon: 'health_check',
     title: 'Takım Nabzı',
     oneLine: 'Her boyut için iyi / orta / kötü. Tamamen anonim.',
     steps: ['Her başlık için bir seçenek işaretle.', 'Herkes bitirince toplu dağılım açılır.'],
@@ -148,7 +150,7 @@ const RULES: RuleCard[] = [
   },
   {
     key: 'feedback',
-    emoji: '💌',
+    icon: 'feedback_wall',
     title: 'Geri Bildirim Duvarı',
     oneLine: 'Takım arkadaşların için güçlü yön ve gelişim alanı. Anonim.',
     steps: [
@@ -164,7 +166,7 @@ const RULES: RuleCard[] = [
   },
   {
     key: 'mission',
-    emoji: '🕶️',
+    icon: 'secret_mission',
     title: 'Gizli Görev',
     oneLine: 'Toplantı boyunca arka planda çalışan gizli bir hedef.',
     steps: [
@@ -200,8 +202,8 @@ export default function Kurallar() {
                 onClick={() => setOpen(isOpen ? null : r.key)}
                 aria-expanded={isOpen}
               >
-                <span className="shrink-0 size-8 grid place-items-center text-2xl" aria-hidden>
-                  {r.emoji}
+                <span className="shrink-0 size-8 grid place-items-center text-label-2">
+                  <Icon name={r.icon} size={20} />
                 </span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-headline">{r.title}</span>
