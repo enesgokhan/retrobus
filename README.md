@@ -48,14 +48,14 @@ boşaltır. Sonunda **Yıllık** sekmesinden markdown/PDF çıktısını al.
    `psql` yoksa aynı dosyaları Supabase panelindeki **SQL Editor**'a yapıştırmak da olur;
    hepsi tekrar çalıştırılabilir (`create or replace`, `drop policy if exists`).
 
-   **Hangi migrasyonun uygulandığını test söyler.** Bu depodaki testler veritabanına karşı
-   koşar, o yüzden eksik bir migrasyon isim isim rapor edilir — örneğin
-   `test/progress-keys-test.mjs` "run migration 0023" der. Uygulamadan önce:
+   **Hangi migrasyonun uygulandığını canlı veritabanı söyler**, dosyalar değil:
    ```
-   node test/reveal-poll-test.mjs     # 0022
-   node test/progress-keys-test.mjs   # 0023
-   node test/mission-count-test.mjs   # 0024
+   node test/migrations.mjs
    ```
+   Migrasyonlar elle yapıştırıldığı için uygulanmışları tutan bir tablo yok. Bu komut
+   her migrasyonun ETKİSİNİ gerçek yazma yolundan geçerek dener ve tek tabloda
+   APPLIED / NOT APPLIED der — eksik olanın toplantı gecesinde ne kırdığını da yazar.
+   Hepsi tekrar çalıştırılabilir, iki kez uygulamak bir şey bozmaz.
 4. Kendini şoför yap:
    ```sql
    insert into members (display_name, is_host) values ('Enes', true);
