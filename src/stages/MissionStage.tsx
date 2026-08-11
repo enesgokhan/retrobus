@@ -30,6 +30,8 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
   const [armed, setArmed] = useState(false)
   const [armedAt, setArmedAt] = useState(0)
   const [didCelebrate, setDidCelebrate] = useState(false)
+  /** how many unrevealed missions exist in this meeting — a count, never a pairing */
+  const [dealt, setDealt] = useState(0)
 
   const anyRevealed = missions.some((m) => m.revealed)
 
@@ -37,16 +39,22 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
     if (!member) return
     let cancelled = false
     async function load() {
-      const [{ data: ms }, { data: mem }] = await Promise.all([
+      const [{ data: ms }, { data: mem }, { data: n }] = await Promise.all([
         supabase
           .from('missions')
           .select('id, member_id, body, completed, revealed')
           .eq('meeting_id', stage.meeting_id),
         supabase.from('members').select('id, display_name, is_host, avatar').order('display_name'),
+        // How many are out there. `missions` itself returns at most YOUR row —
+        // the host is not exempt from that policy, on purpose — so counting the
+        // array told the host "0 atanmış" after a clean deal to nine people,
+        // right next to a button that deletes and re-rolls the lot.
+        supabase.rpc('mission_count', { p_meeting_id: stage.meeting_id }),
       ])
       if (cancelled) return
       setMissions((ms as Mission[]) ?? [])
       setMembers((mem as Member[]) ?? [])
+      setDealt((n as number) ?? 0)
     }
     load()
     const channel = liveChannel(`missions-${stage.meeting_id}`, ['missions', 'stages'], load)
@@ -93,19 +101,22 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
         instruction={
           anyRevealed ? 'Kim başardı, kim yakalandı?'
           : mine && !presenter ? 'Görevini kimseye söyleme. Fırsat kolla.'
+          /* the shared screen is not the host's to-do list: this line used to
+             tell the whole room to go and deal the missions */
+          : presenter ? 'Herkes fırsat kolluyor. Finalde hepsi açılacak.'
           : isHost ? 'Görevleri dağıt — toplantının başında yap.'
           : 'Sana görev atanmamış.'
         }
         waiting={!anyRevealed && !mine}
         presenter={presenter}
       />
-      {note && <p className="rounded-2xl bg-teal-soft px-4 py-2.5 text-subhead font-semibold">{note}</p>}
+      {note && <p className="rounded-lg bg-teal-soft px-4 py-2.5 text-subhead font-semibold">{note}</p>}
 
       {!anyRevealed ? (
         <>
           {mine && !presenter ? (
             <section className="card flex flex-col gap-2 border-grape bg-grape-soft">
-              <span className="text-footnote font-bold uppercase tracking-widest text-grape">
+              <span className="eyebrow text-grape">
                 Gizli görevin — kimseye söyleme
               </span>
               <p className={presenter ? 'text-title-1' : 'text-title-3'}>{mine.body}</p>
@@ -113,6 +124,16 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
                 Toplantı boyunca fırsat kolla. Finalde herkesin görevi açılacak.
               </p>
             </section>
+          ) : presenter ? (
+            /* The shared screen holds nobody's mission, so this branch is where
+               it always lands — and it used to announce "Görevler henüz
+               dağıtılmadı" to the whole room while everyone was holding one.
+               The count is the one true thing this screen can say. */
+            <p className="text-title-3 text-label-2 text-center">
+              {dealt
+                ? `${dealt} gizli görev dağıtıldı. Kimse söylemesin.`
+                : 'Görevler henüz dağıtılmadı.'}
+            </p>
           ) : (
             <p className="text-label-2">
               {isHost ? 'Görevler henüz dağıtılmadı.' : 'Sana görev atanmamış.'}
@@ -140,12 +161,12 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
                   onBlur={() => setArmed(false)}
                 >
                   {armed
-                    ? missions.length
+                    ? dealt
                       ? 'Mevcut görevler silinip yeniden dağıtılacak — bas'
                       : 'Dağıtmak için tekrar bas'
-                    : `Görevleri dağıt (${missions.length || 0} atanmış)`}
+                    : `Görevleri dağıt (${dealt} atanmış)`}
                 </button>
-                {missions.length > 0 && (
+                {dealt > 0 && (
                   <button className="btn-gray text-subhead" onClick={reveal}>
                     Hepsini aç (final)
                   </button>
@@ -181,7 +202,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
                     <button
                       className={[
                         'rounded-full px-2.5 py-1 text-footnote font-bold border-2',
-                        m.completed === true ? 'bg-teal text-[#04141a] border-teal' : 'border-sep',
+                        m.completed === true ? 'bg-teal text-(--ink-on-teal) border-teal' : 'border-sep',
                       ].join(' ')}
                       onClick={() => toggleDone(m.id, true)}
                     >

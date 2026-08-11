@@ -44,6 +44,18 @@ boşaltır. Sonunda **Yıllık** sekmesinden markdown/PDF çıktısını al.
    ```
    IPv4 bir ağdaysan doğrudan `db.<ref>.supabase.co` yerine session-mode pooler'ı kullan:
    `postgresql://postgres.<ref>@aws-0-<region>.pooler.supabase.com:5432/postgres`
+
+   `psql` yoksa aynı dosyaları Supabase panelindeki **SQL Editor**'a yapıştırmak da olur;
+   hepsi tekrar çalıştırılabilir (`create or replace`, `drop policy if exists`).
+
+   **Hangi migrasyonun uygulandığını test söyler.** Bu depodaki testler veritabanına karşı
+   koşar, o yüzden eksik bir migrasyon isim isim rapor edilir — örneğin
+   `test/progress-keys-test.mjs` "run migration 0023" der. Uygulamadan önce:
+   ```
+   node test/reveal-poll-test.mjs     # 0022
+   node test/progress-keys-test.mjs   # 0023
+   node test/mission-count-test.mjs   # 0024
+   ```
 4. Kendini şoför yap:
    ```sql
    insert into members (display_name, is_host) values ('Enes', true);

@@ -55,6 +55,34 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
       } else {
         setResponses({})
       }
+
+      // Which of these we have already answered, read from our own ledger.
+      //
+      // `answered` used to be set in one place only: the moment a click
+      // succeeded. It lived in component state and nothing restored it, so a
+      // reload — or a tab switch, or the remount that follows a reconnect —
+      // offered every poll again as if untouched. The database is not fooled;
+      // `bump_participation` caps the key at one and raises. The cost is worse
+      // than a wrong tally: the app invites you to do something and then tells
+      // you off for doing it, and on a shared call the natural reading is that
+      // your first vote never landed.
+      //
+      // The ledger is per-member and `participation_select_own` restricts it to
+      // your own rows, so this reads your history and nobody else's. It is the
+      // same source HealthCheckStage already uses for the same question.
+      const { data: ledger } = await sb
+        .from('participation')
+        .select('action_key, count')
+        .eq('stage_id', stage.id)
+      if (cancelled) return
+      const mine: Record<string, boolean> = {}
+      for (const row of (ledger as { action_key: string; count: number }[]) ?? []) {
+        if (!row.action_key.startsWith('poll:') || row.count < 1) continue
+        // 'poll:<id>' for single and the scales, 'poll:<id>:<choice>' for multi
+        const [, id, choice] = row.action_key.split(':')
+        mine[choice === undefined ? id : `${id}:${choice}`] = true
+      }
+      setAnswered(mine)
     }
     load()
     const channel = liveChannel(`poll-stage-${stage.id}`, ['polls', 'poll_responses', 'stages'], load)
@@ -70,7 +98,11 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
     setError(null)
     const err = await submitPollResponse(sb, poll.id, choice)
     if (err) setError(ERR[err])
-    else if (poll.kind !== 'multi') setAnswered((a) => ({ ...a, [poll.id]: true }))
+    else
+      setAnswered((a) => ({
+        ...a,
+        [poll.kind === 'multi' ? `${poll.id}:${choice}` : poll.id]: true,
+      }))
   }
 
   if (!polls.length) {
@@ -132,13 +164,17 @@ export default function PollStage({ stage, presenter = false }: { stage: Stage; 
                 const choice = i + offset
                 const count = tally.filter((c) => c === choice).length
                 const pct = tally.length ? Math.round((count / tally.length) * 100) : 0
-                const canAnswer = poll.state === 'open' && !isDone && !presenter
+                // A multi-choice poll caps each OPTION at one, not the poll, so
+                // it is the option that has to know it has been used.
+                const optionDone =
+                  poll.kind === 'multi' && answered[`${poll.id}:${choice}`] === true
+                const canAnswer = poll.state === 'open' && !isDone && !optionDone && !presenter
 
                 return (
                   <button
                     key={choice}
                     className={[
-                      'relative overflow-hidden rounded-2xl border-2 border-sep text-left font-semibold',
+                      'relative overflow-hidden rounded-lg border border-sep text-left font-semibold',
                       scaleMax ? 'px-5 py-3 min-w-14 text-center' : 'px-4 py-3',
                       canAnswer ? 'hover:border-coral' : 'cursor-default',
                     ].join(' ')}

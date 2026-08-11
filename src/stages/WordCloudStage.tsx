@@ -24,6 +24,7 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
 
   const maxWords = (stage.config.maxWords as number) ?? 3
   const isOpen = stage.state === 'open'
+  const revealed = stage.state === 'revealed'
   const canSubmit = isOpen && myCards < maxWords && !presenter
 
   // aggregate case-insensitively, keep the first spelling seen
@@ -57,9 +58,15 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
   return (
     <div className="w-full max-w-5xl flex-1 flex flex-col gap-5">
       <StageHeader
-        phase={isOpen ? 'Yazma zamanı' : 'Kapandı'}
+        /* This stop knew two states, open and not-open, so pressing the
+           console's "Sonuçları aç" — the moment the cloud is actually FOR —
+           put "Kapandı · Bu durak tamamlandı" over it while the host was
+           presenting it. Revealed is its own moment and now says so; closed
+           still means closed. */
+        phase={isOpen ? 'Yazma zamanı' : revealed ? 'Yılın bulutu' : 'Kapandı'}
         instruction={
-          !isOpen ? 'Bu durak tamamlandı.'
+          revealed ? 'En çok tekrar eden kelime en büyüğü.'
+          : !isOpen ? 'Bu durak tamamlandı.'
           : canSubmit ? 'Tek kelime yaz. Aynı kelimeler büyür.'
           : 'Kelime hakkın doldu — bulutu izle.'
         }
@@ -118,7 +125,7 @@ export default function WordCloudStage({ stage, presenter = false }: { stage: St
                 title={`${w.n}×`}
               >
                 {w.label}
-                {w.n > 1 && <sub className="text-footnote align-super opacity-60 ml-0.5">{w.n}</sub>}
+                {w.n > 1 && <sub className="text-footnote align-super text-label-2 ml-0.5">{w.n}</sub>}
               </span>
             )
           })}

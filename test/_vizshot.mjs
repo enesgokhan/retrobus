@@ -128,9 +128,6 @@ const { count } = await api
   .eq('stage_id', health.id)
 console.log(`${count} health answers written through the UI`)
 if (!count) { console.error('nothing was written — the probe proves nothing'); process.exit(1) }
-await api.from('stages').update({ state: 'revealed' }).eq('id', health.id)
-await api.from('meetings').update({ active_stage_id: live.id }).eq('id', meeting.id)
-
 const go = async (path) => {
   await pg.goto(APP + '#' + path, { waitUntil: 'domcontentloaded' })
   await pg.reload({ waitUntil: 'domcontentloaded' })
@@ -138,6 +135,30 @@ const go = async (path) => {
   const start = pg.getByRole('button', { name: 'Hadi başlayalım' })
   if (await start.count()) { await start.click(); await pg.waitForTimeout(700) }
 }
+
+// The shared screen WHILE the room votes — the state that used to render six
+// labels and nothing else, because the controls are hidden on a projector and
+// nothing took their place. Shot before the reveal, deliberately: after it, the
+// chart is up and this state is gone.
+await api.from('meetings').update({ active_stage_id: health.id }).eq('id', meeting.id)
+await go('/sunum')
+await pg.screenshot({ path: `${OUT}/viz-health-voting.png` })
+{
+  // A screenshot proves the page rendered, not that it says anything true.
+  // These counts come from `stage_progress`, which returns 0 for a reader it
+  // does not recognise — so an unauthenticated or mis-scoped probe would
+  // photograph six tidy empty bars and look like a success.
+  const shown = await pg.locator('text=/\\b[1-9]\\d*\\/\\d+\\b/').count()
+  if (!shown) {
+    console.error('the shared screen shows no per-dimension counts — the voting state is still blank')
+    process.exit(1)
+  }
+  console.log(`${shown} live dimension counts on the shared screen`)
+}
+console.log('📸 health check, shared screen, mid-vote')
+
+await api.from('stages').update({ state: 'revealed' }).eq('id', health.id)
+await api.from('meetings').update({ active_stage_id: live.id }).eq('id', meeting.id)
 
 await go('/host')
 await pg.screenshot({ path: `${OUT}/viz-route.png`, fullPage: true })

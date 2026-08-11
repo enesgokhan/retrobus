@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth'
 import StageHeader from '../components/StageHeader'
 import Alert from '../components/ui/Alert'
 import LikertBar from '../components/ui/LikertBar'
+import { useProgressMany } from '../lib/useProgress'
 import type { Stage } from '../lib/types'
 
 export interface Dimension {
@@ -80,6 +81,14 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
 
   const isOpen = stage.state === 'open'
   const showResults = stage.state === 'revealed' || stage.state === 'closed'
+
+  // How far the ROOM has got, per dimension. Counts of people, never ratings —
+  // `stage_progress` returns a number and nothing else, so the batch reveal is
+  // untouched. This is what the shared screen shows while everyone votes.
+  const room = useProgressMany(
+    presenter && !showResults ? stage.id : null,
+    dims.map((d) => `health:${d.key}`),
+  )
 
   useEffect(() => {
     if (!member) return
@@ -204,6 +213,31 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
             <h3 className={['flex-1 min-w-40', presenter ? 'text-title-3' : 'text-headline'].join(' ')}>
               {d.label}
             </h3>
+
+            {/* The shared screen, while the room votes.
+                Nobody taps on a projector, so the controls are correctly
+                hidden here — but hiding them left six labels and nothing else,
+                and a screen that reports nothing for three minutes reads as a
+                screen that has stopped working. A bar per dimension, filling as
+                people answer, is the same information the host was asking for
+                out loud ("herkes yaptı mı?") and it names no one: the number is
+                a count of people, and which way they voted stays sealed until
+                the reveal. */}
+            {isOpen && presenter && (
+              <div className="flex items-center gap-3 shrink-0 w-72">
+                <div className="flex-1 h-2.5 rounded-full bg-fill-3 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-(--tint) transition-[width] duration-500"
+                    style={{
+                      width: `${room.total ? Math.round(((room.done[`health:${d.key}`] ?? 0) / room.total) * 100) : 0}%`,
+                    }}
+                  />
+                </div>
+                <span className="text-title-3 nums tabular-nums text-label-2 w-20 text-right">
+                  {room.done[`health:${d.key}`] ?? 0}/{room.total}
+                </span>
+              </div>
+            )}
 
             {isOpen && !presenter && (
               <div className="flex gap-2 shrink-0">
