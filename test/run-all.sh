@@ -61,7 +61,7 @@ W=430 H=930 node test/a11y.mjs || fails=$((fails + 1))
 # actually plays every game to a finish. `ten-people` and `measure-fill` stay
 # out on purpose: the first burns the anonymous sign-in quota, the second is a
 # ruler rather than a pass/fail.
-suites="publication grants flow phase3 phase4 phase5 phase6 reconnect agenda iteration rules fibbage-cheat join-code codenames-fit reveal-live presenter-secrets smoke-play rehearsal messy-night blocked-network"
+suites="publication grants flow phase3 phase4 phase5 phase6 reconnect agenda iteration rules fibbage-cheat join-code codenames-fit reveal-live presenter-secrets hidden smoke-play rehearsal messy-night blocked-network"
 for t in $suites; do
   echo "################ $t ################"
   # Suites are named either foo-test.mjs or foo.mjs. This used to assume the
