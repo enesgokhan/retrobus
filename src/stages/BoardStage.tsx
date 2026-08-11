@@ -298,7 +298,7 @@ export default function BoardStage({ stage, presenter = false }: { stage: Stage;
             if (columns.length === 1) return inCol.map((c) => tile(c, col.key))
             return (
               <div key={col.key} className="flex flex-col gap-2">
-                <h3 className="text-overline uppercase text-label-3 px-1 pb-1">
+                <h3 className="eyebrow text-label-3 px-1 pb-1">
                   {col.label} <span className="text-label-3 nums">{inCol.length}</span>
                 </h3>
                 {inCol.map((c) => tile(c, col.key))}
@@ -424,7 +424,7 @@ function CardTile({
           aria-label={canVote ? 'Bu karta oy ver' : 'Oy hakkın kalmadı'}
         >
           <span className="text-headline">{votes}</span>
-          <span className="text-[10px] uppercase tracking-wider mt-0.5 opacity-60">oy</span>
+          <span className="eyebrow mt-0.5 text-label-3">oy</span>
         </button>
       )}
     </div>

@@ -72,7 +72,7 @@ export default function ActionsPanel({ meetingId }: { meetingId: string }) {
   return (
     <section className="card-lg w-full max-w-3xl flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        <h3 className="text-overline uppercase text-label-3">Kararlar</h3>
+        <h3 className="eyebrow text-label-3">Kararlar</h3>
         {actions.length > 0 && <span className="badge nums">{actions.length}</span>}
       </div>
 

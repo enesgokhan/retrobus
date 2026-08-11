@@ -445,7 +445,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
         {/* spektrum */}
         <div
           className={[
-            'relative rounded-2xl overflow-hidden border-2 border-sep bg-gradient-to-r from-coral via-amber to-sky',
+            'relative rounded-lg overflow-hidden border border-sep bg-gradient-to-r from-coral via-amber to-sky',
             presenter ? 'h-36' : 'h-28',
           ].join(' ')}
         >
@@ -560,7 +560,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
                 <button
                   key={side}
                   className={[
-                    'flex-1 rounded-2xl border-2 py-4 font-semibold text-headline transition',
+                    'flex-1 rounded-lg border-2 py-4 font-semibold text-headline transition',
                     myBet?.side === side ? 'bg-(--tint) text-(--tint-ink)' : 'border-sep hover:border-coral',
                   ].join(' ')}
                   onClick={() => sendBet(side)}

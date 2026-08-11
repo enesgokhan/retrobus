@@ -30,12 +30,12 @@ interface Answer {
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 const TINTS = [
-  'bg-coral text-[#1a0806] border-coral-deep',
-  'bg-sky text-[#04101f] border-sky',
-  'bg-amber text-[#1a1000] border-amber',
-  'bg-grape text-[#160421] border-grape',
-  'bg-teal text-[#04141a] border-teal',
-  'bg-green text-[#04150a] border-green',
+  'bg-coral text-(--ink-on-coral) border-coral-deep',
+  'bg-sky text-(--ink-on-sky) border-sky',
+  'bg-amber text-(--ink-on-amber) border-amber',
+  'bg-grape text-(--ink-on-grape) border-grape',
+  'bg-teal text-(--ink-on-teal) border-teal',
+  'bg-green text-(--ink-on-green) border-green',
 ]
 
 /** Bilgi yarışması — hız ağırlıklı puan, sorular arası canlı sıralama. */
@@ -203,10 +203,10 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
                   <button
                     key={i}
                     className={[
-                      'rounded-2xl border-2 px-4 py-4 text-left font-bold transition flex items-center gap-3',
+                      'rounded-lg border-2 px-4 py-4 text-left font-bold transition flex items-center gap-3',
                       revealed
                         ? isCorrect
-                          ? 'bg-teal text-[#04141a] border-teal'
+                          ? 'bg-teal text-(--ink-on-teal) border-teal'
                           : 'border-sep opacity-60'
                         : isMine && !presenter
                           ? TINTS[i % TINTS.length]
@@ -220,7 +220,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
                       {LETTERS[i]}
                     </span>
                     <span className={presenter ? 'text-title-3' : ''}>{opt}</span>
-                    {revealed && <span className="ml-auto text-subhead opacity-80">{count}</span>}
+                    {revealed && <span className="ml-auto text-subhead text-label-2">{count}</span>}
                     {isCorrect && <Icon name="check" size={18} />}
                   </button>
                 )
@@ -230,7 +230,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
             <div className="flex flex-col gap-3">
               {revealed ? (
                 <div className="text-center">
-                  <div className="text-subhead font-bold uppercase tracking-widest text-label-2">Doğru cevap</div>
+                  <div className="eyebrow text-label-2">Doğru cevap</div>
                   <div className="text-title-1 text-teal nums">{key?.correct_number ?? '—'}</div>
                 </div>
               ) : myAnswer ? (
@@ -305,7 +305,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
       {/* sorular arası sıralama */}
       {revealed && board.length > 0 && (
         <section className="card flex flex-col gap-2">
-          <h4 className="font-semibold text-subhead uppercase tracking-widest text-label-2">Sıralama</h4>
+          <h4 className="eyebrow text-label-2">Sıralama</h4>
           {board.slice(0, presenter ? 10 : 5).map((r, i) => (
             <div key={r.member_id} className="flex items-center gap-3">
               <span className="w-6 text-right font-bold text-label-2">{i + 1}</span>
@@ -322,7 +322,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
           {/* The same treatment Fibbage needed: a question list you can read.
               These were pills labelled "1. aç" / "2. açık" — the order index and
               a state, with the question itself only in a title attribute. */}
-          <h4 className="text-footnote uppercase tracking-widest text-label-3 font-medium">
+          <h4 className="eyebrow text-label-3">
             Sorular ({questions.length})
           </h4>
           {questions.map((q) => (

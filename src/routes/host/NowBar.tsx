@@ -110,7 +110,7 @@ export default function NowBar(p: NowBarProps) {
     >
       {/* where we are */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 text-overline uppercase text-label-3">
+        <div className="flex items-center gap-2 eyebrow text-label-3">
           <span
             className={['size-2 rounded-full', activeStage ? 'bg-(--tint)' : 'bg-label-4'].join(' ')}
             aria-hidden

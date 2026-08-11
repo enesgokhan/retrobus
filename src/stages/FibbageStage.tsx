@@ -256,7 +256,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
           )}
         </div>
       )}
-      <details className="rounded-2xl border-2 border-sep p-3">
+      <details className="rounded-lg border border-sep p-3">
         <summary className="font-bold text-subhead cursor-pointer">Yeni tur ekle</summary>
         <div className="flex flex-col gap-2 mt-3">
           <input
@@ -309,7 +309,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
           looking at, and lets the host remove one. */}
       {rounds.length > 0 && (
         <div className="flex flex-col gap-1 pt-1">
-          <h5 className="text-footnote uppercase tracking-widest text-label-3 font-medium">
+          <h5 className="eyebrow text-label-3">
             Sorular ({rounds.length})
           </h5>
           {rounds.map((r) => {
@@ -411,7 +411,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
             {round.prompt}
           </h3>
           {round.multiplier > 1 && (
-            <span className="shrink-0 rounded-full bg-grape text-[#160421] px-3 py-1 text-subhead font-semibold">
+            <span className="shrink-0 rounded-full bg-grape text-(--ink-on-grape) px-3 py-1 text-subhead font-semibold">
               ×{round.multiplier}
             </span>
           )}
@@ -464,10 +464,10 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                   <button
                     key={opt.opt_id}
                     className={[
-                      'rounded-2xl border-2 px-4 py-3 text-left font-bold transition',
+                      'rounded-lg border-2 px-4 py-3 text-left font-bold transition',
                       revealed
                         ? isTruth
-                          ? 'bg-teal text-[#04141a] border-teal'
+                          ? 'bg-teal text-(--ink-on-teal) border-teal'
                           : 'border-sep opacity-70'
                         : picked
                           ? 'bg-rose-soft border-coral'
@@ -487,11 +487,11 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                           player, so labelling "your lie" on the shared screen
                           tells the whole room which option is a lie. */}
                       {isMine && !revealed && !presenter && (
-                        <span className="text-footnote shrink-0 opacity-70">senin yalanın</span>
+                        <span className="text-footnote shrink-0 text-label-2">senin yalanın</span>
                       )}
                     </div>
                     {revealed && (
-                      <p className="text-footnote font-semibold mt-1.5 opacity-80">
+                      <p className="text-footnote font-semibold mt-1.5 text-label-2">
                         {!isTruth && opt.author && `${opt.author} yazdı. `}
                         {takers.length > 0
                           ? `Seçenler: ${takers.join(', ')}`

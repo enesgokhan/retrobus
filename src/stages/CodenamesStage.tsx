@@ -49,14 +49,17 @@ interface Card {
  */
 /**
  * Team colours are semantic, not decorative — they name the two sides — so they
- * stay saturated. The neutral and assassin cards had to be rebuilt for the dark
- * system: `bg-label text-white` was white-on-white once ink became a light token.
+ * stay saturated in both themes. Neutral and assassin name nothing, so they are
+ * the board's own furniture and follow the ground; every value here is a token
+ * for that reason. Written as constants they were dark-only, and the key card —
+ * the one screen in this game that is nothing but coloured tiles — put a
+ * near-black label on a near-black tile at 1.15:1 in the light theme.
  */
 const ROLE_MARK: Record<string, { mark: string; label: string; cls: string }> = {
-  red: { mark: '🔴', label: 'Kırmızı', cls: 'bg-coral text-[#1a0806] shadow-[inset_0_0_0_1px_var(--color-coral-deep)]' },
-  blue: { mark: '🔵', label: 'Mavi', cls: 'bg-sky text-[#04101f] shadow-[inset_0_0_0_1px_#3d7fd0]' },
-  neutral: { mark: '⬜', label: 'Tarafsız', cls: 'bg-[#2a2721] text-label-2 shadow-[inset_0_0_0_1px_#3a352c]' },
-  assassin: { mark: '💀', label: 'Suikastçı', cls: 'bg-black text-[#ff8a7a] shadow-[inset_0_0_0_2px_#6b2a24]' },
+  red: { mark: '🔴', label: 'Kırmızı', cls: 'bg-coral text-(--ink-on-coral) shadow-[inset_0_0_0_1px_var(--color-coral-deep)]' },
+  blue: { mark: '🔵', label: 'Mavi', cls: 'bg-sky text-(--ink-on-sky) shadow-[inset_0_0_0_1px_var(--cn-blue-edge)]' },
+  neutral: { mark: '⬜', label: 'Tarafsız', cls: 'bg-(--cn-neutral) text-(--cn-neutral-ink) shadow-[inset_0_0_0_1px_var(--cn-neutral-edge)]' },
+  assassin: { mark: '💀', label: 'Suikastçı', cls: 'bg-(--cn-assassin) text-(--cn-assassin-ink) shadow-[inset_0_0_0_2px_var(--cn-assassin-edge)]' },
 }
 
 export default function CodenamesStage({ stage, presenter = false }: { stage: Stage; presenter?: boolean }) {

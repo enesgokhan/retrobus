@@ -157,7 +157,7 @@ export default function FeedbackWallStage({
                   <button
                     key={k}
                     className={[
-                      'flex-1 rounded-2xl border-2 py-2.5 font-bold text-subhead transition',
+                      'flex-1 rounded-lg border-2 py-2.5 font-bold text-subhead transition',
                       kind === k ? `${KIND_META[k].bg} ${KIND_META[k].border}` : 'border-sep',
                     ].join(' ')}
                     onClick={() => setKind(k)}
@@ -271,11 +271,11 @@ export default function FeedbackWallStage({
                   <div
                     key={i.id}
                     className={[
-                      'rounded-2xl border-2 p-4 flex flex-col gap-2',
+                      'rounded-lg border-2 p-4 flex flex-col gap-2',
                       i.hidden ? 'border-dashed border-label-2/40 opacity-50 bg-bg-1' : `${meta.bg} ${meta.border}`,
                     ].join(' ')}
                   >
-                    <span className="text-footnote font-bold uppercase tracking-wide opacity-70">
+                    <span className="eyebrow text-label-2">
                       {meta.emoji} {meta.label}
                     </span>
                     <p className="whitespace-pre-wrap break-words">{i.body}</p>

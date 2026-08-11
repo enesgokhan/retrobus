@@ -40,6 +40,13 @@ async function login(name, code, avatar = true) {
     deviceScaleFactor: 2,
   })
   const page = await ctx.newPage()
+  // The light theme is a real, shippable choice behind a toggle in the host's
+  // nav, and until now this camera could only ever shoot the dark one — which
+  // is how fourteen colours picked for a black ground survived in it.
+  //   THEME=light SHOT_DIR=… node test/_gallery.mjs
+  if (process.env.THEME) {
+    await page.addInitScript((t) => localStorage.setItem('retrobus.theme', t), process.env.THEME)
+  }
   await page.goto(APP, { waitUntil: 'domcontentloaded' })
   await page.waitForTimeout(1500)
   return { page, ctx, name, code, avatar }

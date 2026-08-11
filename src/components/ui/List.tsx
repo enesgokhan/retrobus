@@ -35,7 +35,7 @@ export function List({
       {(title || action) && (
         <div className="flex items-end justify-between gap-3 px-1 pb-2">
           {title && (
-            <h2 className="text-overline uppercase text-label-3">{title}</h2>
+            <h2 className="eyebrow text-label-3">{title}</h2>
           )}
           {action}
         </div>

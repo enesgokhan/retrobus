@@ -318,7 +318,7 @@ function Block({
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-baseline gap-3">
-        <span className="text-overline uppercase text-label-3 nums">{n}</span>
+        <span className="eyebrow text-label-3 nums">{n}</span>
         <h2 className="text-title-3">{title}</h2>
       </div>
       {note && <p className="text-subhead text-label-2 max-w-2xl -mt-2 leading-relaxed">{note}</p>}

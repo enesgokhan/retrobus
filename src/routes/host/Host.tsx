@@ -353,7 +353,7 @@ export default function Host() {
             {/* rota */}
             <section className="flex flex-col gap-3 min-w-0 xl:sticky xl:top-20">
               <div className="flex items-center justify-between gap-3 px-1">
-                <h2 className="text-overline uppercase text-label-3">
+                <h2 className="eyebrow text-label-3">
                   Rota <span className="text-label-3 nums">{sorted.length}</span>
                 </h2>
                 <Button size="sm" variant="plain" onClick={() => setAdding(true)}>

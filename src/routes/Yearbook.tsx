@@ -414,7 +414,7 @@ export default function Yearbook() {
                   {a.avatar || '🙂'}
                 </span>
                 <div className="min-w-0">
-                  <div className="text-footnote font-bold uppercase tracking-wide text-label-2">{a.label}</div>
+                  <div className="eyebrow text-label-2">{a.label}</div>
                   <div className="font-semibold truncate">{a.display_name}</div>
                   <div className="text-footnote text-label-2">{a.detail}</div>
                 </div>

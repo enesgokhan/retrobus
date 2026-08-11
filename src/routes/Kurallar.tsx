@@ -231,7 +231,7 @@ export default function Kurallar() {
               {isOpen && (
                 <div className="flex flex-col gap-5 px-4 pb-5 pt-1 animate-fade">
                   <div>
-                    <h3 className="text-overline uppercase text-label-3 mb-2">Nasıl oynanır</h3>
+                    <h3 className="eyebrow text-label-3 mb-2">Nasıl oynanır</h3>
                     <ol className="flex flex-col gap-2 text-callout">
                       {r.steps.map((step, i) => (
                         <li key={i} className="flex gap-2.5">
@@ -243,7 +243,7 @@ export default function Kurallar() {
                   </div>
 
                   <div>
-                    <h3 className="text-overline uppercase text-label-3 mb-2">Puanlama</h3>
+                    <h3 className="eyebrow text-label-3 mb-2">Puanlama</h3>
                     <ul className="flex flex-col gap-1.5 text-callout">
                       {r.scoring.map((sc, i) => (
                         <li key={i} className="flex gap-2.5">
@@ -263,7 +263,7 @@ export default function Kurallar() {
                         background: 'color-mix(in srgb, var(--color-warn) 10%, transparent)',
                       }}
                     >
-                      <h3 className="text-overline uppercase text-warn mb-2">
+                      <h3 className="eyebrow text-warn mb-2">
                         Sık karıştırılanlar
                       </h3>
                       <ul className="flex flex-col gap-1.5 text-callout">

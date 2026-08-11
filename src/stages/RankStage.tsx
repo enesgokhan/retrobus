@@ -176,7 +176,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
         <section className="card flex flex-col gap-2">
           <h3 className="font-semibold">Odanın ortak sıralaması ({subs.length} kişi)</h3>
           {consensus.map((c, i) => (
-            <div key={c.id} className="flex items-center gap-3 rounded-2xl border-2 border-sep px-4 py-2.5">
+            <div key={c.id} className="flex items-center gap-3 rounded-lg border border-sep px-4 py-2.5">
               <span className="w-6 text-right font-semibold text-label-2">{i + 1}</span>
               <span className={['flex-1 min-w-0 truncate', presenter ? 'text-title-3' : 'text-headline'].join(' ')}>
                 {labelOf(c.id)}
@@ -186,7 +186,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
           ))}
           {subs.some((x) => x.member_id) && (
             <div className="border-t-2 border-sep pt-2 mt-1 flex flex-col gap-1">
-              <h4 className="text-footnote font-bold uppercase tracking-widest text-label-2">Kim ne dedi</h4>
+              <h4 className="eyebrow text-label-2">Kim ne dedi</h4>
               {subs.filter((x) => x.member_id).map((x) => (
                 <div key={x.id} className="text-subhead flex gap-2">
                   <span className="font-bold shrink-0">

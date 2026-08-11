@@ -41,10 +41,17 @@ export default function JoinPanel({
       type: 'svg',
       margin: 0,
       errorCorrectionLevel: 'M',
-      color: { dark: '#f5f5f7', light: '#00000000' },
+      // The modules were generated as the dark theme's near-white, so in the
+      // light theme this was a near-white code on a near-white card — and this
+      // is the join path, so it is not a cosmetic failure. Generated in a
+      // sentinel hue and swapped to `currentColor` instead, which follows the
+      // ground without regenerating the SVG when the theme changes. The sentinel
+      // is magenta because it cannot collide with `#00000000`, the transparent
+      // ground: a naive swap of `#000000` would have eaten the alpha off it.
+      color: { dark: '#ff00ff', light: '#00000000' },
     })
       .then((svg) => {
-        if (!cancelled) setQr(svg)
+        if (!cancelled) setQr(svg.replaceAll('#ff00ff', 'currentColor'))
       })
       .catch(() => {
         if (!cancelled) setQr(null)
@@ -71,7 +78,7 @@ export default function JoinPanel({
   return (
     <section className="card-lg flex gap-6 items-center flex-wrap">
       <div className="min-w-0 flex-1">
-        <p className="text-overline uppercase text-label-3">Katılım kodu</p>
+        <p className="eyebrow text-label-3">Katılım kodu</p>
         <p
           className={[
             'nums font-bold tracking-[0.18em] mt-1.5 leading-none',
@@ -100,7 +107,7 @@ export default function JoinPanel({
       {qr && (
         <div
           className={[
-            'shrink-0 rounded-md bg-bg-2 p-3.5',
+            'shrink-0 rounded-md bg-bg-2 p-3.5 text-label',
             compact ? 'w-32' : 'w-44',
           ].join(' ')}
           aria-label="Katılım karekodu"

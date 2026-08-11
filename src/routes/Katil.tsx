@@ -85,7 +85,7 @@ export default function Katil() {
         <div className="mb-5 text-label-3">
           <Icon name="bus" size={40} />
         </div>
-        <p className="text-overline uppercase text-label-3">{S.appName}</p>
+        <p className="eyebrow text-label-3">{S.appName}</p>
 
         {state === 'checking' && <p className="mt-4 text-subhead text-label-2">{S.loading}</p>}
 

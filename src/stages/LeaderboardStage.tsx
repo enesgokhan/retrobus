@@ -126,7 +126,7 @@ export default function LeaderboardStage({ stage, presenter = false }: { stage: 
           >
             {champion.points}
           </div>
-          <div className="text-overline uppercase text-label-2">
+          <div className="eyebrow text-label-2">
             {cochampions.length > 1 ? `${cochampions.length} kişi berabere` : 'Şampiyon'}
           </div>
         </div>

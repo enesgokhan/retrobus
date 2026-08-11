@@ -7,7 +7,7 @@
 //
 // This composites each label over each surface it is actually used on and
 // reports the WCAG 2.1 ratio.
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 
 const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8')
 
@@ -26,6 +26,23 @@ function token(name, theme = 'dark') {
   const m = new RegExp(`\\s${name}:\\s*([^;]+);`).exec(css)
   if (!m) throw new Error(`token not found: ${name}`)
   return m[1].trim()
+}
+
+/**
+ * Follow `var(--x)` chains. Half the friendly tint names are aliases —
+ * `--color-coral: var(--color-brand)`, `--ink-on-sky: var(--ink-on-blue)` — and
+ * an alias is the whole point: the light theme overrides the base name once and
+ * every alias follows. A resolver that stopped at the first hop would have
+ * thrown on exactly the tokens this file most needs to measure.
+ */
+function resolve(name, theme = 'dark') {
+  let v = token(name, theme)
+  for (let hop = 0; hop < 8; hop++) {
+    const m = /^var\(\s*(--[a-z0-9-]+)\s*\)$/i.exec(v.trim())
+    if (!m) return v
+    v = token(m[1], theme)
+  }
+  throw new Error(`var() chain too deep from ${name}`)
 }
 
 function parse(v) {
@@ -174,6 +191,57 @@ for (const theme of ['dark', 'light']) {
     if (!pass) fails++
     console.log(
       `  ${pass ? 'ok  ' : 'FAIL'} ${theme.padEnd(5)} ink-on-${inkTok.padEnd(7)} ${r.toFixed(2)}:1`,
+    )
+  }
+}
+
+// The check above measures the pairs theme.ts DECLARES. This one measures the
+// pairs the screens actually WRITE, which is a different set and was the set
+// that was broken: twelve game buttons and the Codenames key card had the dark
+// theme's ink typed in as a constant, so they ran at 2.77–3.22:1 the moment
+// anyone used the light theme — and the assertion above passed the whole time,
+// because it was looking at a list those screens never consulted.
+//
+// It reads the fill and the ink off the same line of TSX and composites them,
+// so it follows the code rather than a parallel hand-written inventory.
+console.log('\n################ ink on tint, as the screens write it ################')
+const INK = /text-\((--ink-on-[a-z]+|--cn-[a-z-]+-ink)\)/g
+const FILL = /\bbg-(?:\((--[a-z0-9-]+)\)|([a-z][a-z0-9-]*))(?=[\s'"`\]]|$)/g
+
+function* tsxFiles(dir) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = `${dir}/${e.name}`
+    if (e.isDirectory()) yield* tsxFiles(p)
+    else if (e.name.endsWith('.tsx')) yield p
+  }
+}
+
+const sites = []
+for (const file of tsxFiles(new URL('../src', import.meta.url).pathname)) {
+  readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+    const inks = [...line.matchAll(INK)].map((m) => m[1])
+    if (!inks.length) return
+    const fills = [...line.matchAll(FILL)].map((m) => m[1] ?? `--color-${m[2]}`)
+    const where = `${file.split('/src/')[1]}:${i + 1}`
+    if (inks.length !== 1 || fills.length !== 1) {
+      console.log(`  WARN  ${where} — ${inks.length} ink(s), ${fills.length} fill(s) on one line; not measurable here`)
+      warns++
+      return
+    }
+    sites.push([where, fills[0], inks[0]])
+  })
+}
+if (!sites.length) {
+  console.log('  FAIL  no ink-on-fill pairs found in src — this check is measuring nothing')
+  fails++
+}
+for (const theme of ['dark', 'light']) {
+  for (const [where, fill, ink] of sites) {
+    const r = ratio(parse(resolve(ink, theme)), parse(resolve(fill, theme)))
+    const pass = r >= 4.5
+    if (!pass) fails++
+    console.log(
+      `  ${pass ? 'ok  ' : 'FAIL'} ${theme.padEnd(5)} ${where.padEnd(30)} ${ink.replace('--ink-on-', '').padEnd(16)} ${r.toFixed(2)}:1`,
     )
   }
 }

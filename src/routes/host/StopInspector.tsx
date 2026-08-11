@@ -82,7 +82,7 @@ export default function StopInspector({
       {/* what this is, and the one thing to do with it */}
       <div className="flex flex-wrap items-start gap-4">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 text-overline uppercase text-label-3">
+          <div className="flex items-center gap-2 eyebrow text-label-3">
             {live && <span className="size-2 rounded-full bg-(--tint)" aria-hidden />}
             {S.kind[stage.kind]}
             <span className="text-label-3">· {stateLabel}</span>
@@ -338,7 +338,7 @@ function PollComposer({ stage }: { stage: Stage }) {
 
   return (
     <section className="flex flex-col gap-4">
-      <h3 className="text-overline uppercase text-label-3 px-1">Hızlı anket</h3>
+      <h3 className="eyebrow text-label-3 px-1">Hızlı anket</h3>
       <Field
         value={question}
         onChange={(e) => setQuestion(e.target.value)}

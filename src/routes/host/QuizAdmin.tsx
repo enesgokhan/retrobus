@@ -152,7 +152,7 @@ export default function QuizAdmin({ stage }: { stage: Stage }) {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-center gap-2 px-1">
-        <h3 className="text-overline uppercase text-label-3">Quiz soruları</h3>
+        <h3 className="eyebrow text-label-3">Quiz soruları</h3>
         <span className="badge nums">{rows.length}</span>
       </div>
       {note && <Alert tone="info">{note}</Alert>}

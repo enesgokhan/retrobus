@@ -63,8 +63,8 @@ export default function StageHeader({
         )}
         <span
           className={[
-            'uppercase text-label-3',
-            presenter ? 'text-subhead tracking-widest font-semibold' : 'text-overline',
+            'text-label-3',
+            presenter ? 'eyebrow-lg' : 'eyebrow',
           ].join(' ')}
         >
           {phase}

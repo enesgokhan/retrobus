@@ -79,6 +79,22 @@
      forces you into. 510 and 590 are the two Linear reaches for, and the
      half-steps are visible: 590 is a title, 600 is a shout. */
 
+  /* The weight classes, pointed at the ramp instead of at Tailwind's defaults.
+
+     The ramp is deliberate about weight — 510 for a headline, 590 for a title,
+     600 for a shout, 640 for the projector — and then thirty-three places
+     reached for `font-bold`, which is 700 and belongs to none of those. On a
+     variable face at these sizes 700 does not read as emphasis, it reads as a
+     different typeface intruding, and it is a good part of why the screens
+     looked heavier than the system they were built from.
+
+     Pointing the three classes at ramp steps fixes every site at once, which
+     is the right shape of fix: this was one decision made in one place, not
+     thirty-three independent mistakes. */
+  --font-weight-medium: 510;
+  --font-weight-semibold: 590;
+  --font-weight-bold: 640;
+
   /* projected to the room; read from across a video call */
   --text-display: 4rem; /* 64 */
   --text-display--line-height: 1.02;
@@ -205,6 +221,35 @@
   --ink-on-pink: #1e050c;
   --ink-on-yellow: #1a1500;
   --ink-on-gray: #0d0d0f;
+  --ink-on-teal: #04141a;
+  --ink-on-green: #04150a;
+  --ink-on-coral: #1a0806;
+
+  /* The games spell their tints with the friendly names, so the ink has to
+     answer to those names too — otherwise the token set looks complete while
+     six of the eight tints a passenger actually sees have no ink to reach for,
+     which is precisely how twelve buttons ended up with the dark pair typed in
+     by hand. Aliases resolve at use time, so the light theme's override of the
+     base name carries through here without being restated. */
+  --ink-on-sky: var(--ink-on-blue);
+  --ink-on-amber: var(--ink-on-orange);
+  --ink-on-grape: var(--ink-on-purple);
+
+  /* --------------------------------------------------- Codenames role tiles */
+  /* Red and blue are SEMANTIC — they name the two sides, and a team called
+     "Kırmızı" has to be red on any ground — so those two ride the tint tokens.
+     Neutral and assassin name nothing; they are the board's own furniture, so
+     they follow the ground instead. They were typed in as dark constants, which
+     put a near-black ink on a near-black tile at 1.15:1 the moment anyone used
+     the light theme — on the spymaster's key card, the one screen in the game
+     that is nothing but coloured tiles. */
+  --cn-neutral: #2a2721;
+  --cn-neutral-ink: rgba(235, 235, 245, 0.72);
+  --cn-neutral-edge: #3a352c;
+  --cn-assassin: #000000;
+  --cn-assassin-ink: #ff8a7a;
+  --cn-assassin-edge: #6b2a24;
+  --cn-blue-edge: #3d7fd0;
 
   /* ---------------------------------------------------------------- radii */
   /* Nested, not uniform.
@@ -412,6 +457,23 @@ body {
   --ink-on-pink: #ffffff;
   --ink-on-yellow: #ffffff;
   --ink-on-gray: #ffffff;
+  --ink-on-teal: #ffffff;
+  --ink-on-green: #ffffff;
+  --ink-on-coral: #ffffff;
+
+  /* An edge is meant to be darker than the fill it rings. #e0503f is lighter
+     than the light theme's coral, so the ring read as a highlight on the two
+     places that use it — the Codenames red tile and the quiz's first answer. */
+  --color-coral-deep: #9a2a19;
+
+  /* the board's furniture follows the ground; the two team hues do not */
+  --cn-neutral: #e7e3d9;
+  --cn-neutral-ink: rgba(23, 23, 28, 0.82);
+  --cn-neutral-edge: #cfc9ba;
+  --cn-assassin: #17171c;
+  --cn-assassin-ink: #ff8a7a;
+  --cn-assassin-edge: #4a1c17;
+  --cn-blue-edge: #063a7d;
 }
 
 ::selection {
@@ -444,6 +506,37 @@ body {
 *::-webkit-scrollbar-thumb:hover {
   background: var(--color-fill-2);
   background-clip: content-box;
+}
+
+/* The small tracked-out label that sits above a group and names it.
+
+   The ramp defines it as `--text-overline`, but the ramp only carries size,
+   leading, tracking and weight — the uppercasing was left to the caller. So
+   the system had one token and eight spellings of the thing built from it:
+   twenty-three screens wrote `text-overline uppercase text-label-3` and seven
+   others hand-rolled it out of `text-footnote font-bold tracking-widest`,
+   which is a different size, a weight outside the ramp's vocabulary, and a
+   different amount of tracking. Three of those sat next to a conforming one.
+
+   It is called `eyebrow` — the editorial name for this element — because
+   Tailwind already ships `overline` for `text-decoration-line`, and quietly
+   redefining a built-in is how you get a bug nobody can find.
+
+   `eyebrow-lg` is the same role at projector scale: the shared screen is read
+   from across a call, where eleven pixels is not a label, it is a smudge. */
+@utility eyebrow {
+  font-size: var(--text-overline);
+  line-height: var(--text-overline--line-height);
+  letter-spacing: var(--text-overline--letter-spacing);
+  font-weight: var(--text-overline--font-weight);
+  text-transform: uppercase;
+}
+@utility eyebrow-lg {
+  font-size: var(--text-subhead);
+  line-height: var(--text-overline--line-height);
+  letter-spacing: var(--text-overline--letter-spacing);
+  font-weight: var(--text-overline--font-weight);
+  text-transform: uppercase;
 }
 
 /* Visually hidden, still announced. Used for live regions that narrate what

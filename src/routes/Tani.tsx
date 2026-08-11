@@ -133,7 +133,7 @@ export default function Tani() {
       ) : (
         <div className="flex flex-col gap-5">
           <section className="card flex flex-col">
-            <h2 className="text-overline uppercase text-label-3 mb-2.5">Güncelleme yolu</h2>
+            <h2 className="eyebrow text-label-3 mb-2.5">Güncelleme yolu</h2>
             {/* This page opens no channels of its own, so the registry has
                 nothing to report here. Saying "canlı" in that case would be a
                 guess — and this is the one screen that must never guess. */}
@@ -191,7 +191,7 @@ export default function Tani() {
           </section>
 
           <section className="card flex flex-col">
-            <h2 className="text-overline uppercase text-label-3 mb-2.5">Oturum</h2>
+            <h2 className="eyebrow text-label-3 mb-2.5">Oturum</h2>
             <Row k="kişi" v={`${snap.member}${snap.host ? ' (şoför)' : ''}`} />
             <Row k="oturum geçerli" v={snap.sessionOk ? 'evet' : 'HAYIR'} bad={!snap.sessionOk} />
             <Row
@@ -202,7 +202,7 @@ export default function Tani() {
           </section>
 
           <section className="card flex flex-col">
-            <h2 className="text-overline uppercase text-label-3 mb-2.5">Kanallar ({snap.channels.length})</h2>
+            <h2 className="eyebrow text-label-3 mb-2.5">Kanallar ({snap.channels.length})</h2>
             {snap.channels.length === 0 && <p className="text-subhead text-label-2">Bu sayfada kanal yok.</p>}
             {snap.channels.map((c) => (
               <Row
@@ -222,7 +222,7 @@ export default function Tani() {
           </section>
 
           <section className="card">
-            <h2 className="text-overline uppercase text-label-3 mb-2.5">Tarayıcı</h2>
+            <h2 className="eyebrow text-label-3 mb-2.5">Tarayıcı</h2>
             <p className="text-footnote break-all text-label-2">{snap.ua}</p>
           </section>
 

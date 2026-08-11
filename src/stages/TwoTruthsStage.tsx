@@ -309,7 +309,7 @@ function EntryCard({
           <button
             key={n}
             className={[
-              'text-left rounded-2xl border-2 px-4 py-3 transition',
+              'text-left rounded-lg border-2 px-4 py-3 transition',
               isLie ? 'bg-rose-soft border-coral' : revealed ? 'bg-teal-soft/50 border-teal' : 'border-sep',
               picked && !revealed ? 'border-coral' : '',
               canGuess ? 'hover:border-coral cursor-pointer' : 'cursor-default',

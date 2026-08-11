@@ -66,6 +66,15 @@ async function login(name, code, w = 1280, h = 950) {
   page.on('console', (m) => {
     if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(`${name} console: ${m.text().slice(0, 140)}`)
   })
+  // "Failed to load resource: 404" without the URL is a fault report that
+  // withholds the fault. Fourteen of them once cost an hour of guessing before
+  // the answer turned out to be one missing RPC. The response listener names it.
+  page.on('response', (r) => {
+    if (r.status() < 400) return
+    const url = r.url()
+    if (/favicon/.test(url)) return
+    errors.push(`${name} HTTP ${r.status()} ${url.replace(/^https?:\/\/[^/]+/, '').slice(0, 120)}`)
+  })
   await page.goto(APP, { waitUntil: 'networkidle' })
   // a restored session means there is no login screen to fill in
   if (await page.getByPlaceholder('örn. Enes').count()) {

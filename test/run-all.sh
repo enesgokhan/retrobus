@@ -50,6 +50,47 @@ echo "################ dead tokens ################"
 dead=$(grep -rnoE '\b(border-line|border-line-strong|bg-card|bg-surface|bg-raised|text-ink|text-ink-soft|text-ink-faint|bg-ink|border-ink|input-blob|btn-coral|btn-ghost)\b' src --include='*.tsx' || true)
 if [ -n "$dead" ]; then echo "$dead"; echo "DEAD TOKENS IN USE"; fails=$((fails + 1)); else echo "ALL CHECKS PASSED"; fi
 
+# The stage screens drifted away from the system the chrome around them is
+# built from — and the stages are where three hours are actually spent. Seven
+# hand-rolled spellings of the overline, weights outside the ramp, the 30px
+# projector radius on ordinary buttons, and opacity multipliers standing in for
+# an ink token. All of it typechecked, and none of it was measurable, because
+# the design gates read `index.css` and these were decisions made in TSX.
+echo "################ design-system drift ################"
+drift=0
+# Tracking out is the overline's job and the digit-group's job. Nothing else.
+# Every hand-rolled overline in this codebase announced itself with one of these.
+while IFS= read -r hit; do
+  [ -z "$hit" ] && continue
+  case "$hit" in *nums*) ;; *) echo "  $hit"; drift=1 ;; esac
+done <<< "$(grep -rnE 'tracking-(wider|widest|\[)' src --include='*.tsx' || true)"
+# `uppercase` means an eyebrow, which is one class that carries its own case.
+# The exceptions are display type, which is uppercased for effect at title size.
+while IFS= read -r hit; do
+  [ -z "$hit" ] && continue
+  case "$hit" in *tracking-wide\'*|*tracking-tight*) ;; *) echo "  $hit"; drift=1 ;; esac
+done <<< "$(grep -rn 'uppercase' src --include='*.tsx' | grep -v '^\s*\*\|/\*\*' || true)"
+# 30px is the projected screen. A button is not a projected screen.
+while IFS= read -r hit; do
+  [ -z "$hit" ] && continue
+  echo "  $hit"; drift=1
+done <<< "$(grep -rn 'rounded-2xl\|rounded-3xl' src --include='*.tsx' || true)"
+if [ "$drift" = "1" ]; then echo "DRIFTED FROM THE DESIGN SYSTEM"; fails=$((fails + 1)); else echo "ALL CHECKS PASSED"; fi
+
+# A colour typed into a class string belongs to whichever theme the author had
+# open. Twelve game buttons and the Codenames key card carried the dark theme's
+# near-black ink as a constant, so they ran at 2.77–3.22:1 in the light theme —
+# on the key card, 1.15:1 — while every contrast assertion passed, because the
+# assertions read tokens and these were not tokens.
+#
+# This gate is the CONTROL for the check below it: `contrast.mjs` measures every
+# `text-(--ink-on-*)` against the fill on its line, and that measurement is only
+# worth anything if a hex cannot be written instead. One is useless without the
+# other, so they sit together.
+echo "################ raw colour in class strings ################"
+raw=$(grep -rnE '\b(text|bg|border|ring|fill|stroke|from|to|via|shadow|decoration|outline|accent|caret)-\[[^]]*#[0-9a-fA-F]{3}' src --include='*.tsx' || true)
+if [ -n "$raw" ]; then echo "$raw"; echo "HARDCODED COLOUR — use a token, or the other theme gets the wrong one"; fails=$((fails + 1)); else echo "ALL CHECKS PASSED"; fi
+
 echo "################ contrast ################"
 node test/contrast.mjs || fails=$((fails + 1))
 echo "################ a11y (desktop) ################"

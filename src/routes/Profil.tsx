@@ -74,7 +74,7 @@ export default function Profil() {
         {note && <Alert tone={isError ? 'bad' : 'info'}>{note}</Alert>}
 
         <section className="flex flex-col gap-3">
-          <h2 className="text-overline uppercase text-label-3 px-1">Avatarın</h2>
+          <h2 className="eyebrow text-label-3 px-1">Avatarın</h2>
           <div className="grid grid-cols-8 gap-2">
             {AVATARS.map((a) => (
               <button
@@ -96,7 +96,7 @@ export default function Profil() {
         </section>
 
         <section className="flex flex-col gap-3">
-          <h2 className="text-overline uppercase text-label-3 px-1">Kodunu değiştir</h2>
+          <h2 className="eyebrow text-label-3 px-1">Kodunu değiştir</h2>
           <input
             className="field text-center tracking-widest nums placeholder:tracking-normal"
             value={current}
