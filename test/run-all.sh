@@ -23,6 +23,24 @@ npm run build >/dev/null 2>&1 || { echo "build failed"; fails=$((fails + 1)); }
 # readiness meter, the live dots, the Break countdown, the Leaderboard hero
 # number, and every selected-state control that spelled selection as a tint
 # fill. It typechecks, it lints, and it renders as "the tint is a bit subtle".
+# /sunum is projected to the whole call and the session doing the projecting
+# is a real player with real answers. Three "this one is yours" affordances
+# were rendering there — Fibbage labelled the projector's own lie, which tells
+# the room outright which option is false. Every private marker must carry a
+# !presenter guard. This is a static check and says so: it catches the class of
+# regression, not every possible leak.
+echo "################ private markers on /sunum ################"
+leak=0
+for pat in "senin yalanın" "senin tahminin" "senin cevabın"; do
+  while IFS= read -r hit; do
+    [ -z "$hit" ] && continue
+    f=${hit%%:*}; n=$(echo "$hit" | cut -d: -f2)
+    ctx=$(sed -n "$((n>3?n-3:1)),$((n+1))p" "$f")
+    case "$ctx" in *'!presenter'*) ;; *) echo "  UNGUARDED $f:$n — $pat"; leak=1 ;; esac
+  done <<< "$(grep -rn "$pat" src --include='*.tsx' || true)"
+done
+if [ "$leak" = "1" ]; then echo "PRIVATE MARKER REACHES THE SHARED SCREEN"; fails=$((fails + 1)); else echo "ALL CHECKS PASSED"; fi
+
 echo "################ tailwind v3 syntax ################"
 v3=$(grep -rnE '\b(bg|text|border|ring|fill|stroke|shadow|from|to|via|accent|outline|decoration|caret)-\[--' src --include='*.tsx' || true)
 if [ -n "$v3" ]; then echo "$v3"; echo "V3 ARBITRARY-PROPERTY SYNTAX — use bg-(--tint), not bg-[--tint]"; fails=$((fails + 1)); else echo "ALL CHECKS PASSED"; fi

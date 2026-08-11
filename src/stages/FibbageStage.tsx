@@ -7,6 +7,7 @@ import Empty from '../components/ui/Empty'
 import Alert from '../components/ui/Alert'
 import type { Member, Stage } from '../lib/types'
 import Icon from '../components/ui/Icon'
+import Button from '../components/ui/Button'
 
 interface Round {
   id: string
@@ -207,8 +208,20 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
     }
   }
 
+  /** a round creation in flight; a second press must not make a second round */
+  const [creating, setCreating] = useState(false)
+
   async function addRound() {
-    if (!newRound.prompt.trim() || !newRound.truth.trim()) return
+    if (creating || !newRound.prompt.trim() || !newRound.truth.trim()) return
+    setCreating(true)
+    try {
+      await createRound()
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  async function createRound() {
     // one RPC, because prompt and truth now live in two tables and a round with
     // no truth would be unplayable
     const { data, error: e } = await supabase.rpc('create_fibbage_round', {
@@ -272,9 +285,17 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
               <option value={3}>×3 — final turu</option>
             </select>
           </label>
-          <button className="btn-filled self-start text-subhead" onClick={addRound}>
+          {/* Disabled until it has something to create — it used to be live
+              with both fields empty, so pressing it did nothing at all. */}
+          <Button
+            variant="filled"
+            className="self-start"
+            onClick={addRound}
+            busy={creating}
+            disabled={!newRound.prompt.trim() || !newRound.truth.trim()}
+          >
             Ekle ve başlat
-          </button>
+          </Button>
         </div>
       </details>
       {/* The question list.
@@ -452,7 +473,7 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                           ? 'bg-rose-soft border-coral'
                           : 'border-sep',
                       canPick ? 'hover:border-coral cursor-pointer' : 'cursor-default',
-                      isMine && !revealed ? 'opacity-60' : '',
+                      isMine && !revealed && !presenter ? 'opacity-60' : '',
                     ].join(' ')}
                     onClick={() => canPick && pick(opt.opt_id)}
                     disabled={!canPick}
@@ -462,7 +483,10 @@ export default function FibbageStage({ stage, presenter = false }: { stage: Stag
                         {revealed && (isTruth ? '✅ ' : '🤥 ')}
                         {opt.body}
                       </span>
-                      {isMine && !revealed && (
+                      {/* NEVER on /sunum: the projecting session is a real
+                          player, so labelling "your lie" on the shared screen
+                          tells the whole room which option is a lie. */}
+                      {isMine && !revealed && !presenter && (
                         <span className="text-footnote shrink-0 opacity-70">senin yalanın</span>
                       )}
                     </div>

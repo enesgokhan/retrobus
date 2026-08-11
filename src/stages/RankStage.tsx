@@ -129,7 +129,7 @@ export default function RankStage({ stage, presenter = false }: { stage: Stage; 
           title={isHost ? 'Sıralanacak bir şey yok' : 'Liste hazırlanıyor'}
           body={
             isHost
-              ? 'Birkaç şey ekle — herkes kendi sırasını yapacak, sürüyle uyum puan getirecek.'
+              ? 'Birkaç şey ekle — herkes kendi sıralamasını yapacak, çoğunlukla aynı düşünmek puan getirecek.'
               : 'Liste hazırlanıyor. Sonra herkes kendi sıralamasını yapacak.'
           }
         />

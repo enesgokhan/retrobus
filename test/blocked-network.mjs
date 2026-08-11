@@ -166,6 +166,15 @@ console.log('\n-- uygulama durumu dürüst anlatıyor mu --')
     bad('uyarı', 'the room is told it is reconnecting when it is in fact working by polling')
   } else ok('no false reconnecting alarm')
   await pg.waitForTimeout(16000)
+  // CONTROL for the e2e gate, which asserts `[data-conn-status]` is ABSENT on a
+  // healthy connection. An absence assertion is worthless if its selector can
+  // never match, so prove here — with the socket genuinely blocked — that the
+  // indicator does carry the hook.
+  const hookHere = await pg.locator('[data-conn-status]').count()
+  if (!hookHere) {
+    bad('uyarı', 'CONTROL FAILED: the connection indicator has no [data-conn-status] — the e2e absence check cannot bite')
+  } else ok('control: the indicator carries its hook while the socket is down')
+
   const stillBig = /Canlı bağlantı yok — birkaç saniyede bir yenileniyor/.test(await text())
   if (stillBig) bad('uyarı', 'the polling banner never retires — it would sit there all evening')
   else ok('the polling notice shrinks away once it has been read')

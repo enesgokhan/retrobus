@@ -174,15 +174,37 @@ console.log('\n-- wavelength: the target must not reach the shared screen --')
   } else ok('psychic still sees the target on their own screen')
   if (ownText.includes('Hedef null')) fail('the psychic screen printed the literal string "null"')
 
+  // CONTROL, on the psychic's own screen and before we go anywhere else.
+  //
+  // The band check used to assert on the literal class `bg-white/25`, which
+  // this element has never carried (it is bg-white/30), so the count was 0
+  // every run and the gate passed without looking at anything. A leak test
+  // that cannot see the secret when it IS there proves nothing when it reports
+  // the secret is absent — so prove the selector bites first.
+  // Note the host IS the psychic here, deliberately: the person projecting is
+  // the one holding the secret, which is the dangerous case.
+  const bandSel = '[data-target-band]'
+  const controlBands = await host.locator(bandSel).count()
+  const controlMarker = await host.locator('[data-target-marker]').count()
+  if (controlBands === 0 || controlMarker === 0) {
+    fail(
+      `CONTROL FAILED: psychic's own screen shows ${controlBands} bands / ${controlMarker} markers — this gate cannot detect a leak`,
+    )
+  } else {
+    ok(`control: ${controlBands} bands + marker visible to the psychic, so the selector bites`)
+  }
+
   await go(host, '/sunum')
   await shot(host, 'wave-sunum')
   const roomText = await seen(host)
   if (roomText.includes(`Hedef ${target}`)) fail('the shared screen prints the target number')
   else ok('shared screen does not print the target')
-  // the bands are as much of a giveaway as the number
-  const bands = await host.locator('.stage-world .bg-white\\/25').count()
+  const bands = await host.locator(bandSel).count()
+  const marker = await host.locator('[data-target-marker]').count()
   if (bands > 0) fail(`the shared screen draws ${bands} target bands`)
   else ok('shared screen draws no target bands')
+  if (marker > 0) fail('the shared screen draws the target marker')
+  else ok('shared screen draws no target marker')
   }
 }
 

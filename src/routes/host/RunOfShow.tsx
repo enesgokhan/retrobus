@@ -36,7 +36,7 @@ export default function RunOfShow({
   const sorted = [...stages].sort((a, b) => a.order_index - b.order_index)
 
   return (
-    <div className="list-group">
+    <div className="list-group" role="listbox" aria-label="Rota">
       {sorted.map((stage, i) => {
         const live = stage.id === activeId
         const selected = stage.id === selectedId
@@ -72,7 +72,20 @@ export default function RunOfShow({
             ].join(' ')}
             style={{ ['--tint' as string]: tint } as React.CSSProperties}
             onClick={() => onSelect(stage)}
-            aria-current={selected || undefined}
+            /* It was a bare <div onClick> — not focusable, not announced, and
+               unreachable without a mouse, on the host's permanently-visible
+               rail. It cannot be a <button> because it already contains
+               buttons, so it takes the role and the keys explicitly. */
+            role="option"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onSelect(stage)
+              }
+            }}
+            aria-selected={selected}
+            aria-current={live ? 'true' : undefined}
           >
             {/* The route, drawn as a line.
                 
@@ -141,9 +154,12 @@ export default function RunOfShow({
             {/* what still needs doing, as a dot — the amber outlined pill with
                 a navigation path in it was the loudest thing in the column */}
             {todo && (
+              /* aria-label on a plain <span> is not exposed; give it a role
+                 so the warning actually reaches a screen reader. */
               <span
                 className="shrink-0 size-2 rounded-full bg-warn"
                 title={todo}
+                role="img"
                 aria-label={todo}
               />
             )}

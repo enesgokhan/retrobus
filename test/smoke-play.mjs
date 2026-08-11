@@ -224,10 +224,23 @@ console.log('\n=== WAVELENGTH: clue → dial → bet → reveal ===')
   const teamB = Object.entries(teams).filter(([id, t]) => t === 'b' && driven.has(id)).map(([id]) => id)
   if (!teamA.length || !teamB.length) bad('wavelength', `unbalanced teams a=${teamA.length} b=${teamB.length}`)
 
-  // host starts a round with a psychic from team A
+  // The psychic must come from a team that has SOMEONE ELSE we are driving,
+  // or there is nobody left to set a dial and the suite reports "nobody on the
+  // active team could set a dial" — blaming the app for a hole the test dug.
+  //
+  // "Takımları otomatik kur" splits every member in the room, including
+  // leftovers from other suites that this test drives no browser for, so team A
+  // can easily come out as one driven person who is then also made psychic.
   await room(host)
   const sel = host.locator('select').last()
-  const psychicId = teamA[0]
+  const dialable = [teamA, teamB].find((t) => t.length >= 2)
+  if (!dialable) {
+    bad(
+      'wavelength',
+      `no team has two driven members (a=${teamA.length} b=${teamB.length}) — the dial phase cannot be exercised`,
+    )
+  }
+  const psychicId = (dialable ?? teamA)[0]
   await sel.selectOption(psychicId)
   await host.waitForTimeout(400)
   const start = host.getByRole('button', { name: 'Yeni tur' })

@@ -101,6 +101,11 @@ export default function ConnStatus() {
   if (collapsed) {
     return (
       <button
+        /* The hook goes on BOTH render paths. The indicator shrinks to this dot
+           once the calm state has been read, so tagging only the expanded
+           banner meant every check ran against an element that had already
+           been replaced. */
+        data-conn-status
         aria-label="Canlı bağlantı yok — birkaç saniyede bir yenileniyor"
         title="Canlı bağlantı yok — birkaç saniyede bir yenileniyor."
         onClick={() => setReopened(Date.now())}
@@ -115,6 +120,10 @@ export default function ConnStatus() {
   return (
     <div
       role="status"
+      /* a stable hook: the e2e gate asserts this is absent on a healthy
+         connection, and matching on role="status" alone caught any other
+         live region on the page — the room's stop announcer, for one */
+      data-conn-status
       aria-live="polite"
       className={[
         'fixed bottom-4 left-1/2 -translate-x-1/2 z-40 rounded-full pl-4 pr-3 py-2 animate-rise',

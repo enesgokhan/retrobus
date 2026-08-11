@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { liveChannel } from '../lib/realtime'
 import { useAuth } from '../lib/auth'
@@ -108,7 +108,23 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
     }
   }, [member, stage.id])
 
+  /**
+   * Dimensions with a submit in flight.
+   *
+   * Two quick taps on one dimension used to race: the first answer landed, the
+   * second came back "one per dimension", and the handler rolled back — so the
+   * answer that HAD been recorded vanished from the screen, an error appeared
+   * saying you had already voted, and the row was frozen because `done` had it.
+   * You were left with no selection, a false error, and no way to correct it.
+   *
+   * A ref rather than state: it has to be readable synchronously, before the
+   * second click's render.
+   */
+  const inFlight = useRef<Set<string>>(new Set())
+
   async function rate(dim: string, rating: number) {
+    if (inFlight.current.has(dim) || done.has(dim)) return
+    inFlight.current.add(dim)
     setError(null)
     setMine((m) => ({ ...m, [dim]: rating }))
     const { error: e } = await supabase.rpc('submit_health', {
@@ -116,16 +132,24 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
       p_dimension_key: dim,
       p_rating: rating,
     })
-    if (e) {
-      setMine((m) => {
-        const next = { ...m }
-        delete next[dim]
-        return next
-      })
-      setError(e.message.includes('limit') ? 'Bu boyutu zaten oyladın.' : 'Kaydedilemedi.')
-    } else {
+    inFlight.current.delete(dim)
+    if (!e) {
       setDone((d) => new Set(d).add(dim))
+      return
     }
+    // "already answered" is not a failure to undo — the server is telling us an
+    // answer exists. Rolling the optimistic value back would erase a recorded
+    // vote from the screen; keep it and settle the row.
+    if (e.message.includes('limit')) {
+      setDone((d) => new Set(d).add(dim))
+      return
+    }
+    setMine((m) => {
+      const next = { ...m }
+      delete next[dim]
+      return next
+    })
+    setError('Kaydedilemedi, tekrar dene.')
   }
 
   const allDone = dims.every((d) => done.has(d.key))
@@ -195,10 +219,11 @@ export default function HealthCheckStage({ stage, presenter = false }: { stage: 
                         // fade the roads not taken, never your own answer —
                         // the whole row used to dim once you had chosen, making
                         // your choice the faintest thing on it
-                        answered && !chosen ? 'opacity-35 pointer-events-none' : '',
-                        answered && chosen ? 'pointer-events-none' : '',
+                        answered && !chosen ? 'opacity-35' : '',
+                        'disabled:cursor-default',
                       ].join(' ')}
                       onClick={() => rate(d.key, r.value)}
+                      disabled={answered}
                     >
                       <span aria-hidden className="mr-1.5 text-headline">
                         {r.shape}

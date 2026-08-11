@@ -89,7 +89,7 @@ export default function MissionStage({ stage, presenter = false }: { stage: Stag
   return (
     <div className="w-full max-w-4xl flex-1 flex flex-col gap-4">
       <StageHeader
-        phase={anyRevealed ? 'Görevler açıldı' : 'Görev sende'}
+        phase={anyRevealed ? 'Görevler açıldı' : mine && !presenter ? 'Görev sende' : 'Gizli görevler'}
         instruction={
           anyRevealed ? 'Kim başardı, kim yakalandı?'
           : mine && !presenter ? 'Görevini kimseye söyleme. Fırsat kolla.'

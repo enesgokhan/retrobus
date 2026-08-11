@@ -33,6 +33,9 @@ export default function Sheet({
 }) {
   const panel = useRef<HTMLDivElement>(null)
   const opener = useRef<Element | null>(null)
+  /** always the newest onClose, without making it an effect dependency */
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
 
   useEffect(() => {
     if (!open) return
@@ -43,7 +46,7 @@ export default function Sheet({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation()
-        onClose()
+        closeRef.current()
       }
     }
     document.addEventListener('keydown', onKey)
@@ -59,7 +62,13 @@ export default function Sheet({
       document.body.style.overflow = prev
       ;(opener.current as HTMLElement | null)?.focus?.()
     }
-  }, [open, onClose])
+    // `onClose` is deliberately NOT a dependency. Both callers pass a fresh
+    // inline arrow, so including it re-ran this effect on every parent render —
+    // and the console re-renders on a 20s polling cadence, which meant an open
+    // sheet blurred its focused field and re-focused its first control while
+    // you were typing in it. The latest handler is read through a ref instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   if (!open) return null
 

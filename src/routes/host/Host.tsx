@@ -472,8 +472,8 @@ function RoomPane({
         rows={4}
         hint={
           meeting.welcome_note
-            ? 'Herkese giriş yaptıktan sonra bir kez gösterilir. Yazıp başka bir yere tıkla — otomatik kaydedilir.'
-            : 'Boş — kimseye gösterilmiyor. Herkese giriş yaptıktan sonra bir kez gösterilir.'
+            ? 'Herkes giriş yaptıktan sonra bir kez gösterilir. Yazıp başka bir yere tıkla — otomatik kaydedilir.'
+            : 'Boş — kimseye gösterilmiyor. Herkes giriş yaptıktan sonra bir kez gösterilir.'
         }
         onBlur={async (e) => {
           const v = e.target.value.trim()

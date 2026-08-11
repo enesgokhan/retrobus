@@ -322,7 +322,10 @@ function EntryCard({
                 {revealed && (isLie ? '🤥 ' : '✅ ')}
                 {s}
               </span>
-              {picked && !revealed && <span className="text-footnote font-bold text-coral shrink-0">senin tahminin</span>}
+              {/* not on the shared screen — see FibbageStage */}
+              {picked && !revealed && !presenter && (
+                <span className="text-footnote font-bold text-coral shrink-0">senin tahminin</span>
+              )}
             </div>
             {revealed && votes.length > 0 && (
               <p className="text-footnote font-semibold text-label-2 mt-1.5">

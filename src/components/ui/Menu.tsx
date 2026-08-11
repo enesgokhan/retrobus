@@ -23,6 +23,8 @@ export default function Menu({
 }) {
   const [open, setOpen] = useState(false)
   const wrap = useRef<HTMLDivElement>(null)
+  /** not `trigger` — that is already the prop holding the trigger's content */
+  const triggerEl = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -30,7 +32,12 @@ export default function Menu({
       if (!wrap.current?.contains(e.target as Node)) setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') {
+        setOpen(false)
+        // Escape dropped focus on <body>, so a keyboard user closing the menu
+        // landed nowhere and had to tab from the top of the document.
+        triggerEl.current?.focus()
+      }
     }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
@@ -43,6 +50,7 @@ export default function Menu({
   return (
     <div ref={wrap} className="relative">
       <button
+        ref={triggerEl}
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}

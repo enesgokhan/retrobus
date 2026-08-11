@@ -308,9 +308,13 @@ console.log('\n-- bağlantı göstergesi --')
 {
   await room(p1)
   await p1.waitForTimeout(9000)   // past the 6s grace and the 3s settle
-  const banner = await p1.locator('[role="status"]').count()
+  // Target the connection indicator itself, not "anything with role=status".
+  // The room legitimately carries a polite live region that announces which
+  // stop the host has moved everyone to, and the broad selector matched it and
+  // reported a connection banner that was not there.
+  const banner = await p1.locator('[data-conn-status]').count()
   if (banner > 0) {
-    const txt = await p1.locator('[role="status"]').first().textContent()
+    const txt = await p1.locator('[data-conn-status]').first().textContent()
     fail(`indicator shown on a healthy connection: ${txt?.trim().slice(0, 60)}`)
   } else {
     ok('no connection warning while the socket is healthy')

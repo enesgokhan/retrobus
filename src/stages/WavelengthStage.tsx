@@ -7,6 +7,7 @@ import { fireConfetti } from '../lib/celebrate'
 import StageHeader from '../components/StageHeader'
 import Alert from '../components/ui/Alert'
 import type { Member, Stage } from '../lib/types'
+import Button from '../components/ui/Button'
 
 interface Round {
   id: string
@@ -175,7 +176,11 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [members, stage.config.teams, rounds.length])
 
+  /** guards the round RPC against a double-press making two rounds */
+  const [starting, setStarting] = useState(false)
+
   async function startRound() {
+    if (starting) return
     if (!psychic) {
       setError('Önce ipucu verecek kişiyi seç.')
       return
@@ -186,9 +191,11 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
     }
     const pair = SPECTRUM_PAIRS[pairIdx % SPECTRUM_PAIRS.length]
     setError(null)
+    setStarting(true)
     const { error: e } = await supabase.rpc('start_wave_round', {
       p_stage_id: stage.id, p_left: pair.left, p_right: pair.right, p_psychic: psychic,
     })
+    setStarting(false)
     if (e) { setError('Tur başlatılamadı.'); return }
     setPairIdx((i) => i + 1)
     // hand the role to the other team, and inside that team to whoever has done
@@ -243,6 +250,17 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
   }
 
   const teamLabel = (t?: string) => (t === 'a' ? '🟣 A takımı' : t === 'b' ? '🟠 B takımı' : '—')
+  /**
+   * The team in the genitive, written out in full rather than assembled.
+   *
+   * Turkish suffixes do not survive string concatenation: "A takımı" takes
+   * -nın (it already carries a possessive) while "Sıradaki takım" takes -ın,
+   * and the emoji-prefixed label takes neither. Interpolating one suffix onto
+   * three different stems is how this codebase previously produced "Biz
+   * buyuz'e" and "—nın turu". Store the finished word.
+   */
+  const teamPossessive = (t?: string) =>
+    t === 'a' ? 'A takımının' : t === 'b' ? 'B takımının' : 'Sıradaki takımın'
 
   const hostPanel = isHost && !presenter && (
     <section className="card flex flex-col gap-3">
@@ -303,9 +321,9 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
                 ))}
               </select>
             </label>
-            <button className="btn-filled" onClick={startRound} disabled={!psychic}>
+            <Button variant="filled" onClick={startRound} busy={starting} disabled={!psychic}>
               Yeni tur
-            </button>
+            </Button>
           </div>
           {!psychic && (
             <p className="text-footnote font-semibold text-label-2">
@@ -354,7 +372,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
         ? target == null
           ? { phase: 'Sen medyumsun', instruction: 'Hedef yükleniyor…', waiting: true }
           : { phase: 'Sen medyumsun', instruction: `Hedef ${target}. Tek kelimeyle anlat.`, waiting: false }
-        : { phase: `${teamLabel(round.active_team)} turu`, instruction: `${nameOf(round.psychic_member_id)} ipucu düşünüyor…`, waiting: true }
+        : { phase: `${teamPossessive(round.active_team)} turu`, instruction: `${nameOf(round.psychic_member_id)} ipucu düşünüyor…`, waiting: true }
     }
     if (round.phase === 'guess') {
       if (amPsychic) return { phase: 'Takımın kadranı ayarlıyor', instruction: 'Sessiz kal — ipucunu verdin.', waiting: true }
@@ -439,6 +457,11 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
               {[...BANDS].reverse().map((b) => (
                 <div
                   key={b.within}
+                  /* A stable hook for the leak gate. It used to assert on the
+                     literal class `bg-white/25`, which this element has never
+                     had — so the check counted zero every time and passed
+                     without ever looking at anything. */
+                  data-target-band
                   className="absolute inset-y-0 bg-white/30 border-x-2 border-white/70"
                   style={{
                     left: `${Math.max(0, target - b.within)}%`,
@@ -448,6 +471,7 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
                 />
               ))}
               <div
+                data-target-marker
                 className="absolute inset-y-0 w-1.5 bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.45)]"
                 style={{ left: `calc(${target}% - 3px)` }}
                 title={`Hedef: ${target}`}
@@ -516,6 +540,8 @@ export default function WavelengthStage({ stage, presenter = false }: { stage: S
               value={dial}
               onChange={(e) => setDial(Number(e.target.value))}
               className="w-full accent-coral h-6"
+              aria-label={`Kadran: ${round.left_label} ile ${round.right_label} arası`}
+              aria-valuetext={`${dial}`}
             />
             <button className="btn-filled btn-lg self-start" onClick={sendGuess}>
               {dial} olarak gönder

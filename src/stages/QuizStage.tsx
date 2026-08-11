@@ -167,7 +167,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
 
   const header = (() => {
     if (!active) return { phase: 'Bilgi Yarışması', instruction: 'Bir soru açılmasını bekliyoruz.', waiting: true }
-    if (revealed) return { phase: 'Cevap açıldı', instruction: 'Puanlar düştü — sıralamaya bak.', waiting: false }
+    if (revealed) return { phase: 'Cevap açıldı', instruction: 'Puanlar dağıtıldı — sıralamaya bak.', waiting: false }
     if (myAnswer) return { phase: 'Cevabın kayıtlı', instruction: 'Hız da sayılıyor. Diğerlerini bekliyoruz.', waiting: true }
     return {
       phase: `Soru ${active.order_index}/${questions.length}`,
@@ -208,7 +208,7 @@ export default function QuizStage({ stage, presenter = false }: { stage: Stage; 
                         ? isCorrect
                           ? 'bg-teal text-[#04141a] border-teal'
                           : 'border-sep opacity-60'
-                        : isMine
+                        : isMine && !presenter
                           ? TINTS[i % TINTS.length]
                           : 'border-sep hover:border-label-2',
                       canPick ? 'cursor-pointer' : 'cursor-default',

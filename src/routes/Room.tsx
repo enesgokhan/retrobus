@@ -37,6 +37,23 @@ export default function Room() {
     >
       {meeting && <WelcomeNote meetingId={meeting.id} note={meeting.welcome_note} />}
 
+      {/* The host drives every passenger's screen, and nothing about that is
+          a navigation — the same <section> simply swaps contents. To assistive
+          tech the page silently became a different page. A polite live region
+          announces the stop by name; `atomic` so the whole sentence is read
+          rather than the diff. */}
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {loading
+          ? S.loading
+          : meeting?.frozen
+            ? S.frozenTitle
+            : activeStage
+              ? `${activeStage.title} — ${S.kind[activeStage.kind] ?? ''}`
+              : ended
+                ? S.endedTitle
+                : S.waitingTitle}
+      </p>
+
       <section className="flex-1 flex flex-col">
         {loading ? (
           <div className="flex-1 grid place-items-center">

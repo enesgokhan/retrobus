@@ -355,7 +355,7 @@ export default function CodenamesStage({ stage, presenter = false }: { stage: St
     }
     if (!game.clue_word) {
       return {
-        phase: `${game.turn === 'red' ? 'Kırmızı' : 'Mavi'} sırası`,
+        phase: `${game.turn === 'red' ? 'Kırmızının' : 'Mavinin'} sırası`,
         instruction: 'Spymaster ipucu düşünüyor…',
         waiting: true,
       }

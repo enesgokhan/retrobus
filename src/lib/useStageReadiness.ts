@@ -80,7 +80,7 @@ export function useStageReadiness(stages: Stage[]): Record<string, Readiness> {
           const n = count(rank.data as { stage_id: string }[], s.id)
           next[s.id] = n >= 3
             ? { ready: true, todo: null }
-            : { ready: false, todo: `Sıralanacak öğe ekle (${n}/3 en az)` }
+            : { ready: false, todo: `Sıralanacak öğe ekle (en az 3, şu an ${n})` }
         } else if (s.kind === 'codenames') {
           const games = (cn.data as { stage_id: string; phase: string }[] | null) ?? []
           const mine = games.filter((g) => g.stage_id === s.id)
