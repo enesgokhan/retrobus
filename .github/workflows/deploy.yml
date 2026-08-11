@@ -52,8 +52,22 @@ jobs:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
+      # This has never worked. `/rest/v1/` answers 401 to an anon key (with or
+      # without an Authorization header), and `curl -f` turns that into exit 22
+      # — so the weekly job has failed every run since it was written and the
+      # free project has had no keep-alive at all. A paused project on the night
+      # would take the whole evening down.
+      #
+      # /auth/v1/health is the endpoint that actually answers 200 unauthenticated,
+      # and it reaches the project rather than a CDN edge.
       - name: Ping Supabase so the free project stays awake
         run: |
-          curl -sf "${{ vars.VITE_SUPABASE_URL }}/rest/v1/" \
-            -H "apikey: ${{ vars.VITE_SUPABASE_ANON_KEY }}" -o /dev/null \
-            && echo "supabase awake"
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            "${{ vars.VITE_SUPABASE_URL }}/auth/v1/health" \
+            -H "apikey: ${{ vars.VITE_SUPABASE_ANON_KEY }}")
+          echo "auth/v1/health -> $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::Supabase did not answer 200 — the project may be paused"
+            exit 1
+          fi
+          echo "supabase awake"
