@@ -5,24 +5,24 @@ anything**, because two of the things below look like bugs and are not.
 
 ## What "paused" means here
 
-The **Supabase project is paused from the dashboard.** Everything else is
-untouched: the repo is public, GitHub Pages is still serving, and the last
-commit is deployed.
+The **Supabase project is paused from the dashboard** and the **GitHub Pages
+site is unpublished**. The repo is still public and nothing has been deleted.
 
 | | |
 |---|---|
-| last commit | `ffba587` |
-| deployed bundle | `index-B2UowgaK.js` — verified identical to a local build |
-| live URL | https://enesgokhan.github.io/retrobus/ |
+| last deployed commit | `ffba587`, bundle `index-B2UowgaK.js` — verified against a local build |
+| URL | https://enesgokhan.github.io/retrobus/ — **404s; nothing is served** |
 | database | **paused** |
+| Pages | **unpublished**; was `build_type: workflow`, source `main` `/` |
+| `deploy` job | **off** (`if: false`) — `deploy-pages` fails when Pages is off |
+| keep-alive cron | **off** |
 
 ## Two things that will look broken, and aren't
 
-**1. The site loads and then hangs.** Static assets come from GitHub Pages, so
-the page paints; the first call to Supabase never answers, so it sits on a
-loading state and eventually raises the connection banner. That is the app
-behaving correctly against a database that is switched off. Unpause and it
-comes back on its own — there is nothing to redeploy.
+**1. The URL 404s.** That is the unpublish, not a lost deployment. The build
+is still in the repo and reproducible; publishing again is the three steps
+below. (Even with Pages back on, the app would load and then hang until the
+database is unpaused — static assets with nothing behind them.)
 
 **2. Every integration test fails.** `./test/run-all.sh` and everything under
 `test/` connects to the real project. While it is paused they all fail, and
@@ -59,7 +59,23 @@ they fail in ways that read like data bugs. `npm test` (vitest) and
    re-rolls them. The code for all three is already written, deployed and
    tested; only the SQL is missing.
 
-3. Put the keep-alive cron back, or the free project pauses itself again in a
+3. Publish the site again — three edits, all in one place:
+
+   a. **Settings → Pages → Source: GitHub Actions.** By API:
+      `gh api -X POST repos/:owner/:repo/pages -f build_type=workflow`
+   b. In `.github/workflows/deploy.yml`, put the `deploy` job's condition back
+      to `if: github.event_name != 'schedule'`.
+   c. Push, or run the workflow by hand from the Actions tab.
+
+   Then check it actually shipped by comparing hashes rather than trusting a
+   green tick — that has been wrong twice here:
+
+   ```
+   npm run build && ls dist/assets/index-*.js
+   curl -s https://enesgokhan.github.io/retrobus/ | grep -o 'index-[A-Za-z0-9_-]*\.js'
+   ```
+
+4. Put the keep-alive cron back, or the free project pauses itself again in a
    week. In `.github/workflows/deploy.yml`, uncomment:
 
    ```yaml
@@ -72,7 +88,7 @@ they fail in ways that read like data bugs. `npm test` (vitest) and
    be a surprise and wrong when the pause is the plan. Leaving it on would have
    mailed a red build every Monday about a thing working as asked.
 
-4. `E2E=1 ./test/run-all.sh` — 30 suites. Expect green once the migrations are
+5. `E2E=1 ./test/run-all.sh` — 30 suites. Expect green once the migrations are
    in; before that, exactly four fail and each names its own migration.
 
 ## Nothing is at risk while it sits
@@ -80,9 +96,10 @@ they fail in ways that read like data bugs. `npm test` (vitest) and
 - The schema is entirely in `supabase/migrations/`, in git. The data is a
   handful of members and test meetings — reproducible, nothing irreplaceable.
 - Free tier, paused: no cost. Public repo: Actions and Pages are free, and with
-  the cron off nothing is scheduled to run at all.
-- The publishable key in the deployed bundle is public by design — RLS is the
-  security model, and with the project paused nothing is reachable anyway.
+  the cron off nothing is scheduled to run at all. Pushing still runs `build`,
+  which is wanted — it is what tells you tests and the build still pass.
+- The publishable key is public by design — RLS is the security model — and
+  with the project paused and the site unpublished nothing is reachable at all.
 
 Worth a glance if this sits for months: Supabase's own policy on how long a
 free project may stay paused before it is at risk. If that ever becomes a

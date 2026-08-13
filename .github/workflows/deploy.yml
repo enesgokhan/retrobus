@@ -48,7 +48,19 @@ jobs:
           path: dist
 
   deploy:
-    if: github.event_name != 'schedule'
+    # PARKED. The Pages site is unpublished, and `actions/deploy-pages` fails
+    # against a repo with Pages switched off — so leaving this on would turn
+    # every push into a red build, which is the same noise the keep-alive cron
+    # was just silenced for.
+    #
+    # `build` above deliberately keeps running: it is the check that tests and
+    # the production build still pass, and it needs nothing from Pages.
+    #
+    # To resume: restore this line to `if: github.event_name != 'schedule'`,
+    # re-enable Pages (Settings → Pages → Source: GitHub Actions — the API form
+    # is `gh api -X POST repos/:owner/:repo/pages -f build_type=workflow`), then
+    # push or run this workflow by hand.
+    if: false
     needs: build
     runs-on: ubuntu-latest
     environment:
