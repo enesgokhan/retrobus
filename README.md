@@ -1,5 +1,9 @@
 # 🚌 Retrobüs
 
+> **⏸ Parked since 2026-08-11 — the Supabase project is paused on purpose.**
+> Read [PARKED.md](PARKED.md) first. The site loads but hangs, and every integration
+> test fails; both are the database being off, not a regression.
+
 3 saatlik uzaktan takım retrosu + oyun gecesi uygulaması. Vite + React + TypeScript SPA,
 Supabase (Postgres + RLS + Realtime) üzerinde, GitHub Pages'te barındırılır.
 

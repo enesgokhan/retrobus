@@ -3,9 +3,19 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  # Weekly keep-alive ping so the free Supabase project doesn't pause from idleness.
-  schedule:
-    - cron: '17 6 * * 1'
+  # Weekly keep-alive ping so the free Supabase project doesn't pause from
+  # idleness. TURNED OFF while the project is deliberately paused — put the two
+  # lines back to resume it:
+  #
+  #   schedule:
+  #     - cron: '17 6 * * 1'
+  #
+  # The keepalive job below is deliberately loud: it exits 1 and raises
+  # `::error::Supabase did not answer 200`, because a project that had paused
+  # quietly would have taken the whole evening down. Now that the pause is the
+  # intended state, that alarm is a false one — it would fail every Monday and
+  # mail a red workflow about a thing that is working as asked. A false alarm
+  # left running is how a real one gets ignored.
   workflow_dispatch:
 
 permissions:
